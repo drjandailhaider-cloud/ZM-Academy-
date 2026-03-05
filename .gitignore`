@@ -1,0 +1,9 @@
+.streamlit/secrets.toml
+users.json
+history.json
+images.json
+__pycache__/
+*.py[cod]
+.env
+venv/
+.DS_Store

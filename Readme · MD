@@ -1,0 +1,72 @@
+# 📚 HomeWork Helper — Pakistan's Smart Study Companion
+
+An AI-powered homework assistant for Pakistani students (Classes 1–8, O Level, A Level).
+
+## ✨ Features
+- 💬 **AI Chat Tutor** — Ask any question, get step-by-step answers
+- 📝 **Practice Quiz** — Auto-generated MCQs with explanations
+- 🎨 **Image Generator** — Claude AI draws educational SVG diagrams
+- ✏️ **Essay Helper** — AI-written essays as learning examples
+- 🌐 **Translator** — English ↔ Urdu/Punjabi/Sindhi/Pashto
+- 📊 **Progress Tracker** — Track questions, streaks, and subjects
+- 🏆 **Badges** — 11 achievement badges to earn
+- 🕐 **Chat History** — Save and continue past conversations
+- 👤 **Avatar Profile** — 8 avatar choices
+
+## 🚀 Deploy on Streamlit Cloud (Free)
+
+### Step 1 — Get a Free Anthropic API Key
+1. Go to [console.anthropic.com](https://console.anthropic.com)
+2. Sign up for a free account
+3. Go to **API Keys** → **Create Key**
+4. Copy your key (starts with `sk-ant-...`)
+
+### Step 2 — Upload to GitHub
+1. Create a new GitHub repository (e.g. `homework-helper`)
+2. Upload these files:
+   ```
+   app.py
+   requirements.txt
+   .streamlit/config.toml
+   .gitignore
+   README.md
+   ```
+   ⚠️ Do NOT upload `.streamlit/secrets.toml`
+
+### Step 3 — Deploy on Streamlit Cloud
+1. Go to [share.streamlit.io](https://share.streamlit.io)
+2. Click **New app**
+3. Connect your GitHub account
+4. Select your repository and `app.py`
+5. Click **Advanced settings** → **Secrets**
+6. Paste this:
+   ```toml
+   ANTHROPIC_API_KEY = "sk-ant-your-actual-key-here"
+   ```
+7. Click **Deploy** — your app goes live in ~2 minutes! 🎉
+
+## 📁 File Structure
+```
+homework-helper/
+├── app.py                    ← Main application
+├── requirements.txt          ← Python dependencies
+├── .gitignore                ← Protects secrets & user data
+├── README.md                 ← This file
+└── .streamlit/
+    ├── config.toml           ← Theme settings (safe to commit)
+    └── secrets.toml          ← API key (DO NOT commit!)
+```
+
+## 🔒 Security Notes
+- User passwords are SHA-256 hashed
+- Never commit `secrets.toml` to GitHub
+- User data (JSON files) is stored locally on the server
+
+## 🛠️ Run Locally
+```bash
+pip install streamlit anthropic
+streamlit run app.py
+```
+
+## 📞 Support
+Built for Pakistani students following FBISE and Cambridge Pakistan curriculum.

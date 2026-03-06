@@ -28,6 +28,13 @@ LEVELS = [
     "Class 6","Class 7","Class 8","O Level","A Level"
 ]
 
+def get_level_index(grade):
+    """Safely return index for a grade in LEVELS, defaulting to Class 5 (index 4)"""
+    try:
+        return LEVELS.index(grade) if grade in LEVELS else 4
+    except Exception:
+        return 4
+
 AVATARS = {
     "👦 Boy":"👦", "👧 Girl":"👧", "👨 Dad":"👨", "👩 Mom":"👩",
     "👨‍🏫 Teacher":"👨‍🏫", "🧑‍🚀 Astronaut":"🧑‍🚀",
@@ -201,6 +208,8 @@ st.markdown("""
 html,body,[class*="css"]{ font-family:'Nunito',sans-serif !important; }
 .main .block-container{ padding-top:1rem; padding-bottom:2rem; max-width:900px; }
 #MainMenu,footer,header{ visibility:hidden; }
+
+/* ── Chat bubbles ── */
 .msg-user{ background:linear-gradient(135deg,#E8472A,#C1391F); color:#fff;
   border-radius:18px 18px 4px 18px; padding:12px 16px;
   margin:4px 0 4px 60px; font-size:14px; line-height:1.65; }
@@ -210,6 +219,8 @@ html,body,[class*="css"]{ font-family:'Nunito',sans-serif !important; }
   box-shadow:0 2px 10px rgba(0,0,0,0.07); border:1px solid #F0F0F5; }
 .msg-lbl{ font-size:11px; color:#bbb; margin-bottom:2px; }
 .msg-lbl-r{ text-align:right; }
+
+/* ── Cards ── */
 .stat-card{ background:#fff; border-radius:14px; padding:16px; text-align:center;
   box-shadow:0 2px 10px rgba(0,0,0,0.05); border:1px solid #F0F0F5; }
 .stat-num{ font-size:28px; font-weight:900; color:#1A1A2E; }
@@ -228,14 +239,136 @@ html,body,[class*="css"]{ font-family:'Nunito',sans-serif !important; }
   border-radius:12px; padding:12px 16px; margin-bottom:14px; font-size:13px; }
 .hist-card{ background:#fff; border-radius:14px; padding:14px 16px;
   box-shadow:0 2px 10px rgba(0,0,0,0.05); border:1px solid #F0F0F5; margin-bottom:10px; }
-[data-testid="stSidebar"]{ background:#0F0F1A !important; }
-[data-testid="stSidebar"] *{ color:#fff !important; }
-.stButton>button{ border-radius:12px !important;
-  font-family:'Nunito',sans-serif !important; font-weight:700 !important; }
-.stTextInput>div>div>input,
-.stSelectbox>div>div>div,
-.stTextArea>div>div>textarea{ border-radius:10px !important; font-family:'Nunito',sans-serif !important; }
-div[data-testid="column"]{ padding:4px !important; }
+
+/* ══════════════════════════════════════════════════════
+   SIDEBAR — dark background + ALL text forced white
+   ══════════════════════════════════════════════════════ */
+[data-testid="stSidebar"] { background:#0F0F1A !important; }
+
+/* every text node inside sidebar */
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] div,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] li,
+[data-testid="stSidebar"] a { color:#ffffff !important; }
+
+/* nav buttons — secondary (inactive) */
+[data-testid="stSidebar"] .stButton > button {
+  background: rgba(255,255,255,0.07) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  text-align: left !important;
+  padding: 10px 14px !important;
+  border-radius: 10px !important;
+  margin-bottom: 3px !important;
+  width: 100% !important;
+  transition: background 0.2s !important;
+}
+[data-testid="stSidebar"] .stButton > button:hover {
+  background: rgba(255,255,255,0.14) !important;
+  color: #ffffff !important;
+}
+
+/* nav buttons — primary (active page) */
+[data-testid="stSidebar"] .stButton > button[kind="primary"],
+[data-testid="stSidebar"] .stButton > button[data-testid="baseButton-primary"] {
+  background: linear-gradient(135deg,#E8472A,#C1391F) !important;
+  border: none !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(232,71,42,0.4) !important;
+}
+
+/* logout button */
+[data-testid="stSidebar"] .stButton > button:last-child {
+  background: rgba(255,71,87,0.15) !important;
+  border: 1px solid rgba(255,71,87,0.4) !important;
+  color: #ff6b6b !important;
+}
+[data-testid="stSidebar"] .stButton > button:last-child:hover {
+  background: rgba(255,71,87,0.28) !important;
+}
+
+/* ══════════════════════════════════════════════════════
+   SELECTBOX / DROPDOWN — fix visibility everywhere
+   ══════════════════════════════════════════════════════ */
+
+/* The visible selected value box */
+[data-testid="stSelectbox"] > div > div {
+  background: #ffffff !important;
+  border: 2px solid #E5E7EB !important;
+  border-radius: 10px !important;
+  color: #1A1A2E !important;
+}
+[data-testid="stSelectbox"] > div > div > div {
+  color: #1A1A2E !important;
+  font-weight: 600 !important;
+}
+
+/* The dropdown list panel */
+[data-baseweb="popover"],
+[data-baseweb="menu"],
+[role="listbox"] {
+  background: #ffffff !important;
+  border: 1.5px solid #E5E7EB !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15) !important;
+}
+
+/* Individual dropdown options */
+[role="option"] {
+  color: #1A1A2E !important;
+  background: #ffffff !important;
+  font-family: 'Nunito', sans-serif !important;
+  font-size: 14px !important;
+  padding: 10px 14px !important;
+}
+[role="option"]:hover,
+[role="option"][aria-selected="true"] {
+  background: #FFF1EE !important;
+  color: #E8472A !important;
+  font-weight: 700 !important;
+}
+
+/* Sidebar selectboxes — keep dark theme */
+[data-testid="stSidebar"] [data-testid="stSelectbox"] > div > div {
+  background: rgba(255,255,255,0.1) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+  color: #fff !important;
+}
+[data-testid="stSidebar"] [data-testid="stSelectbox"] > div > div > div {
+  color: #fff !important;
+}
+
+/* ── Other inputs ── */
+.stTextInput > div > div > input,
+.stTextArea > div > div > textarea {
+  border-radius: 10px !important;
+  font-family: 'Nunito', sans-serif !important;
+  border: 2px solid #E5E7EB !important;
+  color: #1A1A2E !important;
+  background: #ffffff !important;
+}
+.stTextInput > div > div > input:focus,
+.stTextArea > div > div > textarea:focus {
+  border-color: #E8472A !important;
+  box-shadow: 0 0 0 3px rgba(232,71,42,0.15) !important;
+}
+
+/* ── Main area buttons ── */
+.main .stButton > button {
+  border-radius: 12px !important;
+  font-family: 'Nunito', sans-serif !important;
+  font-weight: 700 !important;
+}
+
+/* ── Column padding ── */
+div[data-testid="column"] { padding: 4px !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -319,20 +452,43 @@ def page_auth():
 def render_sidebar():
     u = st.session_state.user
     with st.sidebar:
+        # ── User profile card ──────────────────────────────────
         st.markdown(f"""
-        <div style='padding:14px 8px;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:14px'>
-            <div style='font-size:48px;line-height:1;margin-bottom:8px'>{u.get('avatar','👦')}</div>
-            <div style='font-weight:800;font-size:15px'>{u['name']}</div>
-            <div style='font-size:11px;opacity:.55;margin-top:2px'>
-                {'🎒 Student' if u.get('role')=='student' else '👨‍👩‍👦 Parent'} • {u.get('grade','')}
+        <div style='padding:16px 10px 14px;border-bottom:1px solid rgba(255,255,255,.15);
+            margin-bottom:12px'>
+            <div style='font-size:52px;line-height:1;margin-bottom:10px;text-align:center'>
+                {u.get("avatar","👦")}
             </div>
-            <div style='display:flex;gap:12px;margin-top:8px;flex-wrap:wrap'>
-                <span style='font-size:11px;opacity:.6'>❓ <b style='color:#fff'>{u.get('stats',{}).get('total',0)}</b></span>
-                <span style='font-size:11px;opacity:.6'>🏆 <b style='color:#fff'>{len(u.get('badges',[]))}</b></span>
-                <span style='font-size:11px;opacity:.6'>🔥 <b style='color:#fff'>{u.get('stats',{}).get('streak',0)}d</b></span>
+            <div style='font-weight:800;font-size:16px;color:#ffffff;text-align:center'>
+                {u["name"]}
+            </div>
+            <div style='font-size:12px;color:rgba(255,255,255,0.6);margin-top:3px;text-align:center'>
+                {"🎒 Student" if u.get("role")=="student" else "👨‍👩‍👦 Parent"}
+                {"&nbsp;•&nbsp;" + u.get("grade","") if u.get("grade","") else ""}
+            </div>
+            <div style='display:flex;justify-content:center;gap:16px;margin-top:10px'>
+                <div style='text-align:center'>
+                    <div style='font-size:18px;font-weight:900;color:#FFD700'>
+                        {u.get("stats",{{}}).get("total",0)}
+                    </div>
+                    <div style='font-size:10px;color:rgba(255,255,255,0.5)'>Questions</div>
+                </div>
+                <div style='text-align:center'>
+                    <div style='font-size:18px;font-weight:900;color:#FFD700'>
+                        {len(u.get("badges",[]))}
+                    </div>
+                    <div style='font-size:10px;color:rgba(255,255,255,0.5)'>Badges</div>
+                </div>
+                <div style='text-align:center'>
+                    <div style='font-size:18px;font-weight:900;color:#FFD700'>
+                        {u.get("stats",{{}}).get("streak",0)}
+                    </div>
+                    <div style='font-size:10px;color:rgba(255,255,255,0.5)'>Streak</div>
+                </div>
             </div>
         </div>""", unsafe_allow_html=True)
 
+        # ── Navigation buttons ────────────────────────────────
         nav = [
             ("🏠", "Home",            "home"),
             ("💬", "Chat Tutor",      "chat"),
@@ -346,16 +502,34 @@ def render_sidebar():
             ("🏆", "Badges",          "badges"),
             ("👤", "Profile",         "profile"),
         ]
+
+        cur = st.session_state.page
         for icon, label, key in nav:
-            active = st.session_state.page == key
-            if st.button(f"{icon}  {label}", key=f"nav_{key}",
-                         use_container_width=True,
-                         type="primary" if active else "secondary"):
+            active = cur == key
+            bg     = "linear-gradient(135deg,#E8472A,#C1391F)" if active else "rgba(255,255,255,0.07)"
+            border = "none" if active else "1px solid rgba(255,255,255,0.12)"
+            shadow = "0 4px 14px rgba(232,71,42,0.45)" if active else "none"
+            weight = "800" if active else "600"
+            # Use st.button so Streamlit handles the click properly
+            # But wrap in a div to override colour with CSS
+            st.markdown(f"""
+            <div style='margin-bottom:3px'>
+                <div style='background:{bg};border:{border};border-radius:10px;
+                    padding:10px 14px;cursor:pointer;box-shadow:{shadow};
+                    display:flex;align-items:center;gap:10px'>
+                    <span style='font-size:17px'>{icon}</span>
+                    <span style='color:#ffffff !important;font-weight:{weight};
+                        font-size:14px;font-family:"Nunito",sans-serif'>{label}</span>
+                </div>
+            </div>""", unsafe_allow_html=True)
+            # Invisible button over the div for click handling
+            if st.button(f"{icon} {label}", key=f"nav_{key}",
+                         use_container_width=True):
                 st.session_state.page = key
                 st.rerun()
 
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-        if st.button("🚪  Logout", use_container_width=True):
+        st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+        if st.button("🚪  Logout", key="logout_btn", use_container_width=True):
             for k in list(st.session_state.keys()):
                 del st.session_state[k]
             st.rerun()
@@ -542,7 +716,7 @@ def page_chat():
         sub = st.selectbox("📚 Subject", list(SUBJECTS.keys()),
                            index=list(SUBJECTS.keys()).index(st.session_state.subject))
     with c2:
-        lvl_idx = LEVELS.index(u.get("grade","Class 5")) if u.get("grade","") in LEVELS else 4
+        lvl_idx = get_level_index(u.get("grade","Class 5"))
         lvl = st.selectbox("🏫 Class", LEVELS, index=lvl_idx)
     st.session_state.subject = sub
 
@@ -598,7 +772,7 @@ def page_quiz():
     with c1:
         sub = st.selectbox("📚 Subject", list(SUBJECTS.keys()), key="quiz_sub")
     with c2:
-        lvl_idx = LEVELS.index(u.get("grade","Class 5")) if u.get("grade","") in LEVELS else 4
+        lvl_idx = get_level_index(u.get("grade","Class 5"))
         lvl = st.selectbox("🏫 Class", LEVELS, index=lvl_idx, key="quiz_lvl")
 
     q = st.session_state.quiz
@@ -720,7 +894,7 @@ def page_image():
     with c1:
         img_sub = st.selectbox("📚 Subject", list(SUBJECTS.keys()), key="img_sub")
     with c2:
-        lvl_idx = LEVELS.index(u.get("grade","Class 5")) if u.get("grade","") in LEVELS else 4
+        lvl_idx = get_level_index(u.get("grade","Class 5"))
         img_lvl = st.selectbox("🏫 Class", LEVELS, index=lvl_idx, key="img_lvl")
 
     style_choice = st.selectbox("🎨 Diagram Style", list(IMAGE_STYLES.keys()))
@@ -864,7 +1038,7 @@ def page_essay():
     with c1:
         etype = st.selectbox("📄 Writing Type", ESSAY_TYPES)
     with c2:
-        lvl_idx = LEVELS.index(u.get("grade","Class 5")) if u.get("grade","") in LEVELS else 4
+        lvl_idx = get_level_index(u.get("grade","Class 5"))
         lvl = st.selectbox("🏫 Class", LEVELS, index=lvl_idx, key="essay_lvl")
 
     topic = st.text_input("📝 Topic / Title", placeholder="e.g. My School, Climate Change, My Best Friend...")
@@ -1084,7 +1258,7 @@ def page_profile():
     with st.form("profile_form"):
         new_name   = st.text_input("Full Name", value=u.get("name",""))
         new_grade  = st.selectbox("Default Class", ["-- Select --"] + LEVELS,
-                                  index=LEVELS.index(u["grade"])+1 if u.get("grade","") in LEVELS else 0)
+                                  index=get_level_index(u.get("grade","Class 5"))+1)
         cur_av_key = next((k for k,v in AVATARS.items() if v == u.get("avatar","👦")), list(AVATARS.keys())[0])
         new_avatar = st.selectbox("Avatar", list(AVATARS.keys()),
                                   index=list(AVATARS.keys()).index(cur_av_key))
@@ -1140,7 +1314,7 @@ def page_syllabus():
     c1, c2 = st.columns(2)
     with c1:
         sel_grade = st.selectbox("🏫 Class", LEVELS,
-            index=LEVELS.index(grade) if grade in LEVELS else 4,
+            index=get_level_index(grade),
             key="syl_grade")
     with c2:
         sel_sub = st.selectbox("📖 Subject", list(SUBJECTS.keys()),

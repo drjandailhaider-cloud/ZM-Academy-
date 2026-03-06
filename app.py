@@ -142,7 +142,7 @@ def init_stats():
             "streak":0,"lastDate":"","images":0,"essays":0,"docs":0,
             "flashcard":0,"xp":0,"hw_tasks":0,"groups":0,
             "daily_questions":0,"daily_quiz":0,"daily_essays":0,
-            "daily_flashcard":0,"daily_subjects":set(),"daily_images":0,
+            "daily_flashcard":0,"daily_subjects":[],"daily_images":0,
             "daily_date":"","challenges_done":[]}
 
 # ─────────────────────────────────────────────────────────────────

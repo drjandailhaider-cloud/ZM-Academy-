@@ -469,7 +469,7 @@ def render_sidebar():
             <div style='display:flex;justify-content:center;gap:16px;margin-top:10px'>
                 <div style='text-align:center'>
                     <div style='font-size:18px;font-weight:900;color:#FFD700'>
-                        {u.get("stats",{{}}).get("total",0)}
+                        {u.get("stats",{}).get("total",0)}
                     </div>
                     <div style='font-size:10px;color:rgba(255,255,255,0.5)'>Questions</div>
                 </div>
@@ -481,7 +481,7 @@ def render_sidebar():
                 </div>
                 <div style='text-align:center'>
                     <div style='font-size:18px;font-weight:900;color:#FFD700'>
-                        {u.get("stats",{{}}).get("streak",0)}
+                        {u.get("stats",{}).get("streak",0)}
                     </div>
                     <div style='font-size:10px;color:rgba(255,255,255,0.5)'>Streak</div>
                 </div>

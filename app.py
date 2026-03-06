@@ -7,7 +7,7 @@ from curriculum import CAMBRIDGE_CURRICULUM
 # PAGE CONFIG
 # ─────────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="HomeWork Helper 📚",
+    page_title="ZM Academy 📚",
     page_icon="📚",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -86,21 +86,79 @@ HISTORY_FILE = "history.json"
 IMAGES_FILE  = "images.json"
 
 def load_json(filepath):
-    if os.path.exists(filepath):
-        with open(filepath, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+    """Load data — disk first, in-memory cache as fallback."""
+    cache_key = f"_cache_{filepath}"
+    try:
+        if os.path.exists(filepath):
+            with open(filepath, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            st.session_state[cache_key] = data  # keep in-memory copy
+            return data
+    except Exception:
+        pass
+    # Fall back to in-memory cache (survives Streamlit soft-restarts within same session)
+    return st.session_state.get(cache_key, {})
 
 def save_json(filepath, data):
-    with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+    """Save data — always update in-memory cache, then write to disk atomically."""
+    cache_key = f"_cache_{filepath}"
+    st.session_state[cache_key] = data   # in-memory always works
+    # Atomic write: write to temp file then rename to avoid corruption
+    tmp = filepath + ".tmp"
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        os.replace(tmp, filepath)          # atomic on POSIX
+    except Exception:
+        try:
+            os.remove(tmp)
+        except Exception:
+            pass   # silently ignore — in-memory cache still works
 
 def hash_pw(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
+DAILY_LIMITS = {"free":5, "basic":50, "premium":9999}
+
 def init_stats():
     return {"total":0,"Maths":0,"Physics":0,"English":0,"Urdu":0,
-            "streak":0,"lastDate":"","images":0,"essays":0}
+            "streak":0,"lastDate":"","images":0,"essays":0,
+            "dailyQs":0,"dailyDate":"","dailyQuizzes":0}
+
+def get_daily_used(user):
+    stats = user.get("stats", {})
+    today = datetime.date.today().isoformat()
+    if stats.get("dailyDate","") != today:
+        return 0
+    return stats.get("dailyQs", 0)
+
+def check_daily_limit(user):
+    """Returns (ok, used, limit)"""
+    plan  = user.get("plan","free")
+    limit = DAILY_LIMITS.get(plan, 5)
+    used  = get_daily_used(user)
+    return used < limit, used, limit
+
+def bump_daily(user):
+    """Increment daily usage and total stats. Returns updated user."""
+    users = load_json(USERS_FILE)
+    u = users.get(user["email"], user)
+    stats = u.get("stats", init_stats())
+    today = datetime.date.today().isoformat()
+    if stats.get("dailyDate","") != today:
+        stats["dailyQs"] = 0
+        stats["dailyDate"] = today
+    stats["dailyQs"] = stats.get("dailyQs",0) + 1
+    stats["total"]   = stats.get("total",0) + 1
+    # streak
+    yest = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
+    if stats.get("lastDate","") != today:
+        stats["streak"] = stats.get("streak",0)+1 if stats.get("lastDate","")==yest else 1
+        stats["lastDate"] = today
+    u["stats"] = stats
+    users[user["email"]] = u
+    save_json(USERS_FILE, users)
+    return u
 
 # ─────────────────────────────────────────────────────────────────
 # SESSION STATE
@@ -206,7 +264,29 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@600;700;800&display=swap');
 html,body,[class*="css"]{ font-family:'Nunito',sans-serif !important; }
-.main .block-container{ padding-top:1rem; padding-bottom:2rem; max-width:900px; }
+.main .block-container{ padding-top:0.5rem; padding-bottom:3rem; max-width:860px; padding-left:1rem; padding-right:1rem; }
+@media (max-width:768px){
+  /* More breathing room on small screens */
+  .main .block-container{ padding-left:0.4rem !important; padding-right:0.4rem !important; }
+  /* Bigger tap targets for buttons */
+  .stButton>button{ min-height:48px !important; font-size:15px !important; }
+  /* Chat bubbles narrower margin on mobile */
+  .msg-user{ margin-left:8px !important; }
+  .msg-bot{ margin-right:8px !important; }
+  /* Stat numbers slightly smaller */
+  .stat-num{ font-size:22px !important; }
+  /* Word card padding tighter */
+  .word-card{ padding:14px 14px !important; }
+  /* Columns stack better — reduce column padding */
+  div[data-testid="column"]{ padding:2px !important; }
+  /* Inputs full width, comfortable thumb size */
+  .stTextInput>div>div>input{ font-size:16px !important; padding:12px !important; }
+  .stTextArea>div>div>textarea{ font-size:16px !important; }
+  /* Selectbox larger on mobile */
+  [data-testid="stSelectbox"]>div>div{ min-height:44px !important; }
+  /* Forms easier to tap */
+  .stForm{ padding:8px !important; }
+}
 #MainMenu,footer,header{ visibility:hidden; }
 
 /* ── Chat bubbles ── */
@@ -256,42 +336,44 @@ html,body,[class*="css"]{ font-family:'Nunito',sans-serif !important; }
 [data-testid="stSidebar"] li,
 [data-testid="stSidebar"] a { color:#ffffff !important; }
 
-/* nav buttons — secondary (inactive) */
+/* ── Sidebar nav buttons ── */
 [data-testid="stSidebar"] .stButton > button {
-  background: rgba(255,255,255,0.07) !important;
-  border: 1px solid rgba(255,255,255,0.15) !important;
+  background: rgba(255,255,255,0.08) !important;
+  border: 1px solid rgba(255,255,255,0.13) !important;
   color: #ffffff !important;
   font-weight: 700 !important;
   font-size: 14px !important;
   text-align: left !important;
-  padding: 10px 14px !important;
-  border-radius: 10px !important;
-  margin-bottom: 3px !important;
+  padding: 11px 16px !important;
+  border-radius: 11px !important;
+  margin-bottom: 4px !important;
   width: 100% !important;
-  transition: background 0.2s !important;
+  transition: all 0.18s ease !important;
+  letter-spacing: 0.2px !important;
 }
 [data-testid="stSidebar"] .stButton > button:hover {
-  background: rgba(255,255,255,0.14) !important;
+  background: rgba(255,255,255,0.16) !important;
   color: #ffffff !important;
+  border-color: rgba(255,255,255,0.25) !important;
 }
-
-/* nav buttons — primary (active page) */
-[data-testid="stSidebar"] .stButton > button[kind="primary"],
-[data-testid="stSidebar"] .stButton > button[data-testid="baseButton-primary"] {
-  background: linear-gradient(135deg,#E8472A,#C1391F) !important;
+/* Active page — primary type */
+[data-testid="stSidebar"] .stButton > button[kind="primary"] {
+  background: linear-gradient(135deg,#E8472A 0%,#C1391F 100%) !important;
   border: none !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 14px rgba(232,71,42,0.4) !important;
+  box-shadow: 0 4px 16px rgba(232,71,42,0.45) !important;
+  font-weight: 800 !important;
 }
-
-/* logout button */
-[data-testid="stSidebar"] .stButton > button:last-child {
-  background: rgba(255,71,87,0.15) !important;
-  border: 1px solid rgba(255,71,87,0.4) !important;
-  color: #ff6b6b !important;
+[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
+  background: linear-gradient(135deg,#FF5533 0%,#D14020 100%) !important;
+  box-shadow: 0 6px 20px rgba(232,71,42,0.55) !important;
 }
-[data-testid="stSidebar"] .stButton > button:last-child:hover {
-  background: rgba(255,71,87,0.28) !important;
+/* Logout button */
+[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:last-of-type {
+  background: rgba(255,80,80,0.12) !important;
+  border: 1px solid rgba(255,80,80,0.35) !important;
+  color: #ff7777 !important;
+  margin-top: 8px !important;
 }
 
 /* ══════════════════════════════════════════════════════
@@ -382,12 +464,12 @@ def page_auth():
         <div style='text-align:center;padding:24px 0 16px'>
             <div style='font-size:56px'>📚</div>
             <h1 style='font-family:"Baloo 2",cursive;font-size:28px;font-weight:800;
-                color:#0F0F1A;margin:6px 0 2px'>HomeWork Helper</h1>
-            <p style='color:#999;font-size:13px'>🇵🇰 Pakistan's Smart Study Companion</p>
+                color:#0F0F1A;margin:6px 0 2px'>ZM Academy</h1>
+            <p style='color:#999;font-size:13px'>🇵🇰 Pakistan's AI-Powered Study App</p>
             <p style='color:#bbb;font-size:12px'>Classes 1–8 • O Level • A Level</p>
         </div>""", unsafe_allow_html=True)
 
-        tab_login, tab_signup = st.tabs(["🔑  Login", "✨  Sign Up"])
+        tab_login, tab_signup, tab_forgot = st.tabs(["🔑  Login", "✨  Sign Up", "🔓  Forgot Password"])
 
         with tab_login:
             with st.form("login_form"):
@@ -398,6 +480,10 @@ def page_auth():
                     if email in users and users[email]["password"] == hash_pw(password):
                         users[email]["last_login"] = datetime.date.today().isoformat()
                         save_json(USERS_FILE, users)
+                        # Ensure plan field exists for old accounts
+                        if "plan" not in users[email]:
+                            users[email]["plan"] = "free"
+                            save_json(USERS_FILE, users)
                         st.session_state.logged_in = True
                         st.session_state.user = users[email]
                         st.success("Welcome back! 🎉")
@@ -433,7 +519,9 @@ def page_auth():
                             "avatar": AVATARS[avatar],
                             "grade": grade if grade != "-- Select --" else "",
                             "joined": datetime.date.today().isoformat(),
-                            "stats": init_stats(), "badges": []
+                            "plan": "free",
+                            "stats": init_stats(), "badges": [],
+                            "is_new": True
                         }
                         users[email2] = new_user
                         save_json(USERS_FILE, users)
@@ -442,6 +530,29 @@ def page_auth():
                         st.success("Account created! Welcome aboard 🎉")
                         time.sleep(0.5)
                         st.rerun()
+
+        with tab_forgot:
+            st.markdown("""
+            <div style='background:#EFF4FF;border-radius:12px;padding:14px 16px;margin-bottom:16px;
+                font-size:13px;color:#1B4FD8'>
+                🔒 Enter your email and a new password to reset your account.
+            </div>""", unsafe_allow_html=True)
+            with st.form("forgot_form"):
+                fp_email = st.text_input("📧 Your registered email")
+                fp_new   = st.text_input("🔒 New Password", type="password", placeholder="Min 6 characters")
+                fp_new2  = st.text_input("🔒 Confirm New Password", type="password")
+                if st.form_submit_button("Reset Password →", use_container_width=True, type="primary"):
+                    users = load_json(USERS_FILE)
+                    if fp_email not in users:
+                        st.error("⚠️ Email not found. Please check or sign up.")
+                    elif len(fp_new) < 6:
+                        st.error("Password must be at least 6 characters.")
+                    elif fp_new != fp_new2:
+                        st.error("Passwords don't match.")
+                    else:
+                        users[fp_email]["password"] = hash_pw(fp_new)
+                        save_json(USERS_FILE, users)
+                        st.success("✅ Password reset! You can now login with your new password.")
 
         st.markdown("<p style='text-align:center;color:#ccc;font-size:11px;margin-top:14px'>"
                     "Free to use • Pakistan National Curriculum</p>", unsafe_allow_html=True)
@@ -505,30 +616,25 @@ def render_sidebar():
 
         cur = st.session_state.page
         for icon, label, key in nav:
-            active = cur == key
-            bg     = "linear-gradient(135deg,#E8472A,#C1391F)" if active else "rgba(255,255,255,0.07)"
-            border = "none" if active else "1px solid rgba(255,255,255,0.12)"
-            shadow = "0 4px 14px rgba(232,71,42,0.45)" if active else "none"
-            weight = "800" if active else "600"
-            # Use st.button so Streamlit handles the click properly
-            # But wrap in a div to override colour with CSS
-            st.markdown(f"""
-            <div style='margin-bottom:3px'>
-                <div style='background:{bg};border:{border};border-radius:10px;
-                    padding:10px 14px;cursor:pointer;box-shadow:{shadow};
-                    display:flex;align-items:center;gap:10px'>
-                    <span style='font-size:17px'>{icon}</span>
-                    <span style='color:#ffffff !important;font-weight:{weight};
-                        font-size:14px;font-family:"Nunito",sans-serif'>{label}</span>
-                </div>
-            </div>""", unsafe_allow_html=True)
-            # Invisible button over the div for click handling
-            if st.button(f"{icon} {label}", key=f"nav_{key}",
-                         use_container_width=True):
+            btn_type = "primary" if cur == key else "secondary"
+            if st.button(f"{icon}  {label}", key=f"nav_{key}",
+                         use_container_width=True, type=btn_type):
                 st.session_state.page = key
                 st.rerun()
 
         st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+
+        # FIX 5 — WhatsApp share
+        wa_text = "📚 I'm learning with ZM Academy — Pakistan's free AI tutor! Try it: https://zmacademy2026.streamlit.app"
+        wa_link = f"https://wa.me/?text={wa_text.replace(' ','%20')}"
+        st.markdown(f"""
+        <a href="{wa_link}" target="_blank"
+           style='display:block;text-align:center;padding:9px 12px;background:#25D366;
+           border-radius:10px;color:#fff !important;font-weight:700;font-size:13px;
+           text-decoration:none;margin-bottom:6px'>
+           📱 Share on WhatsApp
+        </a>""", unsafe_allow_html=True)
+
         if st.button("🚪  Logout", key="logout_btn", use_container_width=True):
             for k in list(st.session_state.keys()):
                 del st.session_state[k]
@@ -543,6 +649,88 @@ def page_home():
     col = SUBJECTS[sub]["color"]
     h   = datetime.datetime.now().hour
     greet = "Good morning" if h < 12 else "Good afternoon" if h < 17 else "Good evening"
+
+    # ── FIX 6: Proper 3-step onboarding for new users ──────────
+    if u.get("is_new") and not st.session_state.get("onboarding_done"):
+        step = st.session_state.get("onboard_step", 1)
+
+        steps = [
+            {
+                "emoji": "🎓",
+                "title": f"Welcome to ZM Academy, {u['name'].split()[0]}! 🎉",
+                "body": "Pakistan's <b>AI-powered study app</b> for Classes 1–8, O Level & A Level.<br><br>"
+                        "Your personal AI tutor <b>Ustad</b> is ready to help you study smarter — "
+                        "step-by-step answers, quizzes, diagrams and more!",
+                "btn": "Next →"
+            },
+            {
+                "emoji": "💬",
+                "title": "How to use ZM Academy",
+                "body": "<b>💬 Chat Tutor</b> — Ask any question in Maths, Physics, English or Urdu<br><br>"
+                        "<b>📝 Practice Quiz</b> — Auto-generated MCQs with explanations<br><br>"
+                        "<b>📚 My Syllabus</b> — Full Cambridge curriculum for your class<br><br>"
+                        "<b>🎨 Image Generator</b> — AI draws educational diagrams",
+                "btn": "Next →"
+            },
+            {
+                "emoji": "🏆",
+                "title": "Earn Badges & Track Progress",
+                "body": "Every question you ask earns points and builds your streak. 🔥<br><br>"
+                        "Unlock <b>11 achievement badges</b> as you study different subjects.<br><br>"
+                        "Your progress is saved automatically — come back every day!",
+                "btn": "🚀 Start Learning!"
+            },
+        ]
+
+        s = steps[step - 1]
+        _, col, _ = st.columns([1, 2, 1])
+        with col:
+            # Progress dots
+            dots = "".join(
+                f"<span style='display:inline-block;width:10px;height:10px;border-radius:50%;"
+                f"background:{'#E8472A' if i + 1 == step else 'rgba(255,255,255,0.35)'};margin:0 4px'></span>"
+                for i in range(3)
+            )
+            st.markdown(f"""
+            <div style='background:linear-gradient(135deg,#0A1628,#1B4FD8);border-radius:24px;
+                padding:32px 28px;color:#fff;text-align:center;margin-top:20px'>
+                <div style='margin-bottom:12px'>{dots}</div>
+                <div style='font-size:60px;margin-bottom:16px'>{s['emoji']}</div>
+                <div style='font-family:"Baloo 2",cursive;font-size:22px;font-weight:900;margin-bottom:14px'>
+                    {s['title']}</div>
+                <div style='font-size:14px;opacity:.88;line-height:1.8;margin-bottom:8px'>
+                    {s['body']}</div>
+            </div>""", unsafe_allow_html=True)
+
+            st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
+
+            if st.button(s["btn"], use_container_width=True, type="primary", key=f"ob_{step}"):
+                if step < 3:
+                    st.session_state.onboard_step = step + 1
+                    st.rerun()
+                else:
+                    users = load_json(USERS_FILE)
+                    if u["email"] in users:
+                        users[u["email"]]["is_new"] = False
+                        save_json(USERS_FILE, users)
+                        st.session_state.user = users[u["email"]]
+                    st.session_state.onboarding_done = True
+                    st.rerun()
+
+            if step > 1:
+                if st.button("← Back", use_container_width=True, key=f"ob_back_{step}"):
+                    st.session_state.onboard_step = step - 1
+                    st.rerun()
+
+            if st.button("Skip intro", key="skip_ob", use_container_width=True):
+                users = load_json(USERS_FILE)
+                if u["email"] in users:
+                    users[u["email"]]["is_new"] = False
+                    save_json(USERS_FILE, users)
+                    st.session_state.user = users[u["email"]]
+                st.session_state.onboarding_done = True
+                st.rerun()
+        return  # show ONLY onboarding until dismissed
 
     st.markdown(f"""
     <div style='background:linear-gradient(135deg,{col}dd,{col}88);border-radius:18px;
@@ -840,6 +1028,16 @@ def page_quiz():
                 </div>
             </div>""", unsafe_allow_html=True)
 
+        score_pct = round((q["score"] / len(q["questions"])) * 100)
+        wa_text   = f"I scored {q['score']}/{len(q['questions'])} ({score_pct}%) on {q['sub']} quiz in ZM Academy! 🎓🇵🇰 Try it free: https://zmacademy2026.streamlit.app"
+        wa_url    = f"https://wa.me/?text={wa_text.replace(' ','%20')}"
+        st.markdown(f"""
+        <a href="{wa_url}" target="_blank"
+           style="display:block;text-align:center;background:#25D366;color:#fff;
+                  padding:12px;border-radius:12px;font-weight:800;font-size:14px;
+                  text-decoration:none;margin-bottom:10px">
+           📲 Share Score on WhatsApp
+        </a>""", unsafe_allow_html=True)
         if st.button("🔄 Try Another Quiz", use_container_width=True, type="primary"):
             st.session_state.quiz = None
             st.rerun()
@@ -916,37 +1114,47 @@ def page_image():
             st.warning("Please enter a description first!")
             return
 
-        with st.spinner("🎨 Claude AI is creating your educational diagram... (20-30 seconds)"):
+        # ── FIX 7: real progress animation (was dead code before) ──
+        prog_bar = st.progress(0, text="🎨 Step 1/4 — Planning your diagram...")
+        time.sleep(0.5)
+        prog_bar.progress(20, text="✏️ Step 2/4 — Drawing shapes and structure...")
+        time.sleep(0.5)
+        prog_bar.progress(45, text="🎨 Step 3/4 — Adding colors, labels and arrows...")
 
-            system_msg = (
-                "You are an expert SVG illustrator who creates educational diagrams for Pakistani school students. "
-                "STRICT OUTPUT RULES — follow every rule or the image will not display:\n"
-                "1. Output ONLY the SVG code. No markdown. No backticks. No explanations. No text before <svg or after </svg>.\n"
-                "2. Start your response with exactly: <svg\n"
-                "3. End your response with exactly: </svg>\n"
-                "4. Use: xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 700 500\" width=\"700\" height=\"500\"\n"
-                "5. Include a <defs> block with at least 3 linearGradient definitions for colorful fills.\n"
-                "6. Add a bold title at the top (y=35, font-size=24, font-weight=bold, text-anchor=middle, x=350).\n"
-                "7. Use BRIGHT colors — never plain white shapes. Use gradient fills on all major shapes.\n"
-                "8. Include at least 20 visual elements: shapes, labels, arrows, icons.\n"
-                "9. Draw arrows using <line> with marker-end or <path> elements.\n"
-                "10. Every component must have a clear text label.\n"
-                "11. Make it look like a professional educational poster.\n"
-                "12. DO NOT use any xlink:href or external images."
-            )
+        system_msg = (
+            "You are an expert SVG illustrator who creates educational diagrams for Pakistani school students. "
+            "STRICT OUTPUT RULES — follow every rule or the image will not display:\n"
+            "1. Output ONLY the SVG code. No markdown. No backticks. No explanations. No text before <svg or after </svg>.\n"
+            "2. Start your response with exactly: <svg\n"
+            "3. End your response with exactly: </svg>\n"
+            "4. Use: xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 700 500\" width=\"700\" height=\"500\"\n"
+            "5. Include a <defs> block with at least 3 linearGradient definitions for colorful fills.\n"
+            "6. Add a bold title at the top (y=35, font-size=24, font-weight=bold, text-anchor=middle, x=350).\n"
+            "7. Use BRIGHT colors — never plain white shapes. Use gradient fills on all major shapes.\n"
+            "8. Include at least 20 visual elements: shapes, labels, arrows, icons.\n"
+            "9. Draw arrows using <line> with marker-end or <path> elements.\n"
+            "10. Every component must have a clear text label.\n"
+            "11. Make it look like a professional educational poster.\n"
+            "12. DO NOT use any xlink:href or external images."
+        )
 
-            user_msg = (
-                f"Create a detailed colorful educational SVG illustration:\n"
-                f"TOPIC: {prompt}\n"
-                f"SUBJECT: {img_sub}\n"
-                f"LEVEL: {img_lvl}\n"
-                f"STYLE: {style_hint}\n\n"
-                f"Include: gradient background, bold title, labeled components, "
-                f"arrows showing flow/relationships, color-coded sections.\n"
-                f"Remember: output ONLY the SVG. Start with <svg and end with </svg>."
-            )
+        user_msg = (
+            f"Create a detailed colorful educational SVG illustration:\n"
+            f"TOPIC: {prompt}\n"
+            f"SUBJECT: {img_sub}\n"
+            f"LEVEL: {img_lvl}\n"
+            f"STYLE: {style_hint}\n\n"
+            f"Include: gradient background, bold title, labeled components, "
+            f"arrows showing flow/relationships, color-coded sections.\n"
+            f"Remember: output ONLY the SVG. Start with <svg and end with </svg>."
+        )
 
-            raw = call_ai_svg([{"role":"user","content":user_msg}], system_msg)
+        raw = call_ai_svg([{"role":"user","content":user_msg}], system_msg)
+        prog_bar.progress(90, text="✨ Step 4/4 — Finishing touches...")
+        time.sleep(0.3)
+        prog_bar.progress(100, text="✅ Done!")
+        time.sleep(0.3)
+        prog_bar.empty()
 
         # ── Extract SVG ──────────────────────────────────────────
         # Strip any markdown fences
@@ -1515,6 +1723,11 @@ if not st.session_state.logged_in:
     page_auth()
 else:
     render_sidebar()
+    # Mobile navigation hint (shown once per session)
+    if not st.session_state.get("mobile_hint_shown", False):
+        st.info("📱 **On mobile?** Tap the **☰ arrow** at top-left to open the menu and navigate between features!", icon="📱")
+        st.session_state.mobile_hint_shown = True
+
     p = st.session_state.page
     if   p == "home":     page_home()
     elif p == "chat":     page_chat()

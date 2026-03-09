@@ -1,4 +1,21 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# ZM Academy — Complete Streamlit App
+# Updated with: Enhanced Quiz, Friends Group, Improved Image Gen,
+#               Redesigned Syllabus, Removed Essay/StudyTools
+# ═══════════════════════════════════════════════════════════════════════════════
+import streamlit as st
+import json, hashlib, datetime, time, os, base64, random
+from anthropic import Anthropic
+from curriculum import CAMBRIDGE_CURRICULUM
 
+# ─────────────────────────────────────────────────────────────────
+# PAGE CONFIG
+# ─────────────────────────────────────────────────────────────────
+st.set_page_config(
+    page_title="ZM Academy 📚",
+    page_icon="📚",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 # ─────────────────────────────────────────────────────────────────

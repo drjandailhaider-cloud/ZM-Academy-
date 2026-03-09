@@ -846,38 +846,35 @@ def render_sidebar():
                 unsafe_allow_html=True
             )
 
-        # ── DASHBOARD (all roles) ─────────────────────────────
+        # ── DASHBOARD ────────────────────────────────────────────
         section_label("📊 Dashboard")
         nav_btn("🏠", "Home",            "home")
         nav_btn("📚", "Syllabus",        "syllabus")
         nav_btn("🎨", "Image Generator", "image")
         nav_btn("📈", "My Progress",     "progress")
 
-        # ── STUDENT (student / parent) ────────────────────────
-        if role in ("student", "parent"):
-            section_label("🎒 Student")
-            nav_btn("💬", "Chat Tutor",    "chat",    "_s")
-            nav_btn("📝", "Practice Quiz", "quiz")
-            nav_btn("👥", "Friendz Quiz",  "friends")
-            nav_btn("🕐", "Chat History",  "history", "_s")
-            nav_btn("🏆", "Badges",        "badges")
+        # ── STUDENT ───────────────────────────────────────────
+        section_label("🎒 Student")
+        nav_btn("💬", "Chat Tutor",    "chat",    "_s")
+        nav_btn("📝", "Practice Quiz", "quiz")
+        nav_btn("👥", "Friendz Quiz",  "friends")
+        nav_btn("🕐", "Chat History",  "history", "_s")
+        nav_btn("🏆", "Badges",        "badges")
 
         # ── TEACHER ───────────────────────────────────────────
-        if role == "teacher":
-            section_label("👨‍🏫 Teacher")
-            nav_btn("📋", "Create Homework",     "homework", "_t")
-            nav_btn("📊", "Student Performance", "admin",    "_t")
-            nav_btn("💬", "Chat Tutor",          "chat",     "_t")
+        section_label("👨‍🏫 Teacher")
+        nav_btn("📋", "Create Homework",     "homework", "_t")
+        nav_btn("📊", "Student Performance", "admin",    "_t")
+        nav_btn("💬", "Chat Tutor",          "chat",     "_t")
 
         # ── ADMIN ─────────────────────────────────────────────
-        if role == "admin":
-            section_label("🛡️ Admin")
-            nav_btn("📊", "Student Performance", "admin",    "_a")
-            nav_btn("🕐", "Chat History",        "history",  "_a")
-            nav_btn("📋", "Homework Tracker",    "homework", "_a")
-            nav_btn("💬", "Chat Tutor",          "chat",     "_a")
+        section_label("🛡️ Admin")
+        nav_btn("📊", "Student Performance", "admin",    "_a")
+        nav_btn("🕐", "Chat History",        "history",  "_a")
+        nav_btn("📋", "Homework Tracker",    "homework", "_a")
+        nav_btn("💬", "Chat Tutor",          "chat",     "_a")
 
-        # ── ACCOUNT (all roles) ───────────────────────────────
+        # ── ACCOUNT ───────────────────────────────────────────
         section_label("👤 Account")
         nav_btn("👤", "Profile", "profile")
 

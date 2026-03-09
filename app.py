@@ -265,187 +265,384 @@ def call_ai_svg(messages, system):
         return f"ERROR: {e}"
 
 # ─────────────────────────────────────────────────────────────────
-# CSS — Colorful AI-style design with full text visibility
+# CSS — ZM Academy Premium UI  🇵🇰  Dark Luxury + Emerald Gold
 # ─────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@600;700;800&display=swap');
-html,body,[class*="css"]{ font-family:'Nunito',sans-serif !important; }
-.main .block-container{
-  padding-top:0.5rem; padding-bottom:3rem;
-  max-width:900px; padding-left:1rem; padding-right:1rem;
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Sora:wght@700;800;900&display=swap');
+
+/* ══════════════════════════════════════════
+   ROOT TOKENS
+══════════════════════════════════════════ */
+:root{
+  --bg:        #F0F4F0;
+  --surface:   #FFFFFF;
+  --surface2:  #F7FAF7;
+  --border:    #E2EAE2;
+  --green:     #0D6E3F;
+  --green-mid: #1A8C50;
+  --green-lt:  #27A862;
+  --gold:      #C9A84C;
+  --gold-lt:   #E8C96A;
+  --crimson:   #C0392B;
+  --text:      #0D1F0D;
+  --text2:     #3D5C3D;
+  --text3:     #7A9A7A;
+  --white:     #FFFFFF;
+  --shadow-sm: 0 2px 8px rgba(13,110,63,0.08);
+  --shadow-md: 0 6px 24px rgba(13,110,63,0.12);
+  --shadow-lg: 0 16px 48px rgba(13,110,63,0.16);
+  --radius:    16px;
+  --radius-sm: 10px;
 }
 
-/* ── Mobile ── */
-@media (max-width:768px){
-  .main .block-container{ padding-left:0.4rem !important; padding-right:0.4rem !important; }
-  .stButton>button{ min-height:48px !important; font-size:15px !important; }
-  .msg-user{ margin-left:8px !important; }
-  .msg-bot{  margin-right:8px !important; }
-  .stat-num{ font-size:22px !important; }
-  div[data-testid="column"]{ padding:2px !important; }
-  .stTextInput>div>div>input{ font-size:16px !important; padding:12px !important; }
-  .stTextArea>div>div>textarea{ font-size:16px !important; }
+/* ══════════════════════════════════════════
+   BASE
+══════════════════════════════════════════ */
+html,body,[class*="css"]{
+  font-family:'Plus Jakarta Sans',sans-serif !important;
+  background:var(--bg) !important;
+  color:var(--text) !important;
+}
+.main .block-container{
+  padding-top:1.2rem !important; padding-bottom:4rem !important;
+  max-width:960px !important;
+  padding-left:1.4rem !important; padding-right:1.4rem !important;
+  background:var(--bg) !important;
 }
 #MainMenu,footer,header{ visibility:hidden; }
 
-/* ── Chat bubbles ── */
-.msg-user{
-  background:linear-gradient(135deg,#E8472A,#C1391F); color:#fff;
-  border-radius:18px 18px 4px 18px; padding:12px 16px;
-  margin:4px 0 4px 60px; font-size:14px; line-height:1.65;
-}
-.msg-bot{
-  background:#fff; color:#1A1A2E;
-  border-radius:18px 18px 18px 4px; padding:12px 16px;
-  margin:4px 60px 4px 0; font-size:14px; line-height:1.7;
-  box-shadow:0 2px 10px rgba(0,0,0,0.07); border:1px solid #F0F0F5;
-}
-.msg-lbl{ font-size:11px; color:#bbb; margin-bottom:2px; }
-.msg-lbl-r{ text-align:right; }
-
-/* ── Generic cards ── */
-.stat-card{
-  background:#fff; border-radius:14px; padding:16px; text-align:center;
-  box-shadow:0 2px 10px rgba(0,0,0,0.05); border:1px solid #F0F0F5;
-}
-.stat-num{ font-size:28px; font-weight:900; color:#1A1A2E; }
-.stat-lbl{ font-size:11px; color:#999; margin-top:3px; }
-
-/* ── Feature cards (colorful) ── */
-.feature-card{
-  background:#fff; border-radius:16px; padding:18px 20px;
-  border-left:5px solid; box-shadow:0 3px 14px rgba(0,0,0,0.07);
-  margin-bottom:10px; color:#1A1A2E;
-}
-.quiz-option-card{
-  background:#F8F9FF; border:2px solid #E0E7FF; border-radius:12px;
-  padding:12px 16px; margin-bottom:8px; cursor:pointer; transition:all .18s;
-  color:#1A1A2E;
-}
-.quiz-option-card:hover{ border-color:#6366F1; background:#EEF2FF; }
-
-/* ── Badge cards ── */
-.badge-card{
-  background:linear-gradient(135deg,#FFF8E7,#FFFBF0);
-  border:1.5px solid #F5CC4A; border-radius:12px;
-  padding:12px 10px; text-align:center;
-}
-.badge-locked{ opacity:0.35; filter:grayscale(1); }
-.badge-icon{ font-size:28px; display:block; }
-.badge-name{ font-size:12px; font-weight:800; color:#A07820; margin-top:4px; }
-.badge-desc{ font-size:10px; color:#bbb; margin-top:2px; }
-
-/* ── Progress bars ── */
-.prog-bar{ background:#F0F0F5; border-radius:99px; height:10px; overflow:hidden; margin-bottom:4px; }
-.prog-fill{ height:100%; border-radius:99px; transition:width .4s; }
-
-/* ── Word card ── */
-.word-card{
-  background:linear-gradient(135deg,#1A1A2E,#2D2D4A);
-  border-radius:16px; padding:18px 20px; margin-bottom:14px; color:#fff;
-}
-/* ── Misc ── */
-.reminder{ background:#FFFBF0; border:1.5px solid #F5CC4A; border-radius:12px; padding:12px 16px; margin-bottom:14px; font-size:13px; color:#1A1A2E; }
-.hist-card{ background:#fff; border-radius:14px; padding:14px 16px; box-shadow:0 2px 10px rgba(0,0,0,0.05); border:1px solid #F0F0F5; margin-bottom:10px; }
-
-/* ── Section headers ── */
-.section-header{
-  background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-  color:#fff; border-radius:14px; padding:14px 20px; margin-bottom:18px;
-  font-family:'Baloo 2',cursive; font-size:20px; font-weight:800;
-}
-.section-header.orange{ background:linear-gradient(135deg,#E8472A,#F59E0B); }
-.section-header.green{  background:linear-gradient(135deg,#059669,#10B981); }
-.section-header.blue{   background:linear-gradient(135deg,#2563EB,#06B6D4); }
-.section-header.purple{ background:linear-gradient(135deg,#7C3AED,#A78BFA); }
-
-/* ── Leaderboard ── */
-.lb-row{
-  display:flex;align-items:center;gap:12px;padding:12px 16px;
-  background:#fff;border-radius:12px;margin-bottom:8px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.05);border:1px solid #F0F0F5;
-  color:#1A1A2E;
-}
-.lb-rank{ font-size:22px;font-weight:900;width:32px;text-align:center; }
-.lb-name{ flex:1;font-weight:700;font-size:14px; }
-.lb-score{ font-weight:900;font-size:18px;color:#E8472A; }
-
-/* ── Syllabus step ── */
-.syl-step{
-  background:linear-gradient(135deg,#EFF6FF,#F0FDF4);
-  border-radius:14px;padding:16px 18px;margin-bottom:14px;
-  border:1.5px solid #E0F2FE; color:#1A1A2E;
-}
-.syl-step-title{
-  font-size:12px;font-weight:800;color:#0369A1;
-  text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;
-}
-.topic-chip{
-  display:inline-block;border-radius:20px;padding:4px 12px;
-  font-size:11px;font-weight:700;margin:3px 3px 3px 0;
+/* ── Animated grain overlay for depth ── */
+.main::before{
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  opacity:.4;
 }
 
-/* ══ SIDEBAR ══ */
-[data-testid="stSidebar"]{ background:#0F0F1A !important; }
+/* ══════════════════════════════════════════
+   MOBILE
+══════════════════════════════════════════ */
+@media(max-width:768px){
+  .main .block-container{ padding-left:.6rem !important; padding-right:.6rem !important; }
+  .stButton>button{ min-height:48px !important; font-size:14px !important; }
+  .msg-user{ margin-left:6px !important; }
+  .msg-bot{  margin-right:6px !important; }
+  div[data-testid="column"]{ padding:2px !important; }
+  .stTextInput>div>div>input{ font-size:16px !important; padding:12px !important; }
+}
+
+/* ══════════════════════════════════════════
+   MAIN BUTTONS
+══════════════════════════════════════════ */
+.stButton>button{
+  background:var(--surface) !important;
+  border:1.5px solid var(--border) !important;
+  color:var(--text) !important;
+  font-family:'Plus Jakarta Sans',sans-serif !important;
+  font-weight:700 !important; font-size:13.5px !important;
+  border-radius:var(--radius-sm) !important;
+  padding:10px 18px !important;
+  transition:all .2s cubic-bezier(.4,0,.2,1) !important;
+  box-shadow:var(--shadow-sm) !important;
+}
+.stButton>button:hover{
+  border-color:var(--green-mid) !important;
+  color:var(--green) !important;
+  box-shadow:var(--shadow-md) !important;
+  transform:translateY(-1px) !important;
+}
+.stButton>button[kind="primary"]{
+  background:linear-gradient(135deg,var(--green) 0%,var(--green-lt) 100%) !important;
+  color:#fff !important; border:none !important;
+  box-shadow:0 6px 20px rgba(13,110,63,0.35) !important;
+  font-weight:800 !important;
+}
+.stButton>button[kind="primary"]:hover{
+  box-shadow:0 8px 28px rgba(13,110,63,0.5) !important;
+  transform:translateY(-2px) !important;
+  color:#fff !important;
+}
+
+/* ══════════════════════════════════════════
+   SIDEBAR — Deep Forest Dark
+══════════════════════════════════════════ */
+[data-testid="stSidebar"]{
+  background:linear-gradient(180deg,#061A0E 0%,#0A2414 40%,#071510 100%) !important;
+  border-right:1px solid rgba(201,168,76,0.15) !important;
+}
+[data-testid="stSidebar"] *{ color:#fff !important; }
 [data-testid="stSidebar"] p,
 [data-testid="stSidebar"] span,
 [data-testid="stSidebar"] div,
-[data-testid="stSidebar"] label,
-[data-testid="stSidebar"] h1,
-[data-testid="stSidebar"] h2,
-[data-testid="stSidebar"] h3,
-[data-testid="stSidebar"] li,
-[data-testid="stSidebar"] a{ color:#ffffff !important; }
+[data-testid="stSidebar"] label{ color:#fff !important; }
 
-[data-testid="stSidebar"] .stButton > button{
-  background:rgba(255,255,255,0.08) !important;
-  border:1px solid rgba(255,255,255,0.13) !important;
-  color:#ffffff !important; font-weight:700 !important;
-  font-size:14px !important; text-align:left !important;
-  padding:11px 16px !important; border-radius:11px !important;
-  margin-bottom:4px !important; width:100% !important;
-  transition:all 0.18s ease !important;
+[data-testid="stSidebar"] .stButton>button{
+  background:rgba(255,255,255,0.05) !important;
+  border:1px solid rgba(201,168,76,0.12) !important;
+  color:#E8F5EE !important; font-weight:600 !important;
+  font-size:13.5px !important; text-align:left !important;
+  padding:11px 16px !important; border-radius:10px !important;
+  margin-bottom:3px !important; width:100% !important;
+  transition:all .18s ease !important;
+  box-shadow:none !important; transform:none !important;
 }
-[data-testid="stSidebar"] .stButton > button:hover{
-  background:rgba(255,255,255,0.16) !important;
-  border-color:rgba(255,255,255,0.25) !important;
+[data-testid="stSidebar"] .stButton>button:hover{
+  background:rgba(201,168,76,0.12) !important;
+  border-color:rgba(201,168,76,0.35) !important;
+  color:#E8C96A !important;
+  transform:translateX(3px) !important;
 }
-[data-testid="stSidebar"] .stButton > button[kind="primary"]{
-  background:linear-gradient(135deg,#E8472A 0%,#C1391F 100%) !important;
-  border:none !important; box-shadow:0 4px 16px rgba(232,71,42,0.45) !important;
-  font-weight:800 !important;
+[data-testid="stSidebar"] .stButton>button[kind="primary"]{
+  background:linear-gradient(135deg,#0D6E3F,#1A8C50) !important;
+  border:1px solid rgba(201,168,76,0.4) !important;
+  color:#FFD700 !important; font-weight:800 !important;
+  box-shadow:0 4px 16px rgba(13,110,63,0.5),0 0 0 1px rgba(201,168,76,0.2) !important;
 }
 
-/* ══ INPUTS & SELECTS — always dark text on white ══ */
-[data-testid="stSelectbox"] > div > div{
-  background:#ffffff !important; border:2px solid #E5E7EB !important;
-  border-radius:10px !important; color:#1A1A2E !important;
+/* ══════════════════════════════════════════
+   CARDS
+══════════════════════════════════════════ */
+.stat-card{
+  background:var(--surface); border-radius:var(--radius);
+  padding:18px 14px; text-align:center;
+  box-shadow:var(--shadow-sm); border:1.5px solid var(--border);
+  transition:box-shadow .2s, transform .2s;
+  position:relative; overflow:hidden;
 }
-[data-testid="stSelectbox"] > div > div > div{ color:#1A1A2E !important; font-weight:600 !important; }
+.stat-card::before{
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  background:linear-gradient(90deg,var(--green),var(--gold));
+}
+.stat-card:hover{ box-shadow:var(--shadow-md); transform:translateY(-2px); }
+.stat-num{ font-size:30px; font-weight:900; color:var(--green); font-family:'Sora',sans-serif; }
+.stat-lbl{ font-size:11px; color:var(--text3); margin-top:4px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; }
+
+.feature-card{
+  background:var(--surface); border-radius:var(--radius);
+  padding:18px 20px; border-left:4px solid var(--green);
+  box-shadow:var(--shadow-sm); margin-bottom:10px; color:var(--text);
+  transition:box-shadow .2s, transform .2s;
+}
+.feature-card:hover{ box-shadow:var(--shadow-md); transform:translateY(-1px); }
+
+.hist-card{
+  background:var(--surface); border-radius:var(--radius);
+  padding:14px 16px; box-shadow:var(--shadow-sm);
+  border:1.5px solid var(--border); margin-bottom:10px;
+}
+
+/* ══════════════════════════════════════════
+   SECTION HEADERS
+══════════════════════════════════════════ */
+.section-header{
+  background:linear-gradient(135deg,#0D6E3F 0%,#1A8C50 60%,#0A5A32 100%);
+  color:#fff; border-radius:var(--radius); padding:16px 22px; margin-bottom:20px;
+  font-family:'Sora',sans-serif; font-size:20px; font-weight:800;
+  border:1px solid rgba(201,168,76,0.25);
+  box-shadow:0 6px 24px rgba(13,110,63,0.25);
+  letter-spacing:-.3px; position:relative; overflow:hidden;
+}
+.section-header::after{
+  content:''; position:absolute; top:-40px; right:-30px;
+  width:120px; height:120px; border-radius:50%;
+  background:rgba(201,168,76,0.15);
+}
+.section-header.orange{
+  background:linear-gradient(135deg,#8B1A0A 0%,#C0392B 60%,#E74C3C 100%);
+  border-color:rgba(255,200,100,0.2);
+  box-shadow:0 6px 24px rgba(192,57,43,0.3);
+}
+.section-header.gold{
+  background:linear-gradient(135deg,#7A5C00 0%,#C9A84C 60%,#E8C96A 100%);
+  border-color:rgba(255,255,255,0.2);
+  box-shadow:0 6px 24px rgba(201,168,76,0.35);
+}
+.section-header.blue{
+  background:linear-gradient(135deg,#0A2F6B 0%,#1A56C4 60%,#2E7DD1 100%);
+  border-color:rgba(100,180,255,0.2);
+}
+.section-header.purple{
+  background:linear-gradient(135deg,#3A0A6B 0%,#6B21A8 60%,#8B5CF6 100%);
+  border-color:rgba(200,150,255,0.2);
+}
+
+/* ══════════════════════════════════════════
+   CHAT BUBBLES
+══════════════════════════════════════════ */
+.msg-user{
+  background:linear-gradient(135deg,#0D6E3F,#1A8C50);
+  color:#fff; border-radius:18px 18px 4px 18px;
+  padding:13px 18px; margin:5px 0 5px 50px;
+  font-size:14px; line-height:1.7;
+  box-shadow:0 4px 16px rgba(13,110,63,0.25);
+}
+.msg-bot{
+  background:var(--surface); color:var(--text);
+  border-radius:18px 18px 18px 4px; padding:13px 18px;
+  margin:5px 50px 5px 0; font-size:14px; line-height:1.75;
+  box-shadow:var(--shadow-sm); border:1.5px solid var(--border);
+}
+.msg-lbl{ font-size:11px; color:var(--text3); margin-bottom:3px; font-weight:600; }
+.msg-lbl-r{ text-align:right; }
+
+/* ══════════════════════════════════════════
+   PROGRESS BARS
+══════════════════════════════════════════ */
+.prog-bar{
+  background:rgba(13,110,63,0.08); border-radius:99px;
+  height:10px; overflow:hidden; margin-bottom:4px;
+}
+.prog-fill{ height:100%; border-radius:99px; transition:width .6s cubic-bezier(.4,0,.2,1); }
+
+/* ══════════════════════════════════════════
+   BADGES
+══════════════════════════════════════════ */
+.badge-card{
+  background:linear-gradient(135deg,#FFFDF0,#FFF8E0);
+  border:1.5px solid rgba(201,168,76,0.45); border-radius:var(--radius);
+  padding:14px 10px; text-align:center;
+  box-shadow:0 2px 12px rgba(201,168,76,0.15);
+  transition:transform .2s, box-shadow .2s;
+}
+.badge-card:hover{ transform:translateY(-3px); box-shadow:0 8px 24px rgba(201,168,76,0.3); }
+.badge-locked{ opacity:0.3; filter:grayscale(1); }
+.badge-icon{ font-size:30px; display:block; }
+.badge-name{ font-size:12px; font-weight:800; color:#7A5C00; margin-top:6px; }
+.badge-desc{ font-size:10px; color:var(--text3); margin-top:3px; }
+
+/* ══════════════════════════════════════════
+   WORD CARD
+══════════════════════════════════════════ */
+.word-card{
+  background:linear-gradient(135deg,#061A0E 0%,#0A2414 50%,#071510 100%);
+  border-radius:var(--radius); padding:20px 22px; margin-bottom:16px;
+  color:#fff; border:1px solid rgba(201,168,76,0.25);
+  box-shadow:0 8px 32px rgba(6,26,14,0.3);
+  position:relative; overflow:hidden;
+}
+.word-card::before{
+  content:''; position:absolute; top:-20px; right:-20px;
+  width:100px; height:100px; border-radius:50%;
+  background:radial-gradient(circle,rgba(201,168,76,0.2),transparent 70%);
+}
+
+/* ══════════════════════════════════════════
+   MISC
+══════════════════════════════════════════ */
+.reminder{
+  background:linear-gradient(135deg,#FFFDF0,#FFF8DC);
+  border:1.5px solid rgba(201,168,76,0.4); border-radius:var(--radius);
+  padding:13px 18px; margin-bottom:16px; font-size:13px; color:var(--text);
+  box-shadow:0 2px 10px rgba(201,168,76,0.12);
+}
+
+/* ── Leaderboard ── */
+.lb-row{
+  display:flex; align-items:center; gap:12px; padding:13px 18px;
+  background:var(--surface); border-radius:var(--radius); margin-bottom:8px;
+  box-shadow:var(--shadow-sm); border:1.5px solid var(--border); color:var(--text);
+  transition:box-shadow .2s, transform .2s;
+}
+.lb-row:hover{ box-shadow:var(--shadow-md); transform:translateX(3px); }
+.lb-rank{ font-size:22px; font-weight:900; width:32px; text-align:center; }
+.lb-name{ flex:1; font-weight:700; font-size:14px; }
+.lb-score{ font-weight:900; font-size:18px; color:var(--green); font-family:'Sora',sans-serif; }
+
+/* ── Syllabus ── */
+.syl-step{
+  background:linear-gradient(135deg,#F0FAF3,#F5FFF7);
+  border-radius:var(--radius); padding:16px 18px; margin-bottom:14px;
+  border:1.5px solid rgba(13,110,63,0.12); color:var(--text);
+}
+.syl-step-title{
+  font-size:11px; font-weight:800; color:var(--green);
+  text-transform:uppercase; letter-spacing:1.2px; margin-bottom:8px;
+}
+.topic-chip{
+  display:inline-block; border-radius:20px; padding:4px 12px;
+  font-size:11px; font-weight:700; margin:3px 3px 3px 0;
+}
+
+/* ══════════════════════════════════════════
+   INPUTS & SELECTS
+══════════════════════════════════════════ */
+[data-testid="stSelectbox"]>div>div{
+  background:var(--surface) !important; border:2px solid var(--border) !important;
+  border-radius:var(--radius-sm) !important; color:var(--text) !important;
+}
+[data-testid="stSelectbox"]>div>div>div{ color:var(--text) !important; font-weight:600 !important; }
 [data-baseweb="popover"],[data-baseweb="menu"],[role="listbox"]{
-  background:#ffffff !important; border:1.5px solid #E5E7EB !important;
-  border-radius:12px !important; box-shadow:0 8px 32px rgba(0,0,0,0.15) !important;
+  background:var(--surface) !important; border:1.5px solid var(--border) !important;
+  border-radius:var(--radius) !important;
+  box-shadow:0 12px 40px rgba(13,110,63,0.15) !important;
 }
-[role="option"]{ color:#1A1A2E !important; background:#ffffff !important; font-size:14px !important; padding:10px 14px !important; }
-[role="option"]:hover,[role="option"][aria-selected="true"]{ background:#FFF1EE !important; color:#E8472A !important; font-weight:700 !important; }
-
+[role="option"]{ color:var(--text) !important; background:var(--surface) !important; font-size:14px !important; padding:10px 14px !important; }
+[role="option"]:hover,[role="option"][aria-selected="true"]{
+  background:rgba(13,110,63,0.08) !important; color:var(--green) !important; font-weight:700 !important;
+}
 .stTextInput>div>div>input,
 .stTextArea>div>div>textarea{
-  border-radius:10px !important; border:2px solid #E5E7EB !important;
-  color:#1A1A2E !important; background:#ffffff !important;
+  border-radius:var(--radius-sm) !important; border:2px solid var(--border) !important;
+  color:var(--text) !important; background:var(--surface) !important;
+  font-family:'Plus Jakarta Sans',sans-serif !important;
 }
 .stTextInput>div>div>input:focus,
 .stTextArea>div>div>textarea:focus{
-  border-color:#E8472A !important; box-shadow:0 0 0 3px rgba(232,71,42,0.1) !important;
+  border-color:var(--green) !important;
+  box-shadow:0 0 0 3px rgba(13,110,63,0.12) !important;
+}
+label,[data-testid="stLabel"]>label{ color:var(--text) !important; font-weight:700 !important; font-size:13px !important; }
+
+/* ── Tabs ── */
+.stTabs [data-baseweb="tab-list"]{
+  background:var(--surface2) !important; border-radius:var(--radius-sm) !important;
+  padding:4px !important; border:1.5px solid var(--border) !important;
+  gap:4px !important;
+}
+.stTabs [data-baseweb="tab"]{
+  background:transparent !important; color:var(--text2) !important;
+  font-weight:700 !important; font-size:13px !important;
+  border-radius:8px !important; padding:8px 16px !important;
+  border:none !important;
+}
+.stTabs [aria-selected="true"]{
+  background:linear-gradient(135deg,var(--green),var(--green-lt)) !important;
+  color:#fff !important; box-shadow:0 3px 10px rgba(13,110,63,0.3) !important;
 }
 
-/* ── Radio/checkbox labels ── */
-.stRadio label,[data-testid="stRadio"] label{ color:#1A1A2E !important; }
+/* ── Expanders ── */
+[data-testid="stExpander"]{
+  background:var(--surface) !important; border:1.5px solid var(--border) !important;
+  border-radius:var(--radius-sm) !important; margin-bottom:6px !important;
+}
+[data-testid="stExpander"] summary{
+  font-weight:700 !important; color:var(--text) !important;
+}
 
-/* ── st.metric text ── */
-[data-testid="stMetricValue"]{ color:#1A1A2E !important; }
-[data-testid="stMetricLabel"]{ color:#555 !important; }
+/* ── Metrics ── */
+[data-testid="stMetricValue"]{ color:var(--green) !important; font-family:'Sora',sans-serif !important; font-weight:900 !important; }
+[data-testid="stMetricLabel"]{ color:var(--text2) !important; font-weight:700 !important; }
+
+/* ── st.info / success / error ── */
+[data-testid="stAlert"]{
+  border-radius:var(--radius-sm) !important;
+  border-left-width:4px !important;
+}
+
+/* ── Radio/checkbox ── */
+.stRadio label,[data-testid="stRadio"] label{ color:var(--text) !important; font-weight:600 !important; }
+.stCheckbox label{ color:var(--text) !important; font-weight:600 !important; }
+
+/* ── Slider ── */
+[data-testid="stSlider"] [data-baseweb="slider"] [data-testid="stThumbValue"]{
+  color:var(--green) !important; font-weight:800 !important;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{ width:6px; height:6px; }
+::-webkit-scrollbar-track{ background:var(--bg); }
+::-webkit-scrollbar-thumb{ background:rgba(13,110,63,0.25); border-radius:99px; }
+::-webkit-scrollbar-thumb:hover{ background:rgba(13,110,63,0.45); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -454,89 +651,118 @@ html,body,[class*="css"]{ font-family:'Nunito',sans-serif !important; }
 # AUTH PAGE
 # ─────────────────────────────────────────────────────────────────
 def page_auth():
-    _, col, _ = st.columns([1,2,1])
-    with col:
+    # Full-page premium background
+    st.markdown("""
+    <style>
+    .main .block-container{ max-width:480px !important; padding-top:2rem !important; }
+    [data-testid="stForm"]{ background:var(--surface) !important; border-radius:20px !important; padding:24px !important; border:1.5px solid var(--border) !important; box-shadow:var(--shadow-lg) !important; }
+    </style>""", unsafe_allow_html=True)
+
+    st.markdown("""
+    <div style='text-align:center;padding:32px 0 24px'>
+        <div style='display:inline-flex;align-items:center;justify-content:center;
+            width:80px;height:80px;border-radius:24px;margin-bottom:16px;
+            background:linear-gradient(135deg,#0D6E3F,#1A8C50);
+            box-shadow:0 8px 32px rgba(13,110,63,0.4)'>
+            <span style='font-size:40px;line-height:1'>📚</span>
+        </div>
+        <h1 style='font-family:"Sora",sans-serif;font-size:32px;font-weight:900;
+            color:#0D1F0D;margin:0 0 6px;letter-spacing:-1px'>ZM Academy</h1>
+        <p style='color:#3D5C3D;font-size:14px;font-weight:600;margin:0'>
+            🇵🇰 Pakistan's <b style="color:#0D6E3F">#1</b> AI-Powered Education Platform
+        </p>
+        <div style='display:flex;justify-content:center;gap:8px;margin-top:10px;flex-wrap:wrap'>
+            <span style='background:rgba(13,110,63,0.08);color:#0D6E3F;padding:3px 12px;
+                border-radius:99px;font-size:11px;font-weight:700;border:1px solid rgba(13,110,63,0.15)'>
+                Grades 1–10</span>
+            <span style='background:rgba(13,110,63,0.08);color:#0D6E3F;padding:3px 12px;
+                border-radius:99px;font-size:11px;font-weight:700;border:1px solid rgba(13,110,63,0.15)'>
+                O Level</span>
+            <span style='background:rgba(13,110,63,0.08);color:#0D6E3F;padding:3px 12px;
+                border-radius:99px;font-size:11px;font-weight:700;border:1px solid rgba(13,110,63,0.15)'>
+                A Level</span>
+            <span style='background:rgba(201,168,76,0.15);color:#7A5C00;padding:3px 12px;
+                border-radius:99px;font-size:11px;font-weight:700;border:1px solid rgba(201,168,76,0.25)'>
+                🤖 AI Powered</span>
+        </div>
+    </div>""", unsafe_allow_html=True)
+
+    tab_login, tab_signup, tab_forgot = st.tabs(["🔑  Login","✨  Sign Up","🔓  Reset"])
+
+    with tab_login:
+        with st.form("login_form"):
+            email    = st.text_input("📧 Email", placeholder="you@example.com")
+            password = st.text_input("🔒 Password", type="password")
+            if st.form_submit_button("Login to ZM Academy →", use_container_width=True, type="primary"):
+                users = load_json(USERS_FILE)
+                if email in users and users[email]["password"] == hash_pw(password):
+                    users[email]["last_login"] = datetime.date.today().isoformat()
+                    if "plan" not in users[email]: users[email]["plan"] = "free"
+                    save_json(USERS_FILE, users)
+                    st.session_state.logged_in = True
+                    st.session_state.user      = users[email]
+                    st.success("Welcome back! 🎉"); time.sleep(0.5); st.rerun()
+                else:
+                    st.error("⚠️ Incorrect email or password.")
+
+    with tab_signup:
+        with st.form("signup_form"):
+            name   = st.text_input("👤 Full Name", placeholder="Ahmed Khan")
+            email2 = st.text_input("📧 Email", placeholder="you@example.com")
+            role   = st.selectbox("👥 I am a", ["Student 🎒","Parent 👨‍👩‍👦","Teacher 👨‍🏫","Admin 🛡️"])
+            avatar = st.selectbox("🧑 Choose Avatar", list(AVATARS.keys()))
+            grade  = st.selectbox("🏫 Grade", ["-- Select --"]+LEVELS)
+            pw     = st.text_input("🔒 Password", type="password", placeholder="Min 6 characters")
+            pw2    = st.text_input("🔒 Confirm Password", type="password")
+            if st.form_submit_button("Create My Account →", use_container_width=True, type="primary"):
+                users = load_json(USERS_FILE)
+                if not name or not email2 or not pw:   st.error("Please fill all required fields.")
+                elif len(pw) < 6:                      st.error("Password must be at least 6 characters.")
+                elif pw != pw2:                        st.error("Passwords don't match.")
+                elif email2 in users:                  st.error("Email already registered.")
+                else:
+                    new_user = {
+                        "name": name.strip(), "email": email2.strip(),
+                        "password": hash_pw(pw),
+                        "role": ("student"  if "Student" in role
+                                 else "parent"  if "Parent"  in role
+                                 else "teacher" if "Teacher" in role
+                                 else "admin"),
+                        "avatar": AVATARS[avatar],
+                        "grade": grade if grade != "-- Select --" else "Grade 6",
+                        "joined": datetime.date.today().isoformat(),
+                        "plan": "free", "stats": init_stats(), "badges": [], "is_new": True
+                    }
+                    users[email2] = new_user
+                    save_json(USERS_FILE, users)
+                    st.session_state.logged_in = True
+                    st.session_state.user = new_user
+                    st.success("Account created! Welcome 🎉"); time.sleep(0.5); st.rerun()
+
+    with tab_forgot:
         st.markdown("""
-        <div style='text-align:center;padding:24px 0 16px'>
-            <div style='font-size:56px'>📚</div>
-            <h1 style='font-family:"Baloo 2",cursive;font-size:28px;font-weight:800;
-                color:#0F0F1A;margin:6px 0 2px'>ZM Academy</h1>
-            <p style='color:#999;font-size:13px'>🇵🇰 Pakistan's AI-Powered Study App</p>
-            <p style='color:#bbb;font-size:12px'>Grades 1–10 • O Level • A Level</p>
+        <div style='background:rgba(13,110,63,0.06);border-radius:10px;padding:12px 14px;
+            font-size:13px;color:#0D6E3F;margin-bottom:14px;border:1px solid rgba(13,110,63,0.12)'>
+            🔒 Enter your email and a new password to reset your account.
         </div>""", unsafe_allow_html=True)
+        with st.form("forgot_form"):
+            fp_email = st.text_input("📧 Your registered email")
+            fp_new   = st.text_input("🔒 New Password", type="password")
+            fp_new2  = st.text_input("🔒 Confirm New Password", type="password")
+            if st.form_submit_button("Reset Password →", use_container_width=True, type="primary"):
+                users = load_json(USERS_FILE)
+                if fp_email not in users:    st.error("⚠️ Email not found.")
+                elif len(fp_new) < 6:        st.error("Min 6 characters.")
+                elif fp_new != fp_new2:      st.error("Passwords don't match.")
+                else:
+                    users[fp_email]["password"] = hash_pw(fp_new)
+                    save_json(USERS_FILE, users)
+                    st.success("✅ Password reset! You can now login.")
 
-        tab_login, tab_signup, tab_forgot = st.tabs(["🔑  Login","✨  Sign Up","🔓  Forgot Password"])
-
-        with tab_login:
-            with st.form("login_form"):
-                email    = st.text_input("📧 Email", placeholder="you@example.com")
-                password = st.text_input("🔒 Password", type="password")
-                if st.form_submit_button("Login →", use_container_width=True, type="primary"):
-                    users = load_json(USERS_FILE)
-                    if email in users and users[email]["password"] == hash_pw(password):
-                        users[email]["last_login"] = datetime.date.today().isoformat()
-                        if "plan" not in users[email]: users[email]["plan"] = "free"
-                        save_json(USERS_FILE, users)
-                        st.session_state.logged_in = True
-                        st.session_state.user      = users[email]
-                        st.success("Welcome back! 🎉"); time.sleep(0.5); st.rerun()
-                    else:
-                        st.error("⚠️ Incorrect email or password.")
-
-        with tab_signup:
-            with st.form("signup_form"):
-                name   = st.text_input("👤 Full Name", placeholder="Ahmed Khan")
-                email2 = st.text_input("📧 Email", placeholder="you@example.com")
-                role   = st.selectbox("👥 I am a", ["Student 🎒","Parent 👨‍👩‍👦","Teacher 👨‍🏫","Admin 🛡️"])
-                avatar = st.selectbox("🧑 Choose Avatar", list(AVATARS.keys()))
-                grade  = st.selectbox("🏫 Grade", ["-- Select --"]+LEVELS)
-                pw     = st.text_input("🔒 Password", type="password", placeholder="Min 6 characters")
-                pw2    = st.text_input("🔒 Confirm Password", type="password")
-                if st.form_submit_button("Create Account →", use_container_width=True, type="primary"):
-                    users = load_json(USERS_FILE)
-                    if not name or not email2 or not pw:   st.error("Please fill all required fields.")
-                    elif len(pw) < 6:                      st.error("Password must be at least 6 characters.")
-                    elif pw != pw2:                        st.error("Passwords don't match.")
-                    elif email2 in users:                  st.error("Email already registered.")
-                    else:
-                        new_user = {
-                            "name": name.strip(), "email": email2.strip(),
-                            "password": hash_pw(pw),
-                            "role": ("student"  if "Student" in role
-                                     else "parent"  if "Parent"  in role
-                                     else "teacher" if "Teacher" in role
-                                     else "admin"),
-                            "avatar": AVATARS[avatar],
-                            "grade": grade if grade != "-- Select --" else "Grade 6",
-                            "joined": datetime.date.today().isoformat(),
-                            "plan": "free", "stats": init_stats(), "badges": [], "is_new": True
-                        }
-                        users[email2] = new_user
-                        save_json(USERS_FILE, users)
-                        st.session_state.logged_in = True
-                        st.session_state.user = new_user
-                        st.success("Account created! Welcome 🎉"); time.sleep(0.5); st.rerun()
-
-        with tab_forgot:
-            st.markdown("""
-            <div style='background:#EFF4FF;border-radius:12px;padding:14px;
-                font-size:13px;color:#1B4FD8;margin-bottom:14px'>
-                🔒 Enter your email and a new password to reset your account.
-            </div>""", unsafe_allow_html=True)
-            with st.form("forgot_form"):
-                fp_email = st.text_input("📧 Your registered email")
-                fp_new   = st.text_input("🔒 New Password", type="password")
-                fp_new2  = st.text_input("🔒 Confirm New Password", type="password")
-                if st.form_submit_button("Reset Password →", use_container_width=True, type="primary"):
-                    users = load_json(USERS_FILE)
-                    if fp_email not in users:    st.error("⚠️ Email not found.")
-                    elif len(fp_new) < 6:        st.error("Min 6 characters.")
-                    elif fp_new != fp_new2:      st.error("Passwords don't match.")
-                    else:
-                        users[fp_email]["password"] = hash_pw(fp_new)
-                        save_json(USERS_FILE, users)
-                        st.success("✅ Password reset! You can now login.")
-        st.markdown("<p style='text-align:center;color:#ccc;font-size:11px;margin-top:14px'>Free to use • Pakistan National Curriculum</p>", unsafe_allow_html=True)
+    st.markdown("""
+    <p style='text-align:center;color:#7A9A7A;font-size:11px;margin-top:20px;font-weight:600'>
+        🔒 Secure &nbsp;·&nbsp; 🆓 Free to use &nbsp;·&nbsp; 🇵🇰 Pakistan National Curriculum
+    </p>""", unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -544,33 +770,60 @@ def page_auth():
 # ─────────────────────────────────────────────────────────────────
 def render_sidebar():
     u = st.session_state.user
+    role_info = {
+        "student": ("🎒","Student",     "#27A862"),
+        "parent":  ("👨‍👩‍👦","Parent",    "#1A8C50"),
+        "teacher": ("👨‍🏫","Teacher",    "#C9A84C"),
+        "admin":   ("🛡️","Admin",       "#C0392B"),
+    }
+    r_icon, r_label, r_color = role_info.get(u.get("role","student"),("👤","User","#27A862"))
+
     with st.sidebar:
+        # ── Profile card ──────────────────────────────
         st.markdown(f"""
-        <div style='padding:16px 10px 14px;border-bottom:1px solid rgba(255,255,255,.15);margin-bottom:12px'>
-            <div style='font-size:52px;line-height:1;margin-bottom:10px;text-align:center'>
-                {u.get("avatar","👦")}
-            </div>
-            <div style='font-weight:800;font-size:16px;color:#fff;text-align:center'>{u["name"]}</div>
-            <div style='font-size:12px;color:rgba(255,255,255,0.6);margin-top:3px;text-align:center'>
-                {"🎒 Student"  if u.get("role")=="student"
-                 else "👨‍👩‍👦 Parent"  if u.get("role")=="parent"
-                 else "👨‍🏫 Teacher" if u.get("role")=="teacher"
-                 else "🛡️ Admin"    if u.get("role")=="admin"
-                 else "👤 User"}
-                {"&nbsp;•&nbsp;" + u.get("grade","") if u.get("grade","") else ""}
-            </div>
-            <div style='display:flex;justify-content:center;gap:16px;margin-top:10px'>
-                <div style='text-align:center'>
-                    <div style='font-size:18px;font-weight:900;color:#FFD700'>{u.get("stats",{}).get("total",0)}</div>
-                    <div style='font-size:10px;color:rgba(255,255,255,0.5)'>Questions</div>
+        <div style='padding:20px 12px 16px;margin-bottom:4px;
+            border-bottom:1px solid rgba(201,168,76,0.15)'>
+            <div style='position:relative;display:flex;flex-direction:column;align-items:center'>
+                <div style='width:68px;height:68px;border-radius:20px;
+                    background:linear-gradient(135deg,rgba(201,168,76,0.2),rgba(13,110,63,0.3));
+                    display:flex;align-items:center;justify-content:center;
+                    font-size:38px;line-height:1;margin-bottom:10px;
+                    border:2px solid rgba(201,168,76,0.3);
+                    box-shadow:0 4px 20px rgba(0,0,0,0.3)'>
+                    {u.get("avatar","👦")}
                 </div>
-                <div style='text-align:center'>
-                    <div style='font-size:18px;font-weight:900;color:#FFD700'>{len(u.get("badges",[]))}</div>
-                    <div style='font-size:10px;color:rgba(255,255,255,0.5)'>Badges</div>
+                <div style='font-family:"Sora",sans-serif;font-weight:800;font-size:15px;
+                    color:#fff;text-align:center;letter-spacing:-.3px'>{u["name"]}</div>
+                <div style='display:inline-flex;align-items:center;gap:5px;margin-top:5px;
+                    background:rgba(255,255,255,0.07);border-radius:99px;
+                    padding:3px 10px;border:1px solid rgba(201,168,76,0.2)'>
+                    <span style='font-size:12px'>{r_icon}</span>
+                    <span style='font-size:11px;font-weight:700;color:{r_color}'>{r_label}</span>
+                    {"<span style='font-size:10px;color:rgba(255,255,255,0.4)'>·</span><span style='font-size:11px;color:rgba(255,255,255,0.55);font-weight:600'>" + u.get("grade","") + "</span>" if u.get("grade") else ""}
                 </div>
-                <div style='text-align:center'>
-                    <div style='font-size:18px;font-weight:900;color:#FFD700'>{u.get("stats",{}).get("streak",0)}</div>
-                    <div style='font-size:10px;color:rgba(255,255,255,0.5)'>Streak</div>
+            </div>
+            <div style='display:flex;justify-content:center;gap:0;margin-top:14px;
+                background:rgba(0,0,0,0.25);border-radius:12px;
+                border:1px solid rgba(201,168,76,0.12);overflow:hidden'>
+                <div style='flex:1;text-align:center;padding:9px 6px;
+                    border-right:1px solid rgba(201,168,76,0.1)'>
+                    <div style='font-family:"Sora",sans-serif;font-size:17px;font-weight:900;
+                        color:#E8C96A'>{u.get("stats",{}).get("total",0)}</div>
+                    <div style='font-size:9px;color:rgba(255,255,255,0.4);
+                        text-transform:uppercase;letter-spacing:.8px;font-weight:700'>Qs</div>
+                </div>
+                <div style='flex:1;text-align:center;padding:9px 6px;
+                    border-right:1px solid rgba(201,168,76,0.1)'>
+                    <div style='font-family:"Sora",sans-serif;font-size:17px;font-weight:900;
+                        color:#E8C96A'>{len(u.get("badges",[]))}</div>
+                    <div style='font-size:9px;color:rgba(255,255,255,0.4);
+                        text-transform:uppercase;letter-spacing:.8px;font-weight:700'>Badges</div>
+                </div>
+                <div style='flex:1;text-align:center;padding:9px 6px'>
+                    <div style='font-family:"Sora",sans-serif;font-size:17px;font-weight:900;
+                        color:#E8C96A'>{u.get("stats",{}).get("streak",0)}</div>
+                    <div style='font-size:9px;color:rgba(255,255,255,0.4);
+                        text-transform:uppercase;letter-spacing:.8px;font-weight:700'>Streak</div>
                 </div>
             </div>
         </div>""", unsafe_allow_html=True)
@@ -659,17 +912,20 @@ def page_home():
         _, c, _ = st.columns([1,2,1])
         with c:
             dots = "".join(
-                f"<span style='display:inline-block;width:10px;height:10px;border-radius:50%;"
-                f"background:{'#E8472A' if i+1==step else 'rgba(255,255,255,0.3)'};margin:0 4px'></span>"
+                f"<span style='display:inline-block;width:9px;height:9px;border-radius:50%;"
+                f"background:{'#E8C96A' if i+1==step else 'rgba(255,255,255,0.2)'};margin:0 3px'></span>"
                 for i in range(3)
             )
             st.markdown(f"""
-            <div style='background:linear-gradient(135deg,#0A1628,#1B4FD8);border-radius:24px;
-                padding:32px 28px;color:#fff;text-align:center;margin-top:20px'>
-                <div style='margin-bottom:12px'>{dots}</div>
-                <div style='font-size:60px;margin-bottom:16px'>{s['emoji']}</div>
-                <div style='font-family:"Baloo 2",cursive;font-size:22px;font-weight:900;margin-bottom:14px'>{s['title']}</div>
-                <div style='font-size:14px;opacity:.88;line-height:1.8'>{s['body']}</div>
+            <div style='background:linear-gradient(135deg,#061A0E,#0D6E3F);border-radius:24px;
+                padding:32px 28px;color:#fff;text-align:center;margin-top:20px;
+                border:1px solid rgba(201,168,76,0.25);
+                box-shadow:0 16px 48px rgba(6,26,14,0.5)'>
+                <div style='margin-bottom:14px'>{dots}</div>
+                <div style='font-size:56px;margin-bottom:14px'>{s['emoji']}</div>
+                <div style='font-family:"Sora",sans-serif;font-size:22px;font-weight:900;
+                    margin-bottom:14px;letter-spacing:-.5px'>{s['title']}</div>
+                <div style='font-size:14px;opacity:.85;line-height:1.8'>{s['body']}</div>
             </div>""", unsafe_allow_html=True)
             st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
             if st.button(s["btn"], use_container_width=True, type="primary", key=f"ob_{step}"):
@@ -695,56 +951,73 @@ def page_home():
 
     # ── Hero banner ───────────────────────────────────────────
     st.markdown(f"""
-    <div style='background:linear-gradient(135deg,{col}dd,{col}88);border-radius:18px;
-        padding:20px 22px;margin-bottom:16px;color:#fff'>
-        <div style='display:flex;align-items:center;gap:16px'>
-            <div style='font-size:54px;line-height:1'>{u.get('avatar','👦')}</div>
+    <div style='background:linear-gradient(135deg,#061A0E 0%,#0D6E3F 50%,#0A5A32 100%);
+        border-radius:20px;padding:24px 26px;margin-bottom:20px;color:#fff;
+        border:1px solid rgba(201,168,76,0.2);
+        box-shadow:0 8px 32px rgba(6,26,14,0.25);position:relative;overflow:hidden'>
+        <div style='position:absolute;top:-30px;right:-30px;width:160px;height:160px;
+            border-radius:50%;background:radial-gradient(circle,rgba(201,168,76,0.15),transparent 70%)'></div>
+        <div style='position:absolute;bottom:-20px;left:20px;width:100px;height:100px;
+            border-radius:50%;background:radial-gradient(circle,rgba(39,168,98,0.15),transparent 70%)'></div>
+        <div style='display:flex;align-items:center;gap:18px;position:relative'>
+            <div style='width:64px;height:64px;border-radius:18px;
+                background:rgba(255,255,255,0.1);display:flex;align-items:center;
+                justify-content:center;font-size:36px;flex-shrink:0;
+                border:1.5px solid rgba(201,168,76,0.3)'>
+                {u.get('avatar','👦')}</div>
             <div>
-                <div style='font-family:"Baloo 2",cursive;font-size:22px;font-weight:800'>
+                <div style='font-family:"Sora",sans-serif;font-size:22px;font-weight:900;
+                    letter-spacing:-.5px;line-height:1.2'>
                     {greet}, {u['name'].split()[0]}! 👋</div>
-                <div style='font-size:13px;opacity:.9;margin-top:3px'>
-                    Ready to learn something amazing today? 🚀</div>
+                <div style='font-size:13px;opacity:.75;margin-top:5px;font-weight:500'>
+                    🇵🇰 Pakistan's #1 AI Study Platform &nbsp;·&nbsp; Ready to learn today?</div>
             </div>
         </div>
     </div>""", unsafe_allow_html=True)
 
     stats = u.get("stats", {})
     if stats.get("lastDate","") != datetime.date.today().isoformat():
-        st.markdown("<div class='reminder'>🔔 <b>Daily Reminder:</b> You haven't studied today! Even 15 minutes makes a difference 💪</div>", unsafe_allow_html=True)
+        st.markdown("""<div class='reminder'>🔔 <b>Daily Reminder:</b> You haven't studied today! Even 15 minutes makes a difference 💪</div>""", unsafe_allow_html=True)
 
     # ── Stats row ─────────────────────────────────────────────
     c1,c2,c3,c4 = st.columns(4)
-    for col_w, icon, val, lbl in [
-        (c1,"❓", stats.get("total",0), "Questions"),
-        (c2,"🔥", f"{stats.get('streak',0)}d", "Streak"),
-        (c3,"🏆", len(u.get("badges",[])), "Badges"),
-        (c4,"📅", stats.get("quizzes_done",0), "Quizzes"),
+    for col_w, icon, val, lbl, accent in [
+        (c1,"❓", stats.get("total",0),          "Questions", "#0D6E3F"),
+        (c2,"🔥", f"{stats.get('streak',0)}d",   "Streak",    "#C0392B"),
+        (c3,"🏆", len(u.get("badges",[])),        "Badges",    "#C9A84C"),
+        (c4,"📝", stats.get("quizzes_done",0),    "Quizzes",   "#1A56C4"),
     ]:
         with col_w:
             st.markdown(f"""
             <div class='stat-card'>
-                <div style='font-size:22px'>{icon}</div>
-                <div class='stat-num'>{val}</div>
+                <div style='font-size:22px;margin-bottom:4px'>{icon}</div>
+                <div style='font-family:"Sora",sans-serif;font-size:26px;font-weight:900;
+                    color:{accent};line-height:1'>{val}</div>
                 <div class='stat-lbl'>{lbl}</div>
             </div>""", unsafe_allow_html=True)
 
-    st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
 
     # ── Quick access features ─────────────────────────────────
-    st.markdown("### 🚀 Quick Access")
+    st.markdown(f"""<div style='font-family:"Sora",sans-serif;font-size:16px;font-weight:800;
+        color:#0D1F0D;margin-bottom:12px;letter-spacing:-.3px'>⚡ Quick Access</div>""",
+        unsafe_allow_html=True)
     fa, fb, fc, fd = st.columns(4)
-    for col_w, icon, label, page, color in [
-        (fa,"💬","Chat Tutor",    "chat",    "#E8472A"),
-        (fb,"📝","Practice Quiz", "quiz",    "#2563EB"),
-        (fc,"👥","Friends Quiz",  "friends", "#7C3AED"),
-        (fd,"🎨","Image Gen",     "image",   "#059669"),
+    for col_w, icon, label, page, g, accent in [
+        (fa,"💬","Chat Tutor",    "chat",    "#0D6E3F","#27A862"),
+        (fb,"📝","Practice Quiz", "quiz",    "#0A2F6B","#1A56C4"),
+        (fc,"👥","Friendz Quiz",  "friends", "#4A0D6B","#7C3AED"),
+        (fd,"🎨","Image Gen",     "image",   "#7A5C00","#C9A84C"),
     ]:
         with col_w:
             st.markdown(f"""
-            <div style='background:{color}18;border:2px solid {color}44;border-radius:14px;
-                padding:16px 10px;text-align:center;cursor:pointer'>
-                <div style='font-size:28px;margin-bottom:6px'>{icon}</div>
-                <div style='font-size:12px;font-weight:800;color:{color}'>{label}</div>
+            <div style='background:linear-gradient(135deg,{g}12,{g}06);
+                border:1.5px solid {g}25;border-radius:16px;
+                padding:16px 10px;text-align:center;
+                transition:box-shadow .2s;'>
+                <div style='font-size:26px;margin-bottom:6px'>{icon}</div>
+                <div style='font-size:11px;font-weight:800;color:{accent};
+                    text-transform:uppercase;letter-spacing:.5px'>{label}</div>
             </div>""", unsafe_allow_html=True)
             if st.button(f"Open {label}", key=f"home_go_{page}", use_container_width=True):
                 st.session_state.page = page; st.rerun()

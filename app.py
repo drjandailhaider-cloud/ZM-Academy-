@@ -1,5 +1,10 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# ZM Academy — Complete Streamlit App
+# Updated with: Enhanced Quiz, Friends Group, Improved Image Gen,
+#               Redesigned Syllabus, Removed Essay/StudyTools
+# ═══════════════════════════════════════════════════════════════════════════════
 import streamlit as st
-import json, hashlib, datetime, time, os, base64
+import json, hashlib, datetime, time, os, base64, random
 from anthropic import Anthropic
 from curriculum import CAMBRIDGE_CURRICULUM
 
@@ -14,162 +19,206 @@ st.set_page_config(
 )
 
 # ─────────────────────────────────────────────────────────────────
-# CONSTANTS
+# CONSTANTS & LOOKUPS
 # ─────────────────────────────────────────────────────────────────
 SUBJECTS = {
-    "Maths":   {"emoji": "🔢", "color": "#E8472A"},
-    "Physics": {"emoji": "⚡", "color": "#2563EB"},
-    "English": {"emoji": "📖", "color": "#059669"},
-    "Urdu":    {"emoji": "🖊️", "color": "#7C3AED"},
+    "Maths":           {"emoji": "🔢", "color": "#E8472A"},
+    "Physics":         {"emoji": "⚡", "color": "#2563EB"},
+    "Chemistry":       {"emoji": "🧪", "color": "#7C3AED"},
+    "Biology":         {"emoji": "🌱", "color": "#059669"},
+    "English":         {"emoji": "📖", "color": "#0891B2"},
+    "Computer Science":{"emoji": "💻", "color": "#6D28D9"},
+    "Urdu":            {"emoji": "🖊️", "color": "#B45309"},
 }
 
 LEVELS = [
-    "Class 1","Class 2","Class 3","Class 4","Class 5",
-    "Class 6","Class 7","Class 8","O Level","A Level"
+    "Grade 1","Grade 2","Grade 3","Grade 4","Grade 5",
+    "Grade 6","Grade 7","Grade 8","Grade 9","Grade 10",
+    "O Level","A Level"
 ]
+
+# Legacy compat mapping (old "Class X" keys → new "Grade X")
+_LEVEL_ALIAS = {f"Class {i}": f"Grade {i}" for i in range(1,11)}
+_LEVEL_ALIAS.update({"Class 5": "Grade 5"})
+
+def normalise_level(grade):
+    return _LEVEL_ALIAS.get(grade, grade)
 
 def get_level_index(grade):
-    """Safely return index for a grade in LEVELS, defaulting to Class 5 (index 4)"""
+    grade = normalise_level(grade)
     try:
-        return LEVELS.index(grade) if grade in LEVELS else 4
+        return LEVELS.index(grade) if grade in LEVELS else 5
     except Exception:
-        return 4
+        return 5
 
 AVATARS = {
-    "👦 Boy":"👦", "👧 Girl":"👧", "👨 Dad":"👨", "👩 Mom":"👩",
-    "👨‍🏫 Teacher":"👨‍🏫", "🧑‍🚀 Astronaut":"🧑‍🚀",
-    "🧑‍🔬 Scientist":"🧑‍🔬", "🧑‍🎨 Artist":"🧑‍🎨"
+    "👦 Boy":"👦","👧 Girl":"👧","👨 Dad":"👨","👩 Mom":"👩",
+    "👨‍🏫 Teacher":"👨‍🏫","🧑‍🚀 Astronaut":"🧑‍🚀",
+    "🧑‍🔬 Scientist":"🧑‍🔬","🧑‍🎨 Artist":"🧑‍🎨"
 }
 
-ESSAY_TYPES = [
-    "Descriptive Essay","Argumentative Essay","Narrative Story",
-    "Letter Writing","Report Writing","Summary Writing"
-]
-
+# ── Image styles ─────────────────────────────────────────────────
 IMAGE_STYLES = {
-    "📐 Educational Diagram":
-        "a clean labeled educational diagram with arrows showing relationships, colorful sections, white background",
-    "🎨 Colorful Cartoon":
-        "a bright fun cartoon illustration with cheerful colors suitable for children",
-    "🔬 Scientific Illustration":
-        "a detailed realistic scientific diagram like a textbook, accurate and clearly labeled",
-    "🗺️ Mind Map":
-        "a colorful mind map with a central topic, branches and sub-branches with connecting lines",
+    "📐 Educational Diagram": "a clean labeled educational diagram with arrows, colorful sections, white background",
+    "🎨 Cartoon":             "a bright fun cartoon illustration with cheerful bold colors suitable for students",
+    "🎌 Anime Style":         "an anime-style illustration with vibrant colors, clean lines, expressive characters",
+    "🤖 AI Art":              "a futuristic AI-generated digital art style with glowing elements and deep colors",
+    "🔬 Realistic / Scientific": "a detailed realistic scientific illustration like a textbook diagram, accurate and labeled",
 }
 
+# ── Badge definitions ─────────────────────────────────────────────
 BADGES = [
-    {"id":"first_q",  "icon":"🌟","name":"First Step",       "desc":"Asked first question",   "req": lambda s: s.get("total",0)>=1},
-    {"id":"curious",  "icon":"🧠","name":"Curious Mind",     "desc":"Asked 5 questions",      "req": lambda s: s.get("total",0)>=5},
-    {"id":"seeker",   "icon":"📚","name":"Knowledge Seeker", "desc":"Asked 20 questions",     "req": lambda s: s.get("total",0)>=20},
-    {"id":"maths",    "icon":"🔢","name":"Maths Master",     "desc":"10 Maths questions",     "req": lambda s: s.get("Maths",0)>=10},
-    {"id":"physics",  "icon":"⚡","name":"Physics Pro",      "desc":"10 Physics questions",   "req": lambda s: s.get("Physics",0)>=10},
-    {"id":"english",  "icon":"📖","name":"English Expert",   "desc":"10 English questions",   "req": lambda s: s.get("English",0)>=10},
-    {"id":"urdu",     "icon":"🖊️","name":"Urdu Ustad",       "desc":"10 Urdu questions",      "req": lambda s: s.get("Urdu",0)>=10},
-    {"id":"allround", "icon":"🏆","name":"All-Rounder",      "desc":"Studied all 4 subjects", "req": lambda s: all(s.get(x,0)>0 for x in ["Maths","Physics","English","Urdu"])},
-    {"id":"artist",   "icon":"🎨","name":"Visual Learner",   "desc":"Generated 3 images",     "req": lambda s: s.get("images",0)>=3},
-    {"id":"writer",   "icon":"✏️","name":"Essay Writer",     "desc":"Used Essay Helper",      "req": lambda s: s.get("essays",0)>=1},
-    {"id":"streak",   "icon":"🔥","name":"7-Day Streak",     "desc":"7 days in a row",        "req": lambda s: s.get("streak",0)>=7},
+    {"id":"first_q",  "icon":"🌟","name":"First Step",        "desc":"Asked first question",    "req": lambda s: s.get("total",0)>=1},
+    {"id":"curious",  "icon":"🧠","name":"Curious Mind",      "desc":"Asked 5 questions",       "req": lambda s: s.get("total",0)>=5},
+    {"id":"seeker",   "icon":"📚","name":"Knowledge Seeker",  "desc":"Asked 20 questions",      "req": lambda s: s.get("total",0)>=20},
+    {"id":"maths",    "icon":"🔢","name":"Maths Master",      "desc":"10 Maths questions",      "req": lambda s: s.get("Maths",0)>=10},
+    {"id":"physics",  "icon":"⚡","name":"Physics Pro",       "desc":"10 Physics questions",    "req": lambda s: s.get("Physics",0)>=10},
+    {"id":"english",  "icon":"📖","name":"English Expert",    "desc":"10 English questions",    "req": lambda s: s.get("English",0)>=10},
+    {"id":"urdu",     "icon":"🖊️","name":"Urdu Ustad",        "desc":"10 Urdu questions",       "req": lambda s: s.get("Urdu",0)>=10},
+    {"id":"allround", "icon":"🏆","name":"All-Rounder",       "desc":"Studied 4+ subjects",     "req": lambda s: sum(1 for x in ["Maths","Physics","English","Urdu"] if s.get(x,0)>0)>=4},
+    {"id":"artist",   "icon":"🎨","name":"Visual Learner",    "desc":"Generated 3 images",      "req": lambda s: s.get("images",0)>=3},
+    {"id":"quiz_hero","icon":"🥇","name":"Quiz Champion",     "desc":"Completed 5 quizzes",     "req": lambda s: s.get("quizzes_done",0)>=5},
+    {"id":"streak",   "icon":"🔥","name":"7-Day Streak",      "desc":"7 days in a row",         "req": lambda s: s.get("streak",0)>=7},
 ]
 
 QUICK_PROMPTS = {
-    "Maths":   ["Explain fractions with examples","Solve: 2x + 5 = 15","What is Pythagoras theorem?","How to calculate percentage?"],
-    "Physics": ["What are Newton's 3 laws?","How does electricity work?","What is gravity?","Difference between speed and velocity"],
-    "English": ["How to write a good essay?","Explain past and present tense","What are nouns and verbs?","How to improve vocabulary?"],
-    "Urdu":    ["اردو گرامر کی بنیادی باتیں","نظم اور نثر میں کیا فرق ہے؟","اچھا مضمون کیسے لکھیں؟","محاورے کیا ہوتے ہیں؟"],
+    "Maths":           ["Explain fractions with examples","Solve: 2x + 5 = 15","What is Pythagoras theorem?","How to calculate percentage?"],
+    "Physics":         ["What are Newton's 3 laws?","How does electricity work?","What is gravity?","Difference between speed and velocity"],
+    "Chemistry":       ["What is the periodic table?","Explain atomic structure","What are chemical bonds?","How do acids and bases work?"],
+    "Biology":         ["Explain photosynthesis","What is DNA?","How does the heart work?","What is cell division?"],
+    "English":         ["How to write a good essay?","Explain past and present tense","What are nouns and verbs?","How to improve vocabulary?"],
+    "Computer Science":["What is an algorithm?","Explain loops in programming","What is a database?","How does the internet work?"],
+    "Urdu":            ["اردو گرامر کی بنیادی باتیں","نظم اور نثر میں کیا فرق ہے؟","اچھا مضمون کیسے لکھیں؟","محاورے کیا ہوتے ہیں؟"],
 }
 
+# ── Cambridge syllabus subjects per grade ────────────────────────
+CAMBRIDGE_SUBJECTS = {
+    "Grade 6":  ["Mathematics","Physics","Chemistry","Biology","English","Computer Science","Urdu"],
+    "Grade 7":  ["Mathematics","Physics","Chemistry","Biology","English","Computer Science","Urdu"],
+    "Grade 8":  ["Mathematics","Physics","Chemistry","Biology","English","Computer Science","Urdu"],
+    "Grade 9":  ["Mathematics","Physics","Chemistry","Biology","English","Computer Science","Urdu"],
+    "Grade 10": ["Mathematics","Physics","Chemistry","Biology","English","Computer Science","Urdu"],
+    "O Level":  ["Mathematics","Physics","Chemistry","Biology","English Language","Computer Science","Urdu"],
+    "A Level":  ["Mathematics","Physics","Chemistry","Biology","English Language","Computer Science"],
+}
+for g in ["Grade 1","Grade 2","Grade 3","Grade 4","Grade 5"]:
+    CAMBRIDGE_SUBJECTS[g] = ["Mathematics","English","Urdu","Science","Islamiyat"]
+
 # ─────────────────────────────────────────────────────────────────
-# DATA STORAGE (JSON files)
+# DATA STORAGE
 # ─────────────────────────────────────────────────────────────────
 USERS_FILE   = "users.json"
 HISTORY_FILE = "history.json"
 IMAGES_FILE  = "images.json"
+GROUPS_FILE  = "groups.json"
 
 def load_json(filepath):
-    """Load data — disk first, in-memory cache as fallback."""
     cache_key = f"_cache_{filepath}"
     try:
         if os.path.exists(filepath):
             with open(filepath, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            st.session_state[cache_key] = data  # keep in-memory copy
+            st.session_state[cache_key] = data
             return data
     except Exception:
         pass
-    # Fall back to in-memory cache (survives Streamlit soft-restarts within same session)
     return st.session_state.get(cache_key, {})
 
 def save_json(filepath, data):
-    """Save data — always update in-memory cache, then write to disk atomically."""
     cache_key = f"_cache_{filepath}"
-    st.session_state[cache_key] = data   # in-memory always works
-    # Atomic write: write to temp file then rename to avoid corruption
+    st.session_state[cache_key] = data
     tmp = filepath + ".tmp"
     try:
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
-        os.replace(tmp, filepath)          # atomic on POSIX
+        os.replace(tmp, filepath)
     except Exception:
-        try:
-            os.remove(tmp)
-        except Exception:
-            pass   # silently ignore — in-memory cache still works
+        try: os.remove(tmp)
+        except Exception: pass
 
 def hash_pw(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-DAILY_LIMITS = {"free":5, "basic":50, "premium":9999}
+# ─────────────────────────────────────────────────────────────────
+# STATS & BADGES
+# ─────────────────────────────────────────────────────────────────
+DAILY_LIMITS = {"free":10, "basic":50, "premium":9999}
 
 def init_stats():
-    return {"total":0,"Maths":0,"Physics":0,"English":0,"Urdu":0,
-            "streak":0,"lastDate":"","images":0,"essays":0,
-            "dailyQs":0,"dailyDate":"","dailyQuizzes":0}
+    return {"total":0,"Maths":0,"Physics":0,"Chemistry":0,"Biology":0,
+            "English":0,"Computer Science":0,"Urdu":0,
+            "streak":0,"lastDate":"","images":0,"quizzes_done":0,
+            "dailyQs":0,"dailyDate":""}
 
 def get_daily_used(user):
     stats = user.get("stats", {})
     today = datetime.date.today().isoformat()
-    if stats.get("dailyDate","") != today:
-        return 0
+    if stats.get("dailyDate","") != today: return 0
     return stats.get("dailyQs", 0)
 
 def check_daily_limit(user):
-    """Returns (ok, used, limit)"""
     plan  = user.get("plan","free")
-    limit = DAILY_LIMITS.get(plan, 5)
+    limit = DAILY_LIMITS.get(plan, 10)
     used  = get_daily_used(user)
     return used < limit, used, limit
 
-def bump_daily(user):
-    """Increment daily usage and total stats. Returns updated user."""
+def check_badges(user):
+    earned   = user.get("badges", [])
+    new_ones = []
+    stats    = user.get("stats", {})
+    for b in BADGES:
+        if b["id"] not in earned and b["req"](stats):
+            earned.append(b["id"])
+            new_ones.append(b)
+    user["badges"] = earned
+    return user, new_ones
+
+def bump_stats(subject_field=None, extra_field=None):
     users = load_json(USERS_FILE)
-    u = users.get(user["email"], user)
-    stats = u.get("stats", init_stats())
+    email = st.session_state.user["email"]
+    u     = users.get(email, st.session_state.user)
+    s     = u.get("stats", init_stats())
+    s["total"] = s.get("total", 0) + 1
+    if subject_field: s[subject_field] = s.get(subject_field, 0) + 1
+    if extra_field:   s[extra_field]   = s.get(extra_field, 0) + 1
     today = datetime.date.today().isoformat()
-    if stats.get("dailyDate","") != today:
-        stats["dailyQs"] = 0
-        stats["dailyDate"] = today
-    stats["dailyQs"] = stats.get("dailyQs",0) + 1
-    stats["total"]   = stats.get("total",0) + 1
-    # streak
-    yest = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
-    if stats.get("lastDate","") != today:
-        stats["streak"] = stats.get("streak",0)+1 if stats.get("lastDate","")==yest else 1
-        stats["lastDate"] = today
-    u["stats"] = stats
-    users[user["email"]] = u
+    yest  = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
+    if   s.get("lastDate","") == today: pass
+    elif s.get("lastDate","") == yest:  s["streak"] = s.get("streak",0)+1
+    else:                               s["streak"] = 1
+    s["lastDate"] = today
+    # daily counter
+    if s.get("dailyDate","") != today:
+        s["dailyQs"]  = 0
+        s["dailyDate"] = today
+    s["dailyQs"] = s.get("dailyQs",0)+1
+    u["stats"] = s
+    u, new_badges = check_badges(u)
+    users[email] = u
     save_json(USERS_FILE, users)
-    return u
+    st.session_state.user = u
+    for b in new_badges:
+        st.toast(f"🏆 Badge Earned: {b['icon']} {b['name']}!", icon="🎉")
 
 # ─────────────────────────────────────────────────────────────────
 # SESSION STATE
 # ─────────────────────────────────────────────────────────────────
 defaults = {
     "logged_in": False, "user": None, "page": "home",
-    "subject": "Maths", "level": "Class 5",
+    "subject": "Maths", "level": "Grade 6",
     "chat_messages": [], "session_id": None,
-    "quiz": None, "essay_result": "",
-    "trans_result": "", "word_of_day": None, "wod_loaded": False,
+    "quiz": None,
+    "word_of_day": None, "wod_loaded": False,
     "syl_subject": "Maths", "syl_unit": None,
+    # Syllabus selections
+    "syl_curriculum": "Cambridge",
+    "syl_grade": "Grade 8",
+    "syl_subject_name": "Mathematics",
+    "syl_custom_grade": "",
+    "syl_custom_subject": "",
+    # Friends group
+    "group_session": None,
+    "group_player_idx": 0,
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -180,9 +229,8 @@ for k, v in defaults.items():
 # ─────────────────────────────────────────────────────────────────
 @st.cache_resource
 def get_client():
-    key = st.secrets.get("ANTHROPIC_API_KEY", "") or os.environ.get("ANTHROPIC_API_KEY", "")
-    if not key:
-        return None
+    key = st.secrets.get("ANTHROPIC_API_KEY","") or os.environ.get("ANTHROPIC_API_KEY","")
+    if not key: return None
     return Anthropic(api_key=key)
 
 client = get_client()
@@ -202,7 +250,6 @@ def call_ai(messages, system, max_tokens=1200):
         return f"⚠️ Error: {e}"
 
 def call_ai_svg(messages, system):
-    """Use a higher token limit for SVG generation"""
     if not client:
         return "⚠️ API key not configured."
     try:
@@ -217,115 +264,129 @@ def call_ai_svg(messages, system):
         return f"ERROR: {e}"
 
 # ─────────────────────────────────────────────────────────────────
-# BADGES & STATS
-# ─────────────────────────────────────────────────────────────────
-def check_badges(user):
-    earned = user.get("badges", [])
-    new_ones = []
-    stats = user.get("stats", {})
-    for b in BADGES:
-        if b["id"] not in earned and b["req"](stats):
-            earned.append(b["id"])
-            new_ones.append(b)
-    user["badges"] = earned
-    return user, new_ones
-
-def bump_stats(subject_field=None, extra_field=None):
-    users = load_json(USERS_FILE)
-    email = st.session_state.user["email"]
-    u = users.get(email, st.session_state.user)
-    s = u.get("stats", init_stats())
-    s["total"] = s.get("total", 0) + 1
-    if subject_field:
-        s[subject_field] = s.get(subject_field, 0) + 1
-    if extra_field:
-        s[extra_field] = s.get(extra_field, 0) + 1
-    today = datetime.date.today().isoformat()
-    yest  = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
-    if s.get("lastDate", "") == today:
-        pass
-    elif s.get("lastDate", "") == yest:
-        s["streak"] = s.get("streak", 0) + 1
-    else:
-        s["streak"] = 1
-    s["lastDate"] = today
-    u["stats"] = s
-    u, new_badges = check_badges(u)
-    users[email] = u
-    save_json(USERS_FILE, users)
-    st.session_state.user = u
-    for b in new_badges:
-        st.toast(f"🏆 Badge Earned: {b['icon']} {b['name']}!", icon="🎉")
-
-# ─────────────────────────────────────────────────────────────────
-# CSS
+# CSS — Colorful AI-style design with full text visibility
 # ─────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@600;700;800&display=swap');
 html,body,[class*="css"]{ font-family:'Nunito',sans-serif !important; }
-.main .block-container{ padding-top:0.5rem; padding-bottom:3rem; max-width:860px; padding-left:1rem; padding-right:1rem; }
+.main .block-container{
+  padding-top:0.5rem; padding-bottom:3rem;
+  max-width:900px; padding-left:1rem; padding-right:1rem;
+}
+
+/* ── Mobile ── */
 @media (max-width:768px){
-  /* More breathing room on small screens */
   .main .block-container{ padding-left:0.4rem !important; padding-right:0.4rem !important; }
-  /* Bigger tap targets for buttons */
   .stButton>button{ min-height:48px !important; font-size:15px !important; }
-  /* Chat bubbles narrower margin on mobile */
   .msg-user{ margin-left:8px !important; }
-  .msg-bot{ margin-right:8px !important; }
-  /* Stat numbers slightly smaller */
+  .msg-bot{  margin-right:8px !important; }
   .stat-num{ font-size:22px !important; }
-  /* Word card padding tighter */
-  .word-card{ padding:14px 14px !important; }
-  /* Columns stack better — reduce column padding */
   div[data-testid="column"]{ padding:2px !important; }
-  /* Inputs full width, comfortable thumb size */
   .stTextInput>div>div>input{ font-size:16px !important; padding:12px !important; }
   .stTextArea>div>div>textarea{ font-size:16px !important; }
-  /* Selectbox larger on mobile */
-  [data-testid="stSelectbox"]>div>div{ min-height:44px !important; }
-  /* Forms easier to tap */
-  .stForm{ padding:8px !important; }
 }
 #MainMenu,footer,header{ visibility:hidden; }
 
 /* ── Chat bubbles ── */
-.msg-user{ background:linear-gradient(135deg,#E8472A,#C1391F); color:#fff;
+.msg-user{
+  background:linear-gradient(135deg,#E8472A,#C1391F); color:#fff;
   border-radius:18px 18px 4px 18px; padding:12px 16px;
-  margin:4px 0 4px 60px; font-size:14px; line-height:1.65; }
-.msg-bot{ background:#fff; color:#1A1A2E;
+  margin:4px 0 4px 60px; font-size:14px; line-height:1.65;
+}
+.msg-bot{
+  background:#fff; color:#1A1A2E;
   border-radius:18px 18px 18px 4px; padding:12px 16px;
   margin:4px 60px 4px 0; font-size:14px; line-height:1.7;
-  box-shadow:0 2px 10px rgba(0,0,0,0.07); border:1px solid #F0F0F5; }
+  box-shadow:0 2px 10px rgba(0,0,0,0.07); border:1px solid #F0F0F5;
+}
 .msg-lbl{ font-size:11px; color:#bbb; margin-bottom:2px; }
 .msg-lbl-r{ text-align:right; }
 
-/* ── Cards ── */
-.stat-card{ background:#fff; border-radius:14px; padding:16px; text-align:center;
-  box-shadow:0 2px 10px rgba(0,0,0,0.05); border:1px solid #F0F0F5; }
+/* ── Generic cards ── */
+.stat-card{
+  background:#fff; border-radius:14px; padding:16px; text-align:center;
+  box-shadow:0 2px 10px rgba(0,0,0,0.05); border:1px solid #F0F0F5;
+}
 .stat-num{ font-size:28px; font-weight:900; color:#1A1A2E; }
 .stat-lbl{ font-size:11px; color:#999; margin-top:3px; }
-.badge-card{ background:linear-gradient(135deg,#FFF8E7,#FFFBF0);
-  border:1.5px solid #F5CC4A; border-radius:12px; padding:12px 10px; text-align:center; }
+
+/* ── Feature cards (colorful) ── */
+.feature-card{
+  background:#fff; border-radius:16px; padding:18px 20px;
+  border-left:5px solid; box-shadow:0 3px 14px rgba(0,0,0,0.07);
+  margin-bottom:10px; color:#1A1A2E;
+}
+.quiz-option-card{
+  background:#F8F9FF; border:2px solid #E0E7FF; border-radius:12px;
+  padding:12px 16px; margin-bottom:8px; cursor:pointer; transition:all .18s;
+  color:#1A1A2E;
+}
+.quiz-option-card:hover{ border-color:#6366F1; background:#EEF2FF; }
+
+/* ── Badge cards ── */
+.badge-card{
+  background:linear-gradient(135deg,#FFF8E7,#FFFBF0);
+  border:1.5px solid #F5CC4A; border-radius:12px;
+  padding:12px 10px; text-align:center;
+}
 .badge-locked{ opacity:0.35; filter:grayscale(1); }
 .badge-icon{ font-size:28px; display:block; }
 .badge-name{ font-size:12px; font-weight:800; color:#A07820; margin-top:4px; }
 .badge-desc{ font-size:10px; color:#bbb; margin-top:2px; }
+
+/* ── Progress bars ── */
 .prog-bar{ background:#F0F0F5; border-radius:99px; height:10px; overflow:hidden; margin-bottom:4px; }
 .prog-fill{ height:100%; border-radius:99px; transition:width .4s; }
-.word-card{ background:linear-gradient(135deg,#1A1A2E,#2D2D4A);
-  border-radius:16px; padding:18px 20px; margin-bottom:14px; color:#fff; }
-.reminder{ background:#FFFBF0; border:1.5px solid #F5CC4A;
-  border-radius:12px; padding:12px 16px; margin-bottom:14px; font-size:13px; }
-.hist-card{ background:#fff; border-radius:14px; padding:14px 16px;
-  box-shadow:0 2px 10px rgba(0,0,0,0.05); border:1px solid #F0F0F5; margin-bottom:10px; }
 
-/* ══════════════════════════════════════════════════════
-   SIDEBAR — dark background + ALL text forced white
-   ══════════════════════════════════════════════════════ */
-[data-testid="stSidebar"] { background:#0F0F1A !important; }
+/* ── Word card ── */
+.word-card{
+  background:linear-gradient(135deg,#1A1A2E,#2D2D4A);
+  border-radius:16px; padding:18px 20px; margin-bottom:14px; color:#fff;
+}
+/* ── Misc ── */
+.reminder{ background:#FFFBF0; border:1.5px solid #F5CC4A; border-radius:12px; padding:12px 16px; margin-bottom:14px; font-size:13px; color:#1A1A2E; }
+.hist-card{ background:#fff; border-radius:14px; padding:14px 16px; box-shadow:0 2px 10px rgba(0,0,0,0.05); border:1px solid #F0F0F5; margin-bottom:10px; }
 
-/* every text node inside sidebar */
+/* ── Section headers ── */
+.section-header{
+  background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+  color:#fff; border-radius:14px; padding:14px 20px; margin-bottom:18px;
+  font-family:'Baloo 2',cursive; font-size:20px; font-weight:800;
+}
+.section-header.orange{ background:linear-gradient(135deg,#E8472A,#F59E0B); }
+.section-header.green{  background:linear-gradient(135deg,#059669,#10B981); }
+.section-header.blue{   background:linear-gradient(135deg,#2563EB,#06B6D4); }
+.section-header.purple{ background:linear-gradient(135deg,#7C3AED,#A78BFA); }
+
+/* ── Leaderboard ── */
+.lb-row{
+  display:flex;align-items:center;gap:12px;padding:12px 16px;
+  background:#fff;border-radius:12px;margin-bottom:8px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);border:1px solid #F0F0F5;
+  color:#1A1A2E;
+}
+.lb-rank{ font-size:22px;font-weight:900;width:32px;text-align:center; }
+.lb-name{ flex:1;font-weight:700;font-size:14px; }
+.lb-score{ font-weight:900;font-size:18px;color:#E8472A; }
+
+/* ── Syllabus step ── */
+.syl-step{
+  background:linear-gradient(135deg,#EFF6FF,#F0FDF4);
+  border-radius:14px;padding:16px 18px;margin-bottom:14px;
+  border:1.5px solid #E0F2FE; color:#1A1A2E;
+}
+.syl-step-title{
+  font-size:12px;font-weight:800;color:#0369A1;
+  text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;
+}
+.topic-chip{
+  display:inline-block;border-radius:20px;padding:4px 12px;
+  font-size:11px;font-weight:700;margin:3px 3px 3px 0;
+}
+
+/* ══ SIDEBAR ══ */
+[data-testid="stSidebar"]{ background:#0F0F1A !important; }
 [data-testid="stSidebar"] p,
 [data-testid="stSidebar"] span,
 [data-testid="stSidebar"] div,
@@ -334,131 +395,65 @@ html,body,[class*="css"]{ font-family:'Nunito',sans-serif !important; }
 [data-testid="stSidebar"] h2,
 [data-testid="stSidebar"] h3,
 [data-testid="stSidebar"] li,
-[data-testid="stSidebar"] a { color:#ffffff !important; }
+[data-testid="stSidebar"] a{ color:#ffffff !important; }
 
-/* ── Sidebar nav buttons ── */
-[data-testid="stSidebar"] .stButton > button {
-  background: rgba(255,255,255,0.08) !important;
-  border: 1px solid rgba(255,255,255,0.13) !important;
-  color: #ffffff !important;
-  font-weight: 700 !important;
-  font-size: 14px !important;
-  text-align: left !important;
-  padding: 11px 16px !important;
-  border-radius: 11px !important;
-  margin-bottom: 4px !important;
-  width: 100% !important;
-  transition: all 0.18s ease !important;
-  letter-spacing: 0.2px !important;
+[data-testid="stSidebar"] .stButton > button{
+  background:rgba(255,255,255,0.08) !important;
+  border:1px solid rgba(255,255,255,0.13) !important;
+  color:#ffffff !important; font-weight:700 !important;
+  font-size:14px !important; text-align:left !important;
+  padding:11px 16px !important; border-radius:11px !important;
+  margin-bottom:4px !important; width:100% !important;
+  transition:all 0.18s ease !important;
 }
-[data-testid="stSidebar"] .stButton > button:hover {
-  background: rgba(255,255,255,0.16) !important;
-  color: #ffffff !important;
-  border-color: rgba(255,255,255,0.25) !important;
+[data-testid="stSidebar"] .stButton > button:hover{
+  background:rgba(255,255,255,0.16) !important;
+  border-color:rgba(255,255,255,0.25) !important;
 }
-/* Active page — primary type */
-[data-testid="stSidebar"] .stButton > button[kind="primary"] {
-  background: linear-gradient(135deg,#E8472A 0%,#C1391F 100%) !important;
-  border: none !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 16px rgba(232,71,42,0.45) !important;
-  font-weight: 800 !important;
-}
-[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
-  background: linear-gradient(135deg,#FF5533 0%,#D14020 100%) !important;
-  box-shadow: 0 6px 20px rgba(232,71,42,0.55) !important;
-}
-/* Logout button */
-[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:last-of-type {
-  background: rgba(255,80,80,0.12) !important;
-  border: 1px solid rgba(255,80,80,0.35) !important;
-  color: #ff7777 !important;
-  margin-top: 8px !important;
+[data-testid="stSidebar"] .stButton > button[kind="primary"]{
+  background:linear-gradient(135deg,#E8472A 0%,#C1391F 100%) !important;
+  border:none !important; box-shadow:0 4px 16px rgba(232,71,42,0.45) !important;
+  font-weight:800 !important;
 }
 
-/* ══════════════════════════════════════════════════════
-   SELECTBOX / DROPDOWN — fix visibility everywhere
-   ══════════════════════════════════════════════════════ */
-
-/* The visible selected value box */
-[data-testid="stSelectbox"] > div > div {
-  background: #ffffff !important;
-  border: 2px solid #E5E7EB !important;
-  border-radius: 10px !important;
-  color: #1A1A2E !important;
+/* ══ INPUTS & SELECTS — always dark text on white ══ */
+[data-testid="stSelectbox"] > div > div{
+  background:#ffffff !important; border:2px solid #E5E7EB !important;
+  border-radius:10px !important; color:#1A1A2E !important;
 }
-[data-testid="stSelectbox"] > div > div > div {
-  color: #1A1A2E !important;
-  font-weight: 600 !important;
+[data-testid="stSelectbox"] > div > div > div{ color:#1A1A2E !important; font-weight:600 !important; }
+[data-baseweb="popover"],[data-baseweb="menu"],[role="listbox"]{
+  background:#ffffff !important; border:1.5px solid #E5E7EB !important;
+  border-radius:12px !important; box-shadow:0 8px 32px rgba(0,0,0,0.15) !important;
 }
+[role="option"]{ color:#1A1A2E !important; background:#ffffff !important; font-size:14px !important; padding:10px 14px !important; }
+[role="option"]:hover,[role="option"][aria-selected="true"]{ background:#FFF1EE !important; color:#E8472A !important; font-weight:700 !important; }
 
-/* The dropdown list panel */
-[data-baseweb="popover"],
-[data-baseweb="menu"],
-[role="listbox"] {
-  background: #ffffff !important;
-  border: 1.5px solid #E5E7EB !important;
-  border-radius: 12px !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.15) !important;
+.stTextInput>div>div>input,
+.stTextArea>div>div>textarea{
+  border-radius:10px !important; border:2px solid #E5E7EB !important;
+  color:#1A1A2E !important; background:#ffffff !important;
+}
+.stTextInput>div>div>input:focus,
+.stTextArea>div>div>textarea:focus{
+  border-color:#E8472A !important; box-shadow:0 0 0 3px rgba(232,71,42,0.1) !important;
 }
 
-/* Individual dropdown options */
-[role="option"] {
-  color: #1A1A2E !important;
-  background: #ffffff !important;
-  font-family: 'Nunito', sans-serif !important;
-  font-size: 14px !important;
-  padding: 10px 14px !important;
-}
-[role="option"]:hover,
-[role="option"][aria-selected="true"] {
-  background: #FFF1EE !important;
-  color: #E8472A !important;
-  font-weight: 700 !important;
-}
+/* ── Radio/checkbox labels ── */
+.stRadio label,[data-testid="stRadio"] label{ color:#1A1A2E !important; }
 
-/* Sidebar selectboxes — keep dark theme */
-[data-testid="stSidebar"] [data-testid="stSelectbox"] > div > div {
-  background: rgba(255,255,255,0.1) !important;
-  border-color: rgba(255,255,255,0.2) !important;
-  color: #fff !important;
-}
-[data-testid="stSidebar"] [data-testid="stSelectbox"] > div > div > div {
-  color: #fff !important;
-}
-
-/* ── Other inputs ── */
-.stTextInput > div > div > input,
-.stTextArea > div > div > textarea {
-  border-radius: 10px !important;
-  font-family: 'Nunito', sans-serif !important;
-  border: 2px solid #E5E7EB !important;
-  color: #1A1A2E !important;
-  background: #ffffff !important;
-}
-.stTextInput > div > div > input:focus,
-.stTextArea > div > div > textarea:focus {
-  border-color: #E8472A !important;
-  box-shadow: 0 0 0 3px rgba(232,71,42,0.15) !important;
-}
-
-/* ── Main area buttons ── */
-.main .stButton > button {
-  border-radius: 12px !important;
-  font-family: 'Nunito', sans-serif !important;
-  font-weight: 700 !important;
-}
-
-/* ── Column padding ── */
-div[data-testid="column"] { padding: 4px !important; }
+/* ── st.metric text ── */
+[data-testid="stMetricValue"]{ color:#1A1A2E !important; }
+[data-testid="stMetricLabel"]{ color:#555 !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ═════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────
 # AUTH PAGE
-# ═════════════════════════════════════════════════════════════════
+# ─────────────────────────────────────────────────────────────────
 def page_auth():
-    _, col, _ = st.columns([1, 2, 1])
+    _, col, _ = st.columns([1,2,1])
     with col:
         st.markdown("""
         <div style='text-align:center;padding:24px 0 16px'>
@@ -466,10 +461,10 @@ def page_auth():
             <h1 style='font-family:"Baloo 2",cursive;font-size:28px;font-weight:800;
                 color:#0F0F1A;margin:6px 0 2px'>ZM Academy</h1>
             <p style='color:#999;font-size:13px'>🇵🇰 Pakistan's AI-Powered Study App</p>
-            <p style='color:#bbb;font-size:12px'>Classes 1–8 • O Level • A Level</p>
+            <p style='color:#bbb;font-size:12px'>Grades 1–10 • O Level • A Level</p>
         </div>""", unsafe_allow_html=True)
 
-        tab_login, tab_signup, tab_forgot = st.tabs(["🔑  Login", "✨  Sign Up", "🔓  Forgot Password"])
+        tab_login, tab_signup, tab_forgot = st.tabs(["🔑  Login","✨  Sign Up","🔓  Forgot Password"])
 
         with tab_login:
             with st.form("login_form"):
@@ -479,216 +474,151 @@ def page_auth():
                     users = load_json(USERS_FILE)
                     if email in users and users[email]["password"] == hash_pw(password):
                         users[email]["last_login"] = datetime.date.today().isoformat()
+                        if "plan" not in users[email]: users[email]["plan"] = "free"
                         save_json(USERS_FILE, users)
-                        # Ensure plan field exists for old accounts
-                        if "plan" not in users[email]:
-                            users[email]["plan"] = "free"
-                            save_json(USERS_FILE, users)
                         st.session_state.logged_in = True
-                        st.session_state.user = users[email]
-                        st.success("Welcome back! 🎉")
-                        time.sleep(0.5)
-                        st.rerun()
+                        st.session_state.user      = users[email]
+                        st.success("Welcome back! 🎉"); time.sleep(0.5); st.rerun()
                     else:
                         st.error("⚠️ Incorrect email or password.")
 
         with tab_signup:
             with st.form("signup_form"):
-                name    = st.text_input("👤 Full Name", placeholder="Ahmed Khan")
-                email2  = st.text_input("📧 Email", placeholder="you@example.com")
-                role    = st.selectbox("👥 I am a", ["Student 🎒", "Parent 👨‍👩‍👦"])
-                avatar  = st.selectbox("🧑 Choose Avatar", list(AVATARS.keys()))
-                grade   = st.selectbox("🏫 Class", ["-- Select --"] + LEVELS)
-                pw      = st.text_input("🔒 Password", type="password", placeholder="Min 6 characters")
-                pw2     = st.text_input("🔒 Confirm Password", type="password")
+                name   = st.text_input("👤 Full Name", placeholder="Ahmed Khan")
+                email2 = st.text_input("📧 Email", placeholder="you@example.com")
+                role   = st.selectbox("👥 I am a", ["Student 🎒","Parent 👨‍👩‍👦"])
+                avatar = st.selectbox("🧑 Choose Avatar", list(AVATARS.keys()))
+                grade  = st.selectbox("🏫 Grade", ["-- Select --"]+LEVELS)
+                pw     = st.text_input("🔒 Password", type="password", placeholder="Min 6 characters")
+                pw2    = st.text_input("🔒 Confirm Password", type="password")
                 if st.form_submit_button("Create Account →", use_container_width=True, type="primary"):
                     users = load_json(USERS_FILE)
-                    if not name or not email2 or not pw:
-                        st.error("Please fill all required fields.")
-                    elif len(pw) < 6:
-                        st.error("Password must be at least 6 characters.")
-                    elif pw != pw2:
-                        st.error("Passwords don't match.")
-                    elif email2 in users:
-                        st.error("Email already registered.")
+                    if not name or not email2 or not pw:   st.error("Please fill all required fields.")
+                    elif len(pw) < 6:                      st.error("Password must be at least 6 characters.")
+                    elif pw != pw2:                        st.error("Passwords don't match.")
+                    elif email2 in users:                  st.error("Email already registered.")
                     else:
                         new_user = {
                             "name": name.strip(), "email": email2.strip(),
                             "password": hash_pw(pw),
                             "role": "student" if "Student" in role else "parent",
                             "avatar": AVATARS[avatar],
-                            "grade": grade if grade != "-- Select --" else "",
+                            "grade": grade if grade != "-- Select --" else "Grade 6",
                             "joined": datetime.date.today().isoformat(),
-                            "plan": "free",
-                            "stats": init_stats(), "badges": [],
-                            "is_new": True
+                            "plan": "free", "stats": init_stats(), "badges": [], "is_new": True
                         }
                         users[email2] = new_user
                         save_json(USERS_FILE, users)
                         st.session_state.logged_in = True
                         st.session_state.user = new_user
-                        st.success("Account created! Welcome aboard 🎉")
-                        time.sleep(0.5)
-                        st.rerun()
+                        st.success("Account created! Welcome 🎉"); time.sleep(0.5); st.rerun()
 
         with tab_forgot:
             st.markdown("""
-            <div style='background:#EFF4FF;border-radius:12px;padding:14px 16px;margin-bottom:16px;
-                font-size:13px;color:#1B4FD8'>
+            <div style='background:#EFF4FF;border-radius:12px;padding:14px;
+                font-size:13px;color:#1B4FD8;margin-bottom:14px'>
                 🔒 Enter your email and a new password to reset your account.
             </div>""", unsafe_allow_html=True)
             with st.form("forgot_form"):
                 fp_email = st.text_input("📧 Your registered email")
-                fp_new   = st.text_input("🔒 New Password", type="password", placeholder="Min 6 characters")
+                fp_new   = st.text_input("🔒 New Password", type="password")
                 fp_new2  = st.text_input("🔒 Confirm New Password", type="password")
                 if st.form_submit_button("Reset Password →", use_container_width=True, type="primary"):
                     users = load_json(USERS_FILE)
-                    if fp_email not in users:
-                        st.error("⚠️ Email not found. Please check or sign up.")
-                    elif len(fp_new) < 6:
-                        st.error("Password must be at least 6 characters.")
-                    elif fp_new != fp_new2:
-                        st.error("Passwords don't match.")
+                    if fp_email not in users:    st.error("⚠️ Email not found.")
+                    elif len(fp_new) < 6:        st.error("Min 6 characters.")
+                    elif fp_new != fp_new2:      st.error("Passwords don't match.")
                     else:
                         users[fp_email]["password"] = hash_pw(fp_new)
                         save_json(USERS_FILE, users)
-                        st.success("✅ Password reset! You can now login with your new password.")
+                        st.success("✅ Password reset! You can now login.")
+        st.markdown("<p style='text-align:center;color:#ccc;font-size:11px;margin-top:14px'>Free to use • Pakistan National Curriculum</p>", unsafe_allow_html=True)
 
-        st.markdown("<p style='text-align:center;color:#ccc;font-size:11px;margin-top:14px'>"
-                    "Free to use • Pakistan National Curriculum</p>", unsafe_allow_html=True)
 
-# ═════════════════════════════════════════════════════════════════
+# ─────────────────────────────────────────────────────────────────
 # SIDEBAR
-# ═════════════════════════════════════════════════════════════════
+# ─────────────────────────────────────────────────────────────────
 def render_sidebar():
     u = st.session_state.user
     with st.sidebar:
-        # ── User profile card ──────────────────────────────────
         st.markdown(f"""
-        <div style='padding:16px 10px 14px;border-bottom:1px solid rgba(255,255,255,.15);
-            margin-bottom:12px'>
+        <div style='padding:16px 10px 14px;border-bottom:1px solid rgba(255,255,255,.15);margin-bottom:12px'>
             <div style='font-size:52px;line-height:1;margin-bottom:10px;text-align:center'>
                 {u.get("avatar","👦")}
             </div>
-            <div style='font-weight:800;font-size:16px;color:#ffffff;text-align:center'>
-                {u["name"]}
-            </div>
+            <div style='font-weight:800;font-size:16px;color:#fff;text-align:center'>{u["name"]}</div>
             <div style='font-size:12px;color:rgba(255,255,255,0.6);margin-top:3px;text-align:center'>
                 {"🎒 Student" if u.get("role")=="student" else "👨‍👩‍👦 Parent"}
                 {"&nbsp;•&nbsp;" + u.get("grade","") if u.get("grade","") else ""}
             </div>
             <div style='display:flex;justify-content:center;gap:16px;margin-top:10px'>
                 <div style='text-align:center'>
-                    <div style='font-size:18px;font-weight:900;color:#FFD700'>
-                        {u.get("stats",{}).get("total",0)}
-                    </div>
+                    <div style='font-size:18px;font-weight:900;color:#FFD700'>{u.get("stats",{}).get("total",0)}</div>
                     <div style='font-size:10px;color:rgba(255,255,255,0.5)'>Questions</div>
                 </div>
                 <div style='text-align:center'>
-                    <div style='font-size:18px;font-weight:900;color:#FFD700'>
-                        {len(u.get("badges",[]))}
-                    </div>
+                    <div style='font-size:18px;font-weight:900;color:#FFD700'>{len(u.get("badges",[]))}</div>
                     <div style='font-size:10px;color:rgba(255,255,255,0.5)'>Badges</div>
                 </div>
                 <div style='text-align:center'>
-                    <div style='font-size:18px;font-weight:900;color:#FFD700'>
-                        {u.get("stats",{}).get("streak",0)}
-                    </div>
+                    <div style='font-size:18px;font-weight:900;color:#FFD700'>{u.get("stats",{}).get("streak",0)}</div>
                     <div style='font-size:10px;color:rgba(255,255,255,0.5)'>Streak</div>
                 </div>
             </div>
         </div>""", unsafe_allow_html=True)
 
-        # ── Navigation buttons ────────────────────────────────
         nav = [
-            ("🏠", "Home",            "home"),
-            ("💬", "Chat Tutor",      "chat"),
-            ("📚", "My Syllabus",     "syllabus"),
-            ("📝", "Practice Quiz",   "quiz"),
-            ("🎨", "Image Generator", "image"),
-            ("✏️", "Essay Helper",    "essay"),
-            ("🔧", "Study Tools",     "tools"),
-            ("📊", "My Progress",     "progress"),
-            ("🕐", "Chat History",    "history"),
-            ("🏆", "Badges",          "badges"),
-            ("👤", "Profile",         "profile"),
+            ("🏠","Home",            "home"),
+            ("💬","Chat Tutor",      "chat"),
+            ("📚","My Syllabus",     "syllabus"),
+            ("📝","Practice Quiz",   "quiz"),
+            ("👥","Friends Quiz",    "friends"),
+            ("🎨","Image Generator", "image"),
+            ("📊","My Progress",     "progress"),
+            ("🕐","Chat History",    "history"),
+            ("🏆","Badges",          "badges"),
+            ("👤","Profile",         "profile"),
         ]
-
         cur = st.session_state.page
         for icon, label, key in nav:
             btn_type = "primary" if cur == key else "secondary"
             if st.button(f"{icon}  {label}", key=f"nav_{key}",
                          use_container_width=True, type=btn_type):
-                st.session_state.page = key
-                st.rerun()
+                st.session_state.page = key; st.rerun()
 
-        st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
-
-        # FIX 5 — WhatsApp share
-        wa_text = "📚 I'm learning with ZM Academy — Pakistan's free AI tutor! Try it: https://zmacademy2026.streamlit.app"
-        wa_link = f"https://wa.me/?text={wa_text.replace(' ','%20')}"
-        st.markdown(f"""
-        <a href="{wa_link}" target="_blank"
-           style='display:block;text-align:center;padding:9px 12px;background:#25D366;
-           border-radius:10px;color:#fff !important;font-weight:700;font-size:13px;
-           text-decoration:none;margin-bottom:6px'>
-           📱 Share on WhatsApp
-        </a>""", unsafe_allow_html=True)
-
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
         if st.button("🚪  Logout", key="logout_btn", use_container_width=True):
-            for k in list(st.session_state.keys()):
-                del st.session_state[k]
+            for k in list(st.session_state.keys()): del st.session_state[k]
             st.rerun()
 
-# ═════════════════════════════════════════════════════════════════
-# HOME
-# ═════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────
+# HOME PAGE
+# ─────────────────────────────────────────────────────────────────
 def page_home():
     u   = st.session_state.user
     sub = st.session_state.subject
-    col = SUBJECTS[sub]["color"]
+    col = SUBJECTS.get(sub, SUBJECTS["Maths"])["color"]
     h   = datetime.datetime.now().hour
     greet = "Good morning" if h < 12 else "Good afternoon" if h < 17 else "Good evening"
 
-    # ── FIX 6: Proper 3-step onboarding for new users ──────────
+    # ── Onboarding for new users ──────────────────────────────
     if u.get("is_new") and not st.session_state.get("onboarding_done"):
         step = st.session_state.get("onboard_step", 1)
-
         steps = [
-            {
-                "emoji": "🎓",
-                "title": f"Welcome to ZM Academy, {u['name'].split()[0]}! 🎉",
-                "body": "Pakistan's <b>AI-powered study app</b> for Classes 1–8, O Level & A Level.<br><br>"
-                        "Your personal AI tutor <b>Ustad</b> is ready to help you study smarter — "
-                        "step-by-step answers, quizzes, diagrams and more!",
-                "btn": "Next →"
-            },
-            {
-                "emoji": "💬",
-                "title": "How to use ZM Academy",
-                "body": "<b>💬 Chat Tutor</b> — Ask any question in Maths, Physics, English or Urdu<br><br>"
-                        "<b>📝 Practice Quiz</b> — Auto-generated MCQs with explanations<br><br>"
-                        "<b>📚 My Syllabus</b> — Full Cambridge curriculum for your class<br><br>"
-                        "<b>🎨 Image Generator</b> — AI draws educational diagrams",
-                "btn": "Next →"
-            },
-            {
-                "emoji": "🏆",
-                "title": "Earn Badges & Track Progress",
-                "body": "Every question you ask earns points and builds your streak. 🔥<br><br>"
-                        "Unlock <b>11 achievement badges</b> as you study different subjects.<br><br>"
-                        "Your progress is saved automatically — come back every day!",
-                "btn": "🚀 Start Learning!"
-            },
+            {"emoji":"🎓","title":f"Welcome to ZM Academy, {u['name'].split()[0]}! 🎉",
+             "body":"Pakistan's <b>AI-powered study app</b> for Grades 1–10, O Level & A Level.<br><br>Your personal AI tutor <b>Ustad</b> is here to help!","btn":"Next →"},
+            {"emoji":"💬","title":"Everything you need to study",
+             "body":"<b>💬 Chat Tutor</b> — Ask any question in any subject<br><br><b>📝 Practice Quiz</b> — Custom quizzes with difficulty levels<br><br><b>📚 My Syllabus</b> — Full Cambridge curriculum<br><br><b>🎨 Image Generator</b> — AI draws educational diagrams","btn":"Next →"},
+            {"emoji":"🏆","title":"Earn Badges & Challenge Friends",
+             "body":"Earn <b>11 achievement badges</b> as you study.<br><br>Use <b>👥 Friends Quiz</b> to compete with up to 3 friends on the same quiz — and see who tops the leaderboard!","btn":"🚀 Start Learning!"},
         ]
-
-        s = steps[step - 1]
-        _, col, _ = st.columns([1, 2, 1])
-        with col:
-            # Progress dots
+        s = steps[step-1]
+        _, c, _ = st.columns([1,2,1])
+        with c:
             dots = "".join(
                 f"<span style='display:inline-block;width:10px;height:10px;border-radius:50%;"
-                f"background:{'#E8472A' if i + 1 == step else 'rgba(255,255,255,0.35)'};margin:0 4px'></span>"
+                f"background:{'#E8472A' if i+1==step else 'rgba(255,255,255,0.3)'};margin:0 4px'></span>"
                 for i in range(3)
             )
             st.markdown(f"""
@@ -696,42 +626,32 @@ def page_home():
                 padding:32px 28px;color:#fff;text-align:center;margin-top:20px'>
                 <div style='margin-bottom:12px'>{dots}</div>
                 <div style='font-size:60px;margin-bottom:16px'>{s['emoji']}</div>
-                <div style='font-family:"Baloo 2",cursive;font-size:22px;font-weight:900;margin-bottom:14px'>
-                    {s['title']}</div>
-                <div style='font-size:14px;opacity:.88;line-height:1.8;margin-bottom:8px'>
-                    {s['body']}</div>
+                <div style='font-family:"Baloo 2",cursive;font-size:22px;font-weight:900;margin-bottom:14px'>{s['title']}</div>
+                <div style='font-size:14px;opacity:.88;line-height:1.8'>{s['body']}</div>
             </div>""", unsafe_allow_html=True)
-
             st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
-
             if st.button(s["btn"], use_container_width=True, type="primary", key=f"ob_{step}"):
                 if step < 3:
-                    st.session_state.onboard_step = step + 1
-                    st.rerun()
+                    st.session_state.onboard_step = step+1; st.rerun()
                 else:
                     users = load_json(USERS_FILE)
                     if u["email"] in users:
                         users[u["email"]]["is_new"] = False
                         save_json(USERS_FILE, users)
                         st.session_state.user = users[u["email"]]
-                    st.session_state.onboarding_done = True
-                    st.rerun()
-
-            if step > 1:
-                if st.button("← Back", use_container_width=True, key=f"ob_back_{step}"):
-                    st.session_state.onboard_step = step - 1
-                    st.rerun()
-
+                    st.session_state.onboarding_done = True; st.rerun()
+            if step > 1 and st.button("← Back", key=f"ob_back_{step}", use_container_width=True):
+                st.session_state.onboard_step = step-1; st.rerun()
             if st.button("Skip intro", key="skip_ob", use_container_width=True):
                 users = load_json(USERS_FILE)
                 if u["email"] in users:
                     users[u["email"]]["is_new"] = False
                     save_json(USERS_FILE, users)
                     st.session_state.user = users[u["email"]]
-                st.session_state.onboarding_done = True
-                st.rerun()
-        return  # show ONLY onboarding until dismissed
+                st.session_state.onboarding_done = True; st.rerun()
+        return
 
+    # ── Hero banner ───────────────────────────────────────────
     st.markdown(f"""
     <div style='background:linear-gradient(135deg,{col}dd,{col}88);border-radius:18px;
         padding:20px 22px;margin-bottom:16px;color:#fff'>
@@ -747,30 +667,65 @@ def page_home():
     </div>""", unsafe_allow_html=True)
 
     stats = u.get("stats", {})
-    if stats.get("lastDate", "") != datetime.date.today().isoformat():
-        st.markdown("<div class='reminder'>🔔 <b>Daily Reminder:</b> You haven't studied today! "
-                    "Even 15 minutes makes a difference 💪</div>", unsafe_allow_html=True)
+    if stats.get("lastDate","") != datetime.date.today().isoformat():
+        st.markdown("<div class='reminder'>🔔 <b>Daily Reminder:</b> You haven't studied today! Even 15 minutes makes a difference 💪</div>", unsafe_allow_html=True)
 
-    # Word of the Day
+    # ── Stats row ─────────────────────────────────────────────
+    c1,c2,c3,c4 = st.columns(4)
+    for col_w, icon, val, lbl in [
+        (c1,"❓", stats.get("total",0), "Questions"),
+        (c2,"🔥", f"{stats.get('streak',0)}d", "Streak"),
+        (c3,"🏆", len(u.get("badges",[])), "Badges"),
+        (c4,"📅", stats.get("quizzes_done",0), "Quizzes"),
+    ]:
+        with col_w:
+            st.markdown(f"""
+            <div class='stat-card'>
+                <div style='font-size:22px'>{icon}</div>
+                <div class='stat-num'>{val}</div>
+                <div class='stat-lbl'>{lbl}</div>
+            </div>""", unsafe_allow_html=True)
+
+    st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
+
+    # ── Quick access features ─────────────────────────────────
+    st.markdown("### 🚀 Quick Access")
+    fa, fb, fc, fd = st.columns(4)
+    for col_w, icon, label, page, color in [
+        (fa,"💬","Chat Tutor",    "chat",    "#E8472A"),
+        (fb,"📝","Practice Quiz", "quiz",    "#2563EB"),
+        (fc,"👥","Friends Quiz",  "friends", "#7C3AED"),
+        (fd,"🎨","Image Gen",     "image",   "#059669"),
+    ]:
+        with col_w:
+            st.markdown(f"""
+            <div style='background:{color}18;border:2px solid {color}44;border-radius:14px;
+                padding:16px 10px;text-align:center;cursor:pointer'>
+                <div style='font-size:28px;margin-bottom:6px'>{icon}</div>
+                <div style='font-size:12px;font-weight:800;color:{color}'>{label}</div>
+            </div>""", unsafe_allow_html=True)
+            if st.button(f"Open {label}", key=f"home_go_{page}", use_container_width=True):
+                st.session_state.page = page; st.rerun()
+
+    # ── Word of the Day ───────────────────────────────────────
     if not st.session_state.wod_loaded:
         with st.spinner("Loading Word of the Day..."):
-            grade = u.get("grade", "Class 5")
+            grade = u.get("grade","Grade 6")
             raw = call_ai(
                 [{"role":"user","content":
                   f"Give ONE interesting English word suitable for {grade} students in Pakistan. "
-                  f"Return ONLY this JSON with no extra text: "
-                  f'{{\"word\":\"...\",\"urdu\":\"...\",\"meaning\":\"...\",\"example\":\"...\",\"tip\":\"...\"}}'}],
-                "You are a vocabulary teacher. Return ONLY valid JSON. No markdown, no explanation."
+                  f'Return ONLY this JSON: {{"word":"...","urdu":"...","meaning":"...","example":"...","tip":"..."}}'}],
+                "Vocabulary teacher. Return ONLY valid JSON. No markdown.",
             )
             try:
                 clean = raw.replace("```json","").replace("```","").strip()
                 st.session_state.word_of_day = json.loads(clean)
             except:
                 st.session_state.word_of_day = {
-                    "word": "Perseverance", "urdu": "ثابت قدمی",
-                    "meaning": "Continued effort despite difficulties",
-                    "example": "Success comes to those with perseverance.",
-                    "tip": "Use this word in your next essay!"
+                    "word":"Perseverance","urdu":"ثابت قدمی",
+                    "meaning":"Continued effort despite difficulties",
+                    "example":"Success comes to those with perseverance.",
+                    "tip":"Use this word in your next essay!"
                 }
             st.session_state.wod_loaded = True
 
@@ -781,131 +736,59 @@ def page_home():
             <div style='font-size:11px;font-weight:800;opacity:.5;text-transform:uppercase;
                 letter-spacing:1px;margin-bottom:8px'>📖 Word of the Day</div>
             <div style='display:flex;align-items:baseline;gap:12px;flex-wrap:wrap'>
-                <span style='font-family:"Baloo 2",cursive;font-size:26px;font-weight:800;
-                    color:#FFD700'>{w.get('word','')}</span>
+                <span style='font-family:"Baloo 2",cursive;font-size:26px;font-weight:800;color:#FFD700'>{w.get('word','')}</span>
                 <span style='font-size:13px;opacity:.65'>— {w.get('urdu','')}</span>
             </div>
-            <div style='font-size:13px;margin-top:6px;opacity:.9'>{w.get('meaning','')}</div>
-            <div style='font-size:12px;margin-top:4px;opacity:.65;font-style:italic'>
-                "{w.get('example','')}"</div>
-            <div style='font-size:11px;margin-top:8px;background:rgba(255,255,255,.1);
-                border-radius:8px;padding:6px 10px'>💡 {w.get('tip','')}</div>
+            <div style='font-size:13px;opacity:.75;margin-top:6px'>{w.get('meaning','')}</div>
+            <div style='font-size:12px;opacity:.55;margin-top:4px;font-style:italic'>"{w.get('example','')}"</div>
+            <div style='font-size:11px;color:#FFD700;margin-top:6px'>💡 {w.get('tip','')}</div>
         </div>""", unsafe_allow_html=True)
 
-    # Stats row
-    c1, c2, c3, c4 = st.columns(4)
-    for col_obj, ico, val, lbl in [
-        (c1, "❓", stats.get("total",0),        "Questions"),
-        (c2, "🏆", len(u.get("badges",[])),     "Badges"),
-        (c3, "🔥", stats.get("streak",0),       "Day Streak"),
-        (c4, "🎨", stats.get("images",0),       "Images Made"),
-    ]:
-        with col_obj:
-            st.markdown(f"<div class='stat-card'><div class='stat-num'>{val}</div>"
-                        f"<div class='stat-lbl'>{ico} {lbl}</div></div>", unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("### 📚 Start Learning — Choose a Subject")
-    c1, c2, c3, c4 = st.columns(4)
-    for col_obj, (name, info) in zip([c1,c2,c3,c4], SUBJECTS.items()):
-        cnt = stats.get(name, 0)
-        with col_obj:
-            st.markdown(f"""
-            <div style='background:{info["color"]}18;border:2px solid {info["color"]};
-                border-radius:14px;padding:16px 10px;text-align:center;margin-bottom:8px'>
-                <div style='font-size:30px'>{info["emoji"]}</div>
-                <div style='font-weight:800;font-size:14px;color:{info["color"]}'>{name}</div>
-                <div style='font-size:10px;color:#aaa;margin-top:2px'>{cnt} questions</div>
-            </div>""", unsafe_allow_html=True)
-            if st.button(f"Study {name}", key=f"home_{name}", use_container_width=True):
-                st.session_state.subject = name
-                st.session_state.page = "chat"
-                st.session_state.chat_messages = []
-                st.session_state.session_id = None
-                st.rerun()
-
-    # Syllabus progress teaser
-    st.markdown("### 📚 Syllabus Progress")
-    grade = u.get("grade","Class 5")
-    studied_topics = u.get("studied_topics", {})
-    sub_cols = st.columns(4)
-    for col_obj, (sname, sinfo) in zip(sub_cols, SUBJECTS.items()):
-        curr_data  = CAMBRIDGE_CURRICULUM.get(sname,{}).get(grade,{})
-        units_data = curr_data.get("units",[])
-        total_t    = sum(len(un["topics"]) for un in units_data)
-        key        = f"{sname}_{grade}"
-        done_t     = len(studied_topics.get(key,[]))
-        pct        = int((done_t/max(total_t,1))*100)
-        with col_obj:
-            st.markdown(f"""
-            <div style='background:{sinfo["color"]}12;border:2px solid {sinfo["color"]}55;
-                border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer'>
-                <div style='font-size:26px'>{sinfo["emoji"]}</div>
-                <div style='font-weight:800;font-size:13px;color:{sinfo["color"]}'>{sname}</div>
-                <div class='prog-bar' style='margin:8px 0 4px'>
-                    <div class='prog-fill' style='width:{pct}%;background:{sinfo["color"]}'></div>
-                </div>
-                <div style='font-size:10px;color:#aaa'>{done_t}/{total_t} topics</div>
-            </div>""", unsafe_allow_html=True)
-            if st.button("View", key=f"syl_home_{sname}", use_container_width=True):
-                st.session_state.syl_subject = sname
-                st.session_state.page = "syllabus"
-                st.rerun()
-
-    if u.get("badges"):
-        st.markdown("### 🏆 Recent Badges")
-        cols = st.columns(min(5, len(u["badges"])))
-        for i, bid in enumerate(u["badges"][-5:]):
-            b = next((x for x in BADGES if x["id"] == bid), None)
-            if b:
-                with cols[i % 5]:
-                    st.markdown(f"<div class='badge-card'><span class='badge-icon'>{b['icon']}</span>"
-                                f"<div class='badge-name'>{b['name']}</div></div>", unsafe_allow_html=True)
-
-# ═════════════════════════════════════════════════════════════════
-# CHAT TUTOR
-# ═════════════════════════════════════════════════════════════════
+# ─────────────────────────────────────────────────────────────────
+# CHAT / AI TUTOR
+# ─────────────────────────────────────────────────────────────────
 def build_system(u, sub, lvl):
     return f"""You are Ustad, a warm and encouraging homework tutor for Pakistani students.
 Student: {u['name']} | Role: {'Parent' if u.get('role')=='parent' else 'Student'} | Class: {lvl} | Subject: {sub}
 
 Teaching rules:
-- Adapt complexity to {lvl}: Class 1-3=very simple+emojis; Class 4-5=simple+examples; Class 6-8=structured steps; O Level=exam-focused; A Level=university depth
+- Adapt complexity to {lvl}: Grade 1-3=very simple+emojis; Grade 4-5=simple+examples; Grade 6-8=structured steps; O Level=exam-focused; A Level=university depth
 {f'- Reply in Urdu script. Use English only for technical terms.' if sub=='Urdu' else ''}
-{f'- User is a parent. Explain how to help their child understand the concept.' if u.get('role')=='parent' else ''}
-- For Maths/Physics: ALWAYS show step-by-step working
+{f'- User is a parent. Explain how to help their child understand.' if u.get('role')=='parent' else ''}
+- For Maths/Physics/Chemistry: ALWAYS show step-by-step working
 - Use Pakistani curriculum context (FBISE, Cambridge Pakistan, local examples)
 - Be warm, positive, and end with encouragement or a follow-up question"""
 
 def save_chat_session(sub, lvl):
     hist  = load_json(HISTORY_FILE)
     email = st.session_state.user["email"]
-    if email not in hist:
-        hist[email] = []
+    if email not in hist: hist[email] = []
     sid = st.session_state.session_id or datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     st.session_state.session_id = sid
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-    ex = next((s for s in hist[email] if s["id"] == sid), None)
+    ex = next((s for s in hist[email] if s["id"]==sid), None)
     if ex:
         ex["messages"] = st.session_state.chat_messages
         ex["updated"]  = now
     else:
         hist[email].append({
-            "id": sid, "subject": sub, "level": lvl,
-            "messages": st.session_state.chat_messages,
-            "created": now, "updated": now
+            "id":sid,"subject":sub,"level":lvl,
+            "messages":st.session_state.chat_messages,
+            "created":now,"updated":now
         })
     save_json(HISTORY_FILE, hist)
 
 def page_chat():
     u = st.session_state.user
+    st.markdown("<div class='section-header'>💬 Chat Tutor — Ask Ustad Anything</div>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1:
         sub = st.selectbox("📚 Subject", list(SUBJECTS.keys()),
                            index=list(SUBJECTS.keys()).index(st.session_state.subject))
     with c2:
-        lvl_idx = get_level_index(u.get("grade","Class 5"))
-        lvl = st.selectbox("🏫 Class", LEVELS, index=lvl_idx)
+        lvl_idx = get_level_index(u.get("grade","Grade 6"))
+        lvl = st.selectbox("🏫 Grade", LEVELS, index=lvl_idx)
     st.session_state.subject = sub
 
     if st.button("🆕 New Chat", type="secondary"):
@@ -913,362 +796,82 @@ def page_chat():
         st.session_state.session_id    = None
         st.rerun()
 
-    st.markdown("<div style='font-size:11px;font-weight:800;color:#aaa;"
-                "text-transform:uppercase;letter-spacing:1px;margin:10px 0 6px'>"
-                "⚡ Quick Questions</div>", unsafe_allow_html=True)
+    st.markdown("<div style='font-size:11px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin:10px 0 6px'>⚡ Quick Questions</div>", unsafe_allow_html=True)
     qc = st.columns(2)
     for i, p in enumerate(QUICK_PROMPTS.get(sub, [])):
-        with qc[i % 2]:
+        with qc[i%2]:
             if st.button(p, key=f"qp{i}", use_container_width=True):
                 st.session_state.chat_messages.append({"role":"user","content":p})
                 with st.spinner("Ustad is thinking... 🤔"):
                     reply = call_ai(st.session_state.chat_messages, build_system(u, sub, lvl))
                 st.session_state.chat_messages.append({"role":"assistant","content":reply})
-                bump_stats(sub)
-                save_chat_session(sub, lvl)
-                st.rerun()
+                bump_stats(sub); save_chat_session(sub, lvl); st.rerun()
 
     if not st.session_state.chat_messages:
         st.info(f"👋 Assalam-o-Alaikum {u['name'].split()[0]}! I'm Ustad, your {sub} tutor for {lvl}. Ask me anything!")
 
     for m in st.session_state.chat_messages:
         if m["role"] == "user":
-            st.markdown(f"<div class='msg-lbl msg-lbl-r'>You</div>"
-                        f"<div class='msg-user'>{m['content']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='msg-lbl msg-lbl-r'>You</div><div class='msg-user'>{m['content']}</div>", unsafe_allow_html=True)
         else:
-            st.markdown(f"<div class='msg-lbl'>🎓 Ustad</div>"
-                        f"<div class='msg-bot'>{m['content']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='msg-lbl'>🎓 Ustad</div><div class='msg-bot'>{m['content']}</div>", unsafe_allow_html=True)
 
     with st.form("chat_form", clear_on_submit=True):
-        ph  = "یہاں سوال لکھیں..." if sub == "Urdu" else f"Ask your {sub} question here..."
+        ph  = "یہاں سوال لکھیں..." if sub=="Urdu" else f"Ask your {sub} question here..."
         txt = st.text_area("Q", placeholder=ph, height=80, label_visibility="collapsed")
-        if st.form_submit_button("📤 Send", use_container_width=True, type="primary") and txt.strip():
+        c1f, c2f = st.columns([3,1])
+        with c1f:
+            send = st.form_submit_button("📤 Send", use_container_width=True, type="primary")
+        with c2f:
+            clear = st.form_submit_button("🗑️ Clear", use_container_width=True)
+        if clear:
+            st.session_state.chat_messages = []
+            st.session_state.session_id    = None
+            st.rerun()
+        if send and txt.strip():
             st.session_state.chat_messages.append({"role":"user","content":txt.strip()})
             with st.spinner("Ustad is thinking... 🤔"):
                 reply = call_ai(st.session_state.chat_messages, build_system(u, sub, lvl))
             st.session_state.chat_messages.append({"role":"assistant","content":reply})
-            bump_stats(sub)
-            save_chat_session(sub, lvl)
-            st.rerun()
+            bump_stats(sub); save_chat_session(sub, lvl); st.rerun()
+
 
 # ═════════════════════════════════════════════════════════════════
-# QUIZ
+# 1. PRACTICE QUIZ — Enhanced with topic, difficulty, num questions
 # ═════════════════════════════════════════════════════════════════
 def page_quiz():
     u = st.session_state.user
-    c1, c2 = st.columns(2)
-    with c1:
-        sub = st.selectbox("📚 Subject", list(SUBJECTS.keys()), key="quiz_sub")
-    with c2:
-        lvl_idx = get_level_index(u.get("grade","Class 5"))
-        lvl = st.selectbox("🏫 Class", LEVELS, index=lvl_idx, key="quiz_lvl")
+    st.markdown("<div class='section-header orange'>📝 Practice Quiz</div>", unsafe_allow_html=True)
 
     q = st.session_state.quiz
 
-    if q is None:
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("🚀 Generate 5-Question Quiz", use_container_width=True, type="primary"):
-            with st.spinner("✨ Generating your quiz..."):
-                raw = call_ai(
-                    [{"role":"user","content":
-                      f"Create exactly 5 multiple choice questions for {lvl} {sub} students in Pakistan. "
-                      f"Return ONLY this raw JSON with no markdown: "
-                      f'{{\"questions\":[{{\"q\":\"question text\",\"options\":[\"A. option\",\"B. option\",\"C. option\",\"D. option\"],\"answer\":\"A. option\",\"explanation\":\"why\"}}]}}'}],
-                    "Quiz generator. Return ONLY valid raw JSON. No backticks. No markdown.", 1200
-                )
-                try:
-                    clean = raw.replace("```json","").replace("```","").strip()
-                    data = json.loads(clean)
-                    st.session_state.quiz = {
-                        "questions": data["questions"],
-                        "current": 0, "score": 0,
-                        "answers": [], "done": False,
-                        "sub": sub, "lvl": lvl
-                    }
-                    st.rerun()
-                except:
-                    st.error("⚠️ Could not generate quiz. Please try again.")
-        return
-
-    info = SUBJECTS[q["sub"]]
-
-    if q["done"]:
+    # ── Results screen ────────────────────────────────────────
+    if q is not None and q["done"]:
         total = len(q["questions"]); score = q["score"]
-        pct   = int((score / total) * 100)
-        emoji = "🏆" if pct >= 80 else "👍" if pct >= 60 else "💪"
+        pct   = int((score/total)*100)
+        emoji = "🏆" if pct>=80 else "👍" if pct>=60 else "💪"
+        col   = "#059669" if pct>=80 else "#F59E0B" if pct>=60 else "#E8472A"
+
         st.markdown(f"""
-        <div style='text-align:center;background:#fff;border-radius:20px;padding:30px;
-            box-shadow:0 2px 16px rgba(0,0,0,0.06);margin-bottom:16px'>
+        <div style='text-align:center;background:#fff;border-radius:20px;padding:28px;
+            box-shadow:0 4px 20px rgba(0,0,0,0.08);margin-bottom:18px'>
             <div style='font-size:56px'>{emoji}</div>
             <h2 style='font-family:"Baloo 2",cursive;font-size:26px;font-weight:800;color:#1A1A2E'>
                 Quiz Complete!</h2>
-            <div style='font-size:44px;font-weight:900;color:{info["color"]};margin:8px 0'>
-                {score}/{total}</div>
+            <div style='font-size:48px;font-weight:900;color:{col};margin:8px 0'>{score}/{total}</div>
             <div style='font-size:15px;color:#666'>
                 {pct}% — {"Excellent! ⭐" if pct>=80 else "Good effort! 📚" if pct>=60 else "Keep practicing! 💪"}
             </div>
+            <div style='font-size:13px;color:#999;margin-top:4px'>
+                Topic: {q.get("topic","Custom")} · {q.get("difficulty","Medium")} · {q.get("sub","")} {q.get("lvl","")}
+            </div>
         </div>""", unsafe_allow_html=True)
 
-        st.markdown("### 📋 Review Answers")
-        for i, (ques, ans) in enumerate(zip(q["questions"], q["answers"])):
-            correct = ans["chosen"] == ques["answer"]
-            bg     = "#F0FDF4" if correct else "#FFF1EE"
-            border = "#059669" if correct else "#E8472A"
-            wrong_line = "" if correct else f'<div style="font-size:13px;color:#059669;margin-top:2px">✅ Correct: <b>{ques["answer"]}</b></div>'
-            st.markdown(f"""
-            <div style='background:{bg};border:1.5px solid {border};border-radius:12px;
-                padding:14px 16px;margin-bottom:10px'>
-                <div style='font-weight:700;font-size:14px'>Q{i+1}. {ques["q"]}</div>
-                <div style='font-size:13px;margin-top:5px'>
-                    Your answer: <b>{ans["chosen"]}</b> {"✅" if correct else "❌"}
-                </div>
-                {wrong_line}
-                <div style='font-size:12px;color:#666;margin-top:4px'>
-                    💡 {ques.get("explanation","")}
-                </div>
-            </div>""", unsafe_allow_html=True)
-
-        score_pct = round((q["score"] / len(q["questions"])) * 100)
-        wa_text   = f"I scored {q['score']}/{len(q['questions'])} ({score_pct}%) on {q['sub']} quiz in ZM Academy! 🎓🇵🇰 Try it free: https://zmacademy2026.streamlit.app"
-        wa_url    = f"https://wa.me/?text={wa_text.replace(' ','%20')}"
-        st.markdown(f"""
-        <a href="{wa_url}" target="_blank"
-           style="display:block;text-align:center;background:#25D366;color:#fff;
-                  padding:12px;border-radius:12px;font-weight:800;font-size:14px;
-                  text-decoration:none;margin-bottom:10px">
-           📲 Share Score on WhatsApp
-        </a>""", unsafe_allow_html=True)
-        if st.button("🔄 Try Another Quiz", use_container_width=True, type="primary"):
-            st.session_state.quiz = None
-            st.rerun()
-        return
-
-    current = q["current"]
-    ques    = q["questions"][current]
-    pct_bar = int((current / len(q["questions"])) * 100)
-
-    st.markdown(f"""
-    <div style='display:flex;justify-content:space-between;font-size:13px;font-weight:700;
-        color:#666;margin-bottom:6px'>
-        <span>Question {current+1} of {len(q["questions"])}</span>
-        <span style='color:{info["color"]}'>Score: {q["score"]}/{current}</span>
-    </div>
-    <div class='prog-bar'>
-        <div class='prog-fill' style='width:{pct_bar}%;background:{info["color"]}'></div>
-    </div>
-    <div style='background:#fff;border-radius:16px;padding:18px 20px;margin:12px 0;
-        box-shadow:0 2px 16px rgba(0,0,0,0.06);font-weight:800;font-size:15px;
-        color:#1A1A2E;line-height:1.5'>
-        Q{current+1}. {ques["q"]}
-    </div>""", unsafe_allow_html=True)
-
-    for opt in ques["options"]:
-        if st.button(opt, key=f"opt_{current}_{opt}", use_container_width=True):
-            q["answers"].append({"chosen": opt})
-            if opt == ques["answer"]:
-                q["score"] += 1
-                st.toast("✅ Correct!", icon="🎉")
-            else:
-                st.toast(f"❌ Correct answer: {ques['answer']}", icon="💡")
-            q["current"] += 1
-            if q["current"] >= len(q["questions"]):
-                q["done"] = True
-            st.session_state.quiz = q
-            st.rerun()
-
-# ═════════════════════════════════════════════════════════════════
-# IMAGE GENERATOR  — SVG via Claude AI (no external URLs needed)
-# ═════════════════════════════════════════════════════════════════
-def page_image():
-    u = st.session_state.user
-    st.markdown("### 🎨 Educational Image Generator")
-    st.markdown("""
-    <div style='background:#F5F0FF;border:1.5px solid #7C3AED;border-radius:12px;
-        padding:12px 16px;margin-bottom:16px;font-size:13px;color:#5B21B6'>
-        🖌️ Claude AI draws a <b>custom SVG diagram</b> based on your description — works 100% offline, no external URLs needed!
-    </div>""", unsafe_allow_html=True)
-
-    c1, c2 = st.columns(2)
-    with c1:
-        img_sub = st.selectbox("📚 Subject", list(SUBJECTS.keys()), key="img_sub")
-    with c2:
-        lvl_idx = get_level_index(u.get("grade","Class 5"))
-        img_lvl = st.selectbox("🏫 Class", LEVELS, index=lvl_idx, key="img_lvl")
-
-    style_choice = st.selectbox("🎨 Diagram Style", list(IMAGE_STYLES.keys()))
-    style_hint   = IMAGE_STYLES[style_choice]
-
-    prompt = st.text_area(
-        "📝 Describe what you want to see",
-        placeholder=(
-            "e.g.  Diagram showing how photosynthesis works with labeled parts\n"
-            "e.g.  Solar system with all 8 planets in order\n"
-            "e.g.  Water cycle showing evaporation, clouds and rain\n"
-            "e.g.  Human heart with blood flow direction"
-        ),
-        height=110
-    )
-
-    if st.button("🎨  Generate Image", use_container_width=True, type="primary"):
-        if not prompt.strip():
-            st.warning("Please enter a description first!")
-            return
-
-        # ── FIX 7: real progress animation (was dead code before) ──
-        prog_bar = st.progress(0, text="🎨 Step 1/4 — Planning your diagram...")
-        time.sleep(0.5)
-        prog_bar.progress(20, text="✏️ Step 2/4 — Drawing shapes and structure...")
-        time.sleep(0.5)
-        prog_bar.progress(45, text="🎨 Step 3/4 — Adding colors, labels and arrows...")
-
-        system_msg = (
-            "You are an expert SVG illustrator who creates educational diagrams for Pakistani school students. "
-            "STRICT OUTPUT RULES — follow every rule or the image will not display:\n"
-            "1. Output ONLY the SVG code. No markdown. No backticks. No explanations. No text before <svg or after </svg>.\n"
-            "2. Start your response with exactly: <svg\n"
-            "3. End your response with exactly: </svg>\n"
-            "4. Use: xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 700 500\" width=\"700\" height=\"500\"\n"
-            "5. Include a <defs> block with at least 3 linearGradient definitions for colorful fills.\n"
-            "6. Add a bold title at the top (y=35, font-size=24, font-weight=bold, text-anchor=middle, x=350).\n"
-            "7. Use BRIGHT colors — never plain white shapes. Use gradient fills on all major shapes.\n"
-            "8. Include at least 20 visual elements: shapes, labels, arrows, icons.\n"
-            "9. Draw arrows using <line> with marker-end or <path> elements.\n"
-            "10. Every component must have a clear text label.\n"
-            "11. Make it look like a professional educational poster.\n"
-            "12. DO NOT use any xlink:href or external images."
-        )
-
-        user_msg = (
-            f"Create a detailed colorful educational SVG illustration:\n"
-            f"TOPIC: {prompt}\n"
-            f"SUBJECT: {img_sub}\n"
-            f"LEVEL: {img_lvl}\n"
-            f"STYLE: {style_hint}\n\n"
-            f"Include: gradient background, bold title, labeled components, "
-            f"arrows showing flow/relationships, color-coded sections.\n"
-            f"Remember: output ONLY the SVG. Start with <svg and end with </svg>."
-        )
-
-        raw = call_ai_svg([{"role":"user","content":user_msg}], system_msg)
-        prog_bar.progress(90, text="✨ Step 4/4 — Finishing touches...")
-        time.sleep(0.3)
-        prog_bar.progress(100, text="✅ Done!")
-        time.sleep(0.3)
-        prog_bar.empty()
-
-        # ── Extract SVG ──────────────────────────────────────────
-        # Strip any markdown fences
-        cleaned = raw
-        for fence in ["```svg", "```xml", "```html", "```"]:
-            cleaned = cleaned.replace(fence, "")
-        cleaned = cleaned.strip()
-
-        svg_start = cleaned.find("<svg")
-        svg_end   = cleaned.rfind("</svg>")
-
-        if svg_start >= 0 and svg_end >= 0:
-            final_svg = cleaned[svg_start : svg_end + 6]
-
-            # ── Display ──────────────────────────────────────────
-            st.success("✅ Image generated successfully!")
-            st.markdown("### 🖼️ Your Educational Diagram")
-            st.components.v1.html(final_svg, height=520, scrolling=False)
-
-            # ── Download button ──────────────────────────────────
-            b64 = base64.b64encode(final_svg.encode()).decode()
-            st.markdown(
-                f'<a href="data:image/svg+xml;base64,{b64}" download="hw_diagram.svg" '
-                f'style="display:inline-block;padding:10px 20px;background:#7C3AED;color:#fff;'
-                f'border-radius:12px;font-weight:700;font-size:14px;text-decoration:none;margin-top:8px">'
-                f'⬇️ Download SVG Image</a>',
-                unsafe_allow_html=True
-            )
-
-            # ── Save to gallery ──────────────────────────────────
-            imgs  = load_json(IMAGES_FILE)
-            email = u["email"]
-            if email not in imgs:
-                imgs[email] = []
-            imgs[email].insert(0, {
-                "id":      str(int(time.time())),
-                "svg":     final_svg,
-                "prompt":  prompt,
-                "subject": img_sub,
-                "level":   img_lvl,
-                "style":   style_choice,
-                "created": datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-            })
-            save_json(IMAGES_FILE, imgs)
-
-            # ── Update user stats ────────────────────────────────
-            users = load_json(USERS_FILE)
-            eu    = users.get(u["email"], u)
-            eu.setdefault("stats", init_stats())
-            eu["stats"]["images"] = eu["stats"].get("images", 0) + 1
-            eu, new_b = check_badges(eu)
-            users[u["email"]] = eu
-            save_json(USERS_FILE, users)
-            st.session_state.user = eu
-            for b in new_b:
-                st.toast(f"🏆 Badge: {b['icon']} {b['name']}!", icon="🎉")
-
-        else:
-            st.error("⚠️ Could not generate image. Please rephrase your description and try again.")
-            with st.expander("Show raw response (debug)"):
-                st.code(raw[:800])
-
-    # ── Gallery ──────────────────────────────────────────────────
-    imgs      = load_json(IMAGES_FILE)
-    user_imgs = imgs.get(u["email"], [])
-    if user_imgs:
-        st.markdown("---")
-        st.markdown("### 🖼️ Your Image Gallery")
-        for img in user_imgs[:8]:
-            label = f"🎨 {img['subject']} — {img['prompt'][:55]}... | {img['created']}"
-            with st.expander(label):
-                st.components.v1.html(img["svg"], height=520, scrolling=False)
-                b64 = base64.b64encode(img["svg"].encode()).decode()
-                st.markdown(
-                    f'<a href="data:image/svg+xml;base64,{b64}" download="hw_diagram.svg" '
-                    f'style="display:inline-block;padding:7px 16px;background:#7C3AED;color:#fff;'
-                    f'border-radius:10px;font-weight:700;font-size:12px;text-decoration:none">'
-                    f'⬇️ Download</a>',
-                    unsafe_allow_html=True
-                )
-
-# ═════════════════════════════════════════════════════════════════
-# ESSAY HELPER
-# ═════════════════════════════════════════════════════════════════
-def page_essay():
-    u = st.session_state.user
-    st.markdown("### ✏️ Essay & Writing Helper")
-    c1, c2 = st.columns(2)
-    with c1:
-        etype = st.selectbox("📄 Writing Type", ESSAY_TYPES)
-    with c2:
-        lvl_idx = get_level_index(u.get("grade","Class 5"))
-        lvl = st.selectbox("🏫 Class", LEVELS, index=lvl_idx, key="essay_lvl")
-
-    topic = st.text_input("📝 Topic / Title", placeholder="e.g. My School, Climate Change, My Best Friend...")
-
-    if st.button("✏️ Generate Essay", use_container_width=True, type="primary"):
-        if not topic.strip():
-            st.warning("Please enter a topic first!")
-            return
-        with st.spinner("✏️ Writing your essay..."):
-            result = call_ai(
-                [{"role":"user","content":
-                  f"Write a complete {etype} about '{topic}' for a {lvl} student in Pakistan. "
-                  f"Include proper structure: introduction, body paragraphs, and conclusion. "
-                  f"Use simple age-appropriate language for {lvl}."}],
-                "Expert writing teacher for Pakistani students. Write well-structured, complete essays.",
-                1800
-            )
-        st.session_state.essay_result = result
+        # Update quiz count stat
         users = load_json(USERS_FILE)
-        eu = users.get(u["email"], u)
+        eu    = users.get(u["email"], u)
         eu.setdefault("stats", init_stats())
-        eu["stats"]["essays"] = eu["stats"].get("essays", 0) + 1
+        eu["stats"]["quizzes_done"] = eu["stats"].get("quizzes_done",0) + 1
         eu, new_b = check_badges(eu)
         users[u["email"]] = eu
         save_json(USERS_FILE, users)
@@ -1276,156 +879,828 @@ def page_essay():
         for b in new_b:
             st.toast(f"🏆 Badge: {b['icon']} {b['name']}!", icon="🎉")
 
-    if st.session_state.essay_result:
-        st.markdown(f"""
-        <div style='background:#fff;border-radius:16px;padding:20px 22px;
-            box-shadow:0 2px 16px rgba(0,0,0,0.06);border-top:4px solid #059669;margin-top:12px'>
-            <div style='font-weight:800;font-size:14px;color:#059669;margin-bottom:12px'>
-                ✏️ {etype}: {topic}</div>
-            <div style='font-size:14px;line-height:1.85;color:#1A1A2E;white-space:pre-wrap'>
-                {st.session_state.essay_result}</div>
-            <div style='margin-top:14px;padding:10px 12px;background:#EDFAF5;
-                border-radius:10px;font-size:12px;color:#065F46'>
-                💡 Use this as a learning example — try writing your own version!
-            </div>
-        </div>""", unsafe_allow_html=True)
-        if st.button("📋 Copy Essay"):
-            st.code(st.session_state.essay_result, language=None)
-
-# ═════════════════════════════════════════════════════════════════
-# STUDY TOOLS
-# ═════════════════════════════════════════════════════════════════
-def page_tools():
-    st.markdown("### 🔧 Study Tools")
-    t1, t2 = st.tabs(["🌐 Language Translator", "⏱️ Pomodoro Timer"])
-
-    with t1:
-        st.markdown("#### 🌐 Language Translator")
-        lang = st.selectbox("Translate to", ["Urdu","English","Punjabi","Sindhi","Pashto"])
-        text = st.text_area("Enter text to translate", height=100,
-                            placeholder="Type English or Urdu text here...")
-        if st.button("🌐 Translate", use_container_width=True, type="primary"):
-            if not text.strip():
-                st.warning("Enter some text first!")
-            else:
-                with st.spinner("Translating..."):
-                    result = call_ai(
-                        [{"role":"user","content":
-                          f"Translate the following text to {lang}:\n\n{text}\n\n"
-                          f"Also explain any difficult words.\n"
-                          f"Format:\nTranslation:\n[translation here]\n\nWord Explanations:\n- word: meaning"}],
-                        "Translation assistant for Pakistani school students. Be accurate and helpful."
-                    )
-                st.session_state.trans_result = result
-        if st.session_state.trans_result:
+        st.markdown("### 📋 Review Answers")
+        for i,(ques,ans) in enumerate(zip(q["questions"],q["answers"])):
+            correct = ans["chosen"] == ques["answer"]
+            bg     = "#F0FDF4" if correct else "#FFF1EE"
+            border = "#059669" if correct else "#E8472A"
+            wrong_line = "" if correct else f'<div style="font-size:13px;color:#059669;margin-top:2px">✅ Correct: <b>{ques["answer"]}</b></div>'
             st.markdown(f"""
-            <div style='background:#EFF4FF;border-radius:12px;padding:16px;
-                font-size:14px;line-height:1.75;white-space:pre-wrap;margin-top:10px;color:#1A1A2E'>
-                {st.session_state.trans_result}
+            <div style='background:{bg};border:1.5px solid {border};border-radius:12px;
+                padding:14px 16px;margin-bottom:10px;color:#1A1A2E'>
+                <div style='font-weight:700;font-size:14px'>Q{i+1}. {ques["q"]}</div>
+                <div style='font-size:13px;margin-top:5px'>
+                    Your answer: <b>{ans["chosen"]}</b> {"✅" if correct else "❌"}
+                </div>
+                {wrong_line}
+                <div style='font-size:12px;color:#555;margin-top:5px;padding:6px 10px;background:rgba(0,0,0,.04);border-radius:8px'>
+                    💡 {ques.get("explanation","")}
+                </div>
             </div>""", unsafe_allow_html=True)
 
-    with t2:
-        st.markdown("#### ⏱️ Pomodoro Study Timer")
-        st.markdown("""
-        <div style='background:#F5F0FF;border-radius:12px;padding:14px 16px;
-            font-size:13px;color:#5B21B6;margin-bottom:16px'>
-            🍅 <b>Pomodoro Technique:</b> Study 25 min → 5 min break → repeat 4 times → 15 min long break.
-            Proven to boost focus and memory!
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🔄 New Quiz", use_container_width=True, type="primary"):
+                st.session_state.quiz = None; st.rerun()
+        with col2:
+            if st.button("👥 Challenge Friends", use_container_width=True):
+                st.session_state.page = "friends"; st.rerun()
+        return
+
+    # ── Active quiz ───────────────────────────────────────────
+    if q is not None and not q["done"]:
+        info    = SUBJECTS.get(q.get("sub","Maths"), SUBJECTS["Maths"])
+        current = q["current"]
+        ques    = q["questions"][current]
+        pct_bar = int((current/len(q["questions"]))*100)
+
+        # Header strip
+        st.markdown(f"""
+        <div style='background:{info["color"]}18;border-radius:14px;padding:12px 16px;
+            margin-bottom:14px;display:flex;justify-content:space-between;align-items:center'>
+            <div>
+                <span style='font-weight:800;color:{info["color"]}'>{info["emoji"]} {q.get("sub","")} Quiz</span>
+                <span style='font-size:12px;color:#888;margin-left:10px'>{q.get("topic","")} · {q.get("difficulty","")}</span>
+            </div>
+            <span style='font-weight:700;color:{info["color"]}'>Score: {q["score"]}/{current}</span>
         </div>""", unsafe_allow_html=True)
-        c1, c2, c3 = st.columns(3)
-        with c1: st.metric("📚 Study Session", "25 min")
-        with c2: st.metric("☕ Short Break",    "5 min")
-        with c3: st.metric("🌟 Long Break",     "15 min")
-        st.info("⏱️ Set your phone timer and follow the schedule below:")
-        st.markdown("**Your 4-Session Study Plan:**")
-        for i in range(1, 5):
-            brk = "☕ 5 min break" if i < 4 else "🌟 15 min long break — you deserve it!"
-            st.markdown(f"- 🍅 **Session {i}:** 25 min study → {brk}")
+
+        # Progress bar
+        st.markdown(f"""
+        <div style='display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:4px'>
+            <span>Question {current+1} of {len(q["questions"])}</span>
+            <span>{pct_bar}% complete</span>
+        </div>
+        <div class='prog-bar'><div class='prog-fill' style='width:{pct_bar}%;background:{info["color"]}'></div></div>
+        <br>""", unsafe_allow_html=True)
+
+        # Question
+        st.markdown(f"""
+        <div style='background:#fff;border-radius:16px;padding:18px 20px;margin-bottom:14px;
+            box-shadow:0 3px 16px rgba(0,0,0,0.07);font-weight:800;font-size:15px;
+            color:#1A1A2E;line-height:1.55;border-left:5px solid {info["color"]}'>
+            Q{current+1}. {ques["q"]}
+        </div>""", unsafe_allow_html=True)
+
+        # Options as styled buttons
+        for opt in ques["options"]:
+            if st.button(opt, key=f"opt_{current}_{opt}", use_container_width=True):
+                q["answers"].append({"chosen":opt})
+                if opt == ques["answer"]:
+                    q["score"] += 1; st.toast("✅ Correct!", icon="🎉")
+                else:
+                    st.toast(f"❌ Correct: {ques['answer']}", icon="💡")
+                q["current"] += 1
+                if q["current"] >= len(q["questions"]): q["done"] = True
+                st.session_state.quiz = q; st.rerun()
+        return
+
+    # ── Quiz setup (no active quiz) ───────────────────────────
+    st.markdown("""
+    <div style='background:#EFF4FF;border-radius:14px;padding:14px 18px;
+        margin-bottom:18px;font-size:13px;color:#1B4FD8;border-left:4px solid #2563EB'>
+        📝 <b>Custom Quiz Generator</b> — Enter any topic, pick your difficulty and number of questions!
+    </div>""", unsafe_allow_html=True)
+
+    with st.container():
+        st.markdown("#### 🔧 Quiz Settings")
+
+        c1, c2 = st.columns(2)
+        with c1:
+            quiz_sub = st.selectbox("📚 Subject", list(SUBJECTS.keys()), key="quiz_sub")
+        with c2:
+            lvl_idx  = get_level_index(u.get("grade","Grade 6"))
+            quiz_lvl = st.selectbox("🏫 Grade", LEVELS, index=lvl_idx, key="quiz_lvl")
+
+        quiz_topic = st.text_input(
+            "✏️ Topic (optional — leave blank for general quiz)",
+            placeholder="e.g. Photosynthesis, Quadratic equations, World War II, Pythagoras...",
+            key="quiz_topic_input"
+        )
+
+        c3, c4 = st.columns(2)
+        with c3:
+            difficulty = st.selectbox("🎯 Difficulty Level", ["Easy","Medium","Hard"], index=1, key="quiz_diff")
+        with c4:
+            num_qs = st.selectbox("🔢 Number of Questions", [5,10,15,20], index=0, key="quiz_num")
+
+        # Difficulty description
+        diff_info = {
+            "Easy":   ("🟢","Straightforward recall questions. Perfect for revision."),
+            "Medium": ("🟡","Mixed conceptual and application questions."),
+            "Hard":   ("🔴","Challenging analytical and higher-order thinking questions."),
+        }
+        d_icon, d_text = diff_info[difficulty]
+        st.markdown(f"""
+        <div style='background:#F8F9FA;border-radius:10px;padding:10px 14px;
+            font-size:12px;color:#555;margin-bottom:14px'>
+            {d_icon} <b>{difficulty}:</b> {d_text}
+        </div>""", unsafe_allow_html=True)
+
+        if st.button("🚀 Generate Quiz", use_container_width=True, type="primary", key="gen_quiz_btn"):
+            topic_str = quiz_topic.strip() if quiz_topic.strip() else f"{quiz_sub} general topics"
+            with st.spinner(f"✨ Generating {num_qs} {difficulty} questions on '{topic_str}'..."):
+                raw = call_ai(
+                    [{"role":"user","content":
+                      f"Create exactly {num_qs} {difficulty}-level multiple choice questions "
+                      f"about '{topic_str}' for {quiz_lvl} {quiz_sub} students in Pakistan. "
+                      f"Easy=basic recall, Medium=understanding+application, Hard=analysis+evaluation. "
+                      f"Return ONLY raw JSON: "
+                      f'{{"questions":[{{"q":"question text","options":["A. option","B. option","C. option","D. option"],"answer":"A. option","explanation":"why"}}]}}'}],
+                    "Quiz generator. Return ONLY valid raw JSON. No backticks. No markdown.", 2000
+                )
+            try:
+                clean = raw.replace("```json","").replace("```","").strip()
+                data  = json.loads(clean)
+                st.session_state.quiz = {
+                    "questions": data["questions"][:num_qs],
+                    "current":0, "score":0, "answers":[], "done":False,
+                    "sub":quiz_sub, "lvl":quiz_lvl,
+                    "topic":topic_str, "difficulty":difficulty
+                }
+                st.rerun()
+            except:
+                st.error("⚠️ Could not generate quiz. Please try again with a different topic.")
+                with st.expander("Debug info"): st.code(raw[:500])
+
 
 # ═════════════════════════════════════════════════════════════════
-# PROGRESS
+# 4. FRIENDS GROUP QUIZ — Session-based leaderboard
 # ═════════════════════════════════════════════════════════════════
+def page_friends():
+    u = st.session_state.user
+    st.markdown("<div class='section-header purple'>👥 Friends Group Quiz</div>", unsafe_allow_html=True)
+
+    grp = st.session_state.group_session
+
+    # ── Results / Leaderboard ─────────────────────────────────
+    if grp is not None and grp.get("done"):
+        st.markdown("## 🏆 Final Leaderboard")
+        players = sorted(grp["players"], key=lambda p: p["score"], reverse=True)
+        rank_icons = ["🥇","🥈","🥉","4️⃣"]
+        for i, p in enumerate(players):
+            total = len(grp["questions"])
+            pct   = int((p["score"]/total)*100)
+            st.markdown(f"""
+            <div class='lb-row'>
+                <span class='lb-rank'>{rank_icons[i]}</span>
+                <span class='lb-name'>{p['name']} {p['avatar']}</span>
+                <span style='font-size:12px;color:#888'>{pct}%</span>
+                <span class='lb-score'>{p['score']}/{total}</span>
+            </div>""", unsafe_allow_html=True)
+
+        winner = players[0]
+        st.markdown(f"""
+        <div style='text-align:center;background:linear-gradient(135deg,#FFF8E7,#FFFBF0);
+            border-radius:16px;padding:20px;margin-top:14px;border:2px solid #F5CC4A'>
+            <div style='font-size:40px'>🎉</div>
+            <div style='font-family:"Baloo 2",cursive;font-size:20px;font-weight:800;color:#A07820'>
+                {winner['name']} wins with {winner['score']}/{len(grp['questions'])}!
+            </div>
+        </div>""", unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("🔄 Play Again", use_container_width=True, type="primary"):
+            st.session_state.group_session = None; st.rerun()
+        return
+
+    # ── Active group quiz — player turn ──────────────────────
+    if grp is not None and not grp.get("done"):
+        pidx    = grp["current_player"]
+        player  = grp["players"][pidx]
+        qidx    = player.get("q_index", 0)
+        total_q = len(grp["questions"])
+
+        # Check if this player is done
+        if qidx >= total_q:
+            # Move to next player
+            grp["current_player"] = pidx + 1
+            if grp["current_player"] >= len(grp["players"]):
+                grp["done"] = True
+            st.session_state.group_session = grp; st.rerun()
+            return
+
+        ques = grp["questions"][qidx]
+
+        # Scoreboard strip
+        st.markdown("<div style='display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap'>", unsafe_allow_html=True)
+        for i, p in enumerate(grp["players"]):
+            active = (i == pidx)
+            bg     = "#E8472A" if active else "#F0F0F5"
+            color  = "#fff"    if active else "#555"
+            st.markdown(f"""
+            <div style='background:{bg};color:{color};border-radius:99px;
+                padding:6px 14px;font-size:12px;font-weight:800;display:inline-block'>
+                {p['avatar']} {p['name']}: {p['score']}/{total_q} {"← NOW" if active else ""}
+            </div>""", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div style='background:linear-gradient(135deg,#7C3AED18,#A78BFA18);border-radius:14px;
+            padding:12px 16px;margin-bottom:10px;font-size:12px;color:#7C3AED;font-weight:700'>
+            🎮 {player['name']}'s turn — Q{qidx+1} of {total_q}
+        </div>""", unsafe_allow_html=True)
+
+        pct_bar = int((qidx/total_q)*100)
+        st.markdown(f"""<div class='prog-bar'><div class='prog-fill'
+            style='width:{pct_bar}%;background:#7C3AED'></div></div><br>""", unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div style='background:#fff;border-radius:16px;padding:18px 20px;margin-bottom:14px;
+            box-shadow:0 3px 16px rgba(0,0,0,0.07);font-weight:800;font-size:15px;
+            color:#1A1A2E;border-left:5px solid #7C3AED'>
+            Q{qidx+1}. {ques["q"]}
+        </div>""", unsafe_allow_html=True)
+
+        for opt in ques["options"]:
+            if st.button(opt, key=f"grp_{pidx}_{qidx}_{opt}", use_container_width=True):
+                if opt == ques["answer"]:
+                    grp["players"][pidx]["score"] += 1
+                    st.toast("✅ Correct!", icon="🎉")
+                else:
+                    st.toast(f"❌ Correct: {ques['answer']}", icon="💡")
+                grp["players"][pidx]["q_index"] = qidx + 1
+                st.session_state.group_session = grp; st.rerun()
+        return
+
+    # ── Group setup ───────────────────────────────────────────
+    st.markdown("""
+    <div style='background:#F5F0FF;border-radius:14px;padding:14px 18px;
+        margin-bottom:18px;font-size:13px;color:#5B21B6;border-left:4px solid #7C3AED'>
+        👥 <b>Friends Group Quiz</b> — Take turns answering the same questions. Whoever scores highest wins!
+    </div>""", unsafe_allow_html=True)
+
+    num_friends = st.selectbox("👥 Number of players (including you)", [2,3,4], index=0)
+
+    st.markdown("#### 🎮 Player Names")
+    player_names = [u["name"]]  # first player is always the current user
+    for i in range(1, num_friends):
+        name = st.text_input(f"Player {i+1} name", placeholder=f"Friend {i}", key=f"friend_name_{i}")
+        player_names.append(name.strip() if name.strip() else f"Player {i+1}")
+
+    st.markdown("#### 📚 Quiz Settings")
+    c1, c2 = st.columns(2)
+    with c1:
+        grp_sub  = st.selectbox("Subject", list(SUBJECTS.keys()), key="grp_sub")
+    with c2:
+        lvl_idx  = get_level_index(u.get("grade","Grade 6"))
+        grp_lvl  = st.selectbox("Grade", LEVELS, index=lvl_idx, key="grp_lvl")
+
+    grp_topic = st.text_input("Topic (optional)", placeholder="Any topic...", key="grp_topic")
+    c3, c4 = st.columns(2)
+    with c3:
+        grp_diff = st.selectbox("Difficulty", ["Easy","Medium","Hard"], index=1, key="grp_diff")
+    with c4:
+        grp_num  = st.selectbox("Questions per player", [5,10], index=0, key="grp_num")
+
+    if st.button("🚀 Start Group Quiz", use_container_width=True, type="primary"):
+        topic_str = grp_topic.strip() if grp_topic.strip() else f"{grp_sub} general"
+        with st.spinner(f"Generating {grp_num} questions..."):
+            raw = call_ai(
+                [{"role":"user","content":
+                  f"Create exactly {grp_num} {grp_diff}-level MCQ questions about '{topic_str}' "
+                  f"for {grp_lvl} {grp_sub} students. "
+                  f'Return ONLY raw JSON: {{"questions":[{{"q":"...","options":["A. ...","B. ...","C. ...","D. ..."],"answer":"A. ...","explanation":"..."}}]}}'}],
+                "Quiz generator. Return ONLY valid raw JSON.", 2000
+            )
+        try:
+            clean = raw.replace("```json","").replace("```","").strip()
+            data  = json.loads(clean)
+            questions = data["questions"][:grp_num]
+            avatars   = ["👦","👧","🧑","👨","👩","🧒"]
+            players   = [
+                {"name":n, "avatar":avatars[i%len(avatars)],
+                 "score":0, "q_index":0}
+                for i,n in enumerate(player_names)
+            ]
+            st.session_state.group_session = {
+                "questions":questions, "players":players,
+                "current_player":0, "done":False,
+                "topic":topic_str, "difficulty":grp_diff
+            }
+            st.rerun()
+        except:
+            st.error("⚠️ Could not generate quiz. Please try again.")
+
+
+# ═════════════════════════════════════════════════════════════════
+# 5. IMAGE GENERATOR — Upgraded with styles, gallery grid, download
+# ═════════════════════════════════════════════════════════════════
+def page_image():
+    u = st.session_state.user
+    st.markdown("<div class='section-header purple'>🎨 AI Image Generator</div>", unsafe_allow_html=True)
+
+    st.markdown("""
+    <div style='background:#F5F0FF;border:1.5px solid #7C3AED;border-radius:12px;
+        padding:12px 16px;margin-bottom:16px;font-size:13px;color:#5B21B6'>
+        🖌️ Claude AI draws a <b>custom SVG diagram</b> — choose your style!
+        Generation takes 20–40 seconds. Works fully offline.
+    </div>""", unsafe_allow_html=True)
+
+    # ── Controls ──────────────────────────────────────────────
+    c1, c2 = st.columns(2)
+    with c1:
+        img_sub = st.selectbox("📚 Subject", list(SUBJECTS.keys()), key="img_sub")
+    with c2:
+        lvl_idx = get_level_index(u.get("grade","Grade 6"))
+        img_lvl = st.selectbox("🏫 Grade", LEVELS, index=lvl_idx, key="img_lvl")
+
+    style_choice = st.selectbox("🎨 Art Style", list(IMAGE_STYLES.keys()), key="img_style")
+    style_hint   = IMAGE_STYLES[style_choice]
+
+    # Style preview chips
+    style_colors = {
+        "📐 Educational Diagram":"#2563EB",
+        "🎨 Cartoon":            "#E8472A",
+        "🎌 Anime Style":        "#7C3AED",
+        "🤖 AI Art":             "#059669",
+        "🔬 Realistic / Scientific":"#B45309",
+    }
+    sc = style_colors.get(style_choice,"#666")
+    st.markdown(f"""
+    <div style='background:{sc}18;border:1.5px solid {sc}44;border-radius:10px;
+        padding:8px 14px;font-size:12px;color:{sc};font-weight:700;margin-bottom:12px'>
+        {style_choice} — {style_hint[:60]}...
+    </div>""", unsafe_allow_html=True)
+
+    prompt = st.text_area(
+        "📝 Describe what you want to see",
+        placeholder=(
+            "e.g. Diagram showing how photosynthesis works with labeled parts\n"
+            "e.g. Solar system with all 8 planets in order\n"
+            "e.g. Water cycle showing evaporation, clouds and rain\n"
+            "e.g. Human heart with blood flow direction"
+        ),
+        height=100, key="img_prompt"
+    )
+
+    if st.button("🎨 Generate Image", use_container_width=True, type="primary"):
+        if not prompt.strip():
+            st.warning("Please enter a description first!")
+            return
+
+        prog = st.progress(0,  text="🎨 Step 1/4 — Planning your diagram...")
+        time.sleep(0.5)
+        prog.progress(20, text="✏️ Step 2/4 — Drawing shapes and structure...")
+        time.sleep(0.5)
+        prog.progress(45, text="🎨 Step 3/4 — Adding colors, labels and arrows...")
+
+        system_msg = (
+            "You are an expert SVG illustrator who creates educational diagrams. "
+            "STRICT OUTPUT RULES:\n"
+            "1. Output ONLY the SVG code. No markdown. No backticks. No explanations.\n"
+            "2. Start with exactly: <svg\n"
+            "3. End with exactly: </svg>\n"
+            f"4. Use: xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 700 500\" width=\"700\" height=\"500\"\n"
+            "5. Include <defs> with at least 3 linearGradient definitions.\n"
+            "6. Bold title at top (y=35, font-size=24, font-weight=bold, text-anchor=middle, x=350).\n"
+            "7. BRIGHT colors — use gradient fills on all major shapes.\n"
+            "8. Include 20+ visual elements: shapes, labels, arrows.\n"
+            f"9. Style: {style_hint}\n"
+            "10. Every component must have a clear text label.\n"
+            "11. Make it look like a professional educational poster.\n"
+            "12. DO NOT use any xlink:href or external images."
+        )
+        user_msg = (
+            f"Create a detailed colorful educational SVG illustration:\n"
+            f"TOPIC: {prompt}\nSUBJECT: {img_sub}\nLEVEL: {img_lvl}\nSTYLE: {style_hint}\n\n"
+            f"Include: gradient background, bold title, labeled components, arrows.\n"
+            f"Output ONLY the SVG. Start with <svg and end with </svg>."
+        )
+
+        raw = call_ai_svg([{"role":"user","content":user_msg}], system_msg)
+        prog.progress(90, text="✨ Step 4/4 — Finishing touches...")
+        time.sleep(0.3)
+        prog.progress(100, text="✅ Done!")
+        time.sleep(0.3)
+        prog.empty()
+
+        cleaned = raw
+        for fence in ["```svg","```xml","```html","```"]:
+            cleaned = cleaned.replace(fence,"")
+        cleaned = cleaned.strip()
+
+        svg_start = cleaned.find("<svg")
+        svg_end   = cleaned.rfind("</svg>")
+
+        if svg_start >= 0 and svg_end >= 0:
+            final_svg = cleaned[svg_start:svg_end+6]
+
+            st.success("✅ Image generated!")
+            st.markdown("### 🖼️ Your Educational Image")
+            st.components.v1.html(final_svg, height=520, scrolling=False)
+
+            # Download button
+            b64 = base64.b64encode(final_svg.encode()).decode()
+            st.markdown(
+                f'<a href="data:image/svg+xml;base64,{b64}" download="zm_diagram.svg" '
+                f'style="display:inline-flex;align-items:center;gap:8px;padding:10px 22px;'
+                f'background:linear-gradient(135deg,#7C3AED,#A78BFA);color:#fff;'
+                f'border-radius:12px;font-weight:700;font-size:14px;text-decoration:none;margin-top:10px">'
+                f'⬇️ Download SVG Image</a>',
+                unsafe_allow_html=True
+            )
+
+            # Save to gallery
+            imgs  = load_json(IMAGES_FILE)
+            email = u["email"]
+            if email not in imgs: imgs[email] = []
+            imgs[email].insert(0,{
+                "id": str(int(time.time())), "svg": final_svg,
+                "prompt":prompt, "subject":img_sub, "level":img_lvl,
+                "style":style_choice,
+                "created": datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+            })
+            save_json(IMAGES_FILE, imgs)
+
+            # Update stats
+            users = load_json(USERS_FILE)
+            eu    = users.get(u["email"], u)
+            eu.setdefault("stats", init_stats())
+            eu["stats"]["images"] = eu["stats"].get("images",0)+1
+            eu, new_b = check_badges(eu)
+            users[u["email"]] = eu
+            save_json(USERS_FILE, users)
+            st.session_state.user = eu
+            for b in new_b:
+                st.toast(f"🏆 Badge: {b['icon']} {b['name']}!", icon="🎉")
+        else:
+            st.error("⚠️ Could not generate image. Try rephrasing your description.")
+            with st.expander("Debug"): st.code(raw[:600])
+
+    # ── Gallery grid ──────────────────────────────────────────
+    imgs      = load_json(IMAGES_FILE)
+    user_imgs = imgs.get(u["email"], [])
+    if user_imgs:
+        st.markdown("---")
+        st.markdown("### 🖼️ Your Image Gallery")
+        for i in range(0, min(len(user_imgs), 8), 2):
+            cols = st.columns(2)
+            for j, c in enumerate(cols):
+                if i+j < len(user_imgs):
+                    img = user_imgs[i+j]
+                    with c:
+                        st.markdown(f"""
+                        <div style='background:#fff;border-radius:14px;padding:12px;
+                            box-shadow:0 2px 10px rgba(0,0,0,0.07);border:1px solid #F0F0F5;
+                            margin-bottom:12px'>
+                            <div style='font-size:11px;font-weight:800;color:#7C3AED;margin-bottom:8px'>
+                                {img['style']} · {img['subject']} · {img['created']}
+                            </div>
+                            <div style='font-size:12px;color:#555;margin-bottom:8px'>
+                                📝 {img['prompt'][:60]}...
+                            </div>
+                        </div>""", unsafe_allow_html=True)
+                        with st.expander("🔍 View full image"):
+                            st.components.v1.html(img["svg"], height=480, scrolling=False)
+                            b64 = base64.b64encode(img["svg"].encode()).decode()
+                            st.markdown(
+                                f'<a href="data:image/svg+xml;base64,{b64}" download="zm_diagram.svg" '
+                                f'style="display:inline-block;padding:6px 14px;background:#7C3AED;color:#fff;'
+                                f'border-radius:8px;font-weight:700;font-size:12px;text-decoration:none">⬇️ Download</a>',
+                                unsafe_allow_html=True
+                            )
+
+
+# ═════════════════════════════════════════════════════════════════
+# 6. MY SYLLABUS — Redesigned with 4-step dropdown flow
+# ═════════════════════════════════════════════════════════════════
+def page_syllabus():
+    u = st.session_state.user
+    st.markdown("<div class='section-header blue'>📚 My Syllabus</div>", unsafe_allow_html=True)
+
+    # ──────────────────────────────────────────────────────────
+    # STEP 1: Curriculum
+    # ──────────────────────────────────────────────────────────
+    st.markdown("""
+    <div class='syl-step'>
+        <div class='syl-step-title'>📋 Step 1 — Choose Curriculum</div>
+    </div>""", unsafe_allow_html=True)
+    curriculum = st.selectbox("Curriculum", ["Cambridge (Pakistan)"], key="syl_curr")
+
+    # ──────────────────────────────────────────────────────────
+    # STEP 2: Grade
+    # ──────────────────────────────────────────────────────────
+    st.markdown("""
+    <div class='syl-step'>
+        <div class='syl-step-title'>🏫 Step 2 — Choose Grade</div>
+    </div>""", unsafe_allow_html=True)
+    default_grade = normalise_level(u.get("grade","Grade 8"))
+    default_grade_idx = get_level_index(default_grade)
+    sel_grade = st.selectbox("Grade", LEVELS, index=default_grade_idx, key="syl_grade_sel")
+
+    # ──────────────────────────────────────────────────────────
+    # STEP 3: Subject
+    # ──────────────────────────────────────────────────────────
+    st.markdown("""
+    <div class='syl-step'>
+        <div class='syl-step-title'>📖 Step 3 — Choose Subject</div>
+    </div>""", unsafe_allow_html=True)
+    available_subjects = CAMBRIDGE_SUBJECTS.get(sel_grade, list(SUBJECTS.keys()))
+    sel_sub = st.selectbox("Subject", available_subjects, key="syl_sub_sel")
+    st.session_state.syl_subject = sel_sub
+
+    # ──────────────────────────────────────────────────────────
+    # STEP 4: Custom override
+    # ──────────────────────────────────────────────────────────
+    with st.expander("➕ Step 4 — Add Custom Class or Subject"):
+        st.markdown("<div style='color:#1A1A2E;font-size:13px;margin-bottom:8px'>Not seeing your class or subject? Add it manually:</div>", unsafe_allow_html=True)
+        cc1, cc2 = st.columns(2)
+        with cc1:
+            custom_grade = st.text_input("Custom Grade/Class", placeholder="e.g. Grade 11, A2 Level...", key="custom_grade_inp")
+        with cc2:
+            custom_subject = st.text_input("Custom Subject", placeholder="e.g. Accounting, History...", key="custom_sub_inp")
+        if custom_grade.strip(): sel_grade   = custom_grade.strip()
+        if custom_subject.strip(): sel_sub = custom_subject.strip()
+        if custom_grade.strip() or custom_subject.strip():
+            st.info(f"✅ Using: **{sel_grade}** · **{sel_sub}**")
+
+    # ── Update user's default grade ───────────────────────────
+    if sel_grade != normalise_level(u.get("grade","")):
+        users = load_json(USERS_FILE)
+        if u["email"] in users:
+            users[u["email"]]["grade"] = sel_grade
+            save_json(USERS_FILE, users)
+            st.session_state.user["grade"] = sel_grade
+
+    # ── Map subject name to SUBJECTS key ─────────────────────
+    subj_key_map = {
+        "Mathematics":"Maths","Maths":"Maths","Physics":"Physics",
+        "Chemistry":"Chemistry","Biology":"Biology",
+        "English":"English","English Language":"English",
+        "Computer Science":"Computer Science","Urdu":"Urdu",
+        "Science":"Biology","Islamiyat":"English",  # fallback
+    }
+    subj_key  = subj_key_map.get(sel_sub, "Maths")
+    info      = SUBJECTS.get(subj_key, {"emoji":"📚","color":"#666"})
+    sub_color = info["color"]
+    sub_emoji = info["emoji"]
+
+    # ── Subject header ────────────────────────────────────────
+    st.markdown(f"""
+    <div style='background:{sub_color}18;border:2px solid {sub_color}44;
+        border-radius:14px;padding:14px 18px;margin:16px 0;
+        display:flex;align-items:center;gap:12px'>
+        <div style='font-size:36px'>{sub_emoji}</div>
+        <div>
+            <div style='font-weight:800;font-size:16px;color:{sub_color}'>{sel_sub} — {sel_grade}</div>
+            <div style='font-size:12px;color:#666;margin-top:2px'>🎓 {curriculum}</div>
+        </div>
+    </div>""", unsafe_allow_html=True)
+
+    # ── Curriculum data ───────────────────────────────────────
+    curr  = CAMBRIDGE_CURRICULUM.get(subj_key, {}).get(sel_grade, {})
+    if not curr:
+        # Try Grade alias (old "Class X" format)
+        for alias_old, alias_new in _LEVEL_ALIAS.items():
+            if alias_new == sel_grade:
+                curr = CAMBRIDGE_CURRICULUM.get(subj_key, {}).get(alias_old, {})
+                if curr: break
+
+    board = curr.get("board","Cambridge / Pakistan National Curriculum")
+    units = curr.get("units",[])
+
+    if not units:
+        st.info(f"📋 No pre-loaded syllabus for {sel_sub} — {sel_grade}. Use the AI to explore topics!")
+        if st.button(f"💬 Ask Ustad about {sel_sub} {sel_grade}", use_container_width=True, type="primary"):
+            st.session_state.subject = subj_key
+            st.session_state.chat_messages = [{
+                "role":"user",
+                "content":f"Give me an overview of the {sel_sub} syllabus for {sel_grade} in Pakistan. "
+                          f"What are the main topics and units I need to study?"
+            }]
+            st.session_state.page = "chat"; st.rerun()
+        return
+
+    # ── Progress tracker ──────────────────────────────────────
+    studied_topics = u.get("studied_topics",{})
+    key = f"{subj_key}_{sel_grade}"
+    done_topics  = studied_topics.get(key,[])
+    total_topics = sum(len(un["topics"]) for un in units)
+    done_count   = sum(1 for un in units for t in un["topics"] if f"{un['unit']}::{t}" in done_topics)
+    pct = int((done_count/max(total_topics,1))*100)
+
+    st.markdown(f"""
+    <div style='margin-bottom:16px'>
+        <div style='display:flex;justify-content:space-between;font-size:13px;
+            font-weight:700;color:#666;margin-bottom:6px'>
+            <span>📊 Syllabus Progress</span>
+            <span style='color:{sub_color}'>{done_count}/{total_topics} topics ({pct}%)</span>
+        </div>
+        <div class='prog-bar'><div class='prog-fill' style='width:{pct}%;background:{sub_color}'></div></div>
+    </div>""", unsafe_allow_html=True)
+
+    # ── Unit cards ─────────────────────────────────────────────
+    for ui, unit in enumerate(units):
+        unit_done = [t for t in unit["topics"] if f"{unit['unit']}::{t}" in done_topics]
+        unit_pct  = int((len(unit_done)/max(len(unit["topics"]),1))*100)
+
+        with st.expander(
+            f"{'✅' if unit_pct==100 else '🔵' if unit_pct>0 else '⚪'}  "
+            f"Unit {ui+1}: {unit['unit']}  ({unit_pct}% done)",
+            expanded=(ui==0)
+        ):
+            st.markdown(f"""<div class='prog-bar' style='margin-bottom:12px'>
+                <div class='prog-fill' style='width:{unit_pct}%;background:{sub_color}'></div>
+            </div>""", unsafe_allow_html=True)
+
+            # Topic chips overview
+            chip_parts = []
+            for t in unit["topics"]:
+                tk   = f"{unit['unit']}::{t}"
+                tick = "✅ " if tk in done_topics else ""
+                chip_parts.append(
+                    f"<span class='topic-chip' style='background:{sub_color}18;"
+                    f"border:1px solid {sub_color}44;color:{sub_color}'>"
+                    f"{tick}{t}</span>"
+                )
+            chips = "".join(chip_parts)
+            st.markdown(f"<div style='margin-bottom:12px'>{chips}</div>", unsafe_allow_html=True)
+
+            # Per-topic actions
+            for topic in unit["topics"]:
+                topic_key = f"{unit['unit']}::{topic}"
+                is_done   = topic_key in done_topics
+                tc1, tc2, tc3 = st.columns([3,1,1])
+                with tc1:
+                    st.markdown(
+                        f"<div style='padding:6px 0;font-size:14px;"
+                        f"color:{'#059669' if is_done else '#1A1A2E'};"
+                        f"font-weight:{'700' if is_done else '400'}'>"
+                        f"{'✅' if is_done else '📖'} {topic}</div>",
+                        unsafe_allow_html=True
+                    )
+                with tc2:
+                    if st.button("💬 Ask", key=f"ask_{ui}_{topic[:18]}", use_container_width=True):
+                        st.session_state.subject = subj_key
+                        st.session_state.level   = sel_grade
+                        st.session_state.chat_messages = [{
+                            "role":"user",
+                            "content":f"Explain this topic from my {sel_grade} {sel_sub} syllabus: {topic}"
+                        }]
+                        st.session_state.session_id = None
+                        st.session_state.page = "chat"; st.rerun()
+                with tc3:
+                    btn_lbl = "✅ Done" if is_done else "Mark ✓"
+                    if st.button(btn_lbl, key=f"done_{ui}_{topic[:18]}", use_container_width=True):
+                        users = load_json(USERS_FILE)
+                        eu    = users.get(u["email"],u)
+                        st_map = eu.get("studied_topics",{})
+                        tlist  = st_map.get(key,[])
+                        if topic_key in tlist: tlist.remove(topic_key)
+                        else: tlist.append(topic_key)
+                        st_map[key] = tlist
+                        eu["studied_topics"] = st_map
+                        users[u["email"]] = eu
+                        save_json(USERS_FILE, users)
+                        st.session_state.user = eu; st.rerun()
+
+            # Quick action buttons
+            ba, bb, bc = st.columns(3)
+            with ba:
+                if st.button(f"📝 Quiz on Unit {ui+1}", key=f"qunit_{ui}", use_container_width=True):
+                    topics_str = ", ".join(unit["topics"])
+                    with st.spinner("Generating unit quiz..."):
+                        raw = call_ai(
+                            [{"role":"user","content":
+                              f"Create 5 MCQ questions for unit '{unit['unit']}' covering: {topics_str}. "
+                              f"For {sel_grade} {sel_sub} students. "
+                              f'Return ONLY raw JSON: {{"questions":[{{"q":"...","options":["A.","B.","C.","D."],"answer":"A.","explanation":"..."}}]}}'}],
+                            "Quiz generator. Return ONLY valid raw JSON.", 1200
+                        )
+                        try:
+                            clean = raw.replace("```json","").replace("```","").strip()
+                            data  = json.loads(clean)
+                            st.session_state.quiz = {
+                                "questions":data["questions"],"current":0,"score":0,
+                                "answers":[],"done":False,"sub":subj_key,"lvl":sel_grade,
+                                "topic":unit["unit"],"difficulty":"Medium"
+                            }
+                            st.session_state.page = "quiz"; st.rerun()
+                        except: st.error("Could not generate quiz.")
+            with bb:
+                if st.button(f"🎨 Diagram", key=f"imgunit_{ui}", use_container_width=True):
+                    st.session_state.page = "image"; st.rerun()
+            with bc:
+                if st.button(f"📖 Summary", key=f"sumunit_{ui}", use_container_width=True):
+                    topics_str = ", ".join(unit["topics"])
+                    with st.spinner("Generating summary..."):
+                        summary = call_ai(
+                            [{"role":"user","content":
+                              f"Give a clear revision summary of '{unit['unit']}' for {sel_grade} {sel_sub} ({board}). "
+                              f"Cover: {topics_str}. Use bullet points, include key formulas, max 300 words."}],
+                            f"You are a {sel_sub} teacher. Clear revision summaries.", 800
+                        )
+                    st.markdown(f"""
+                    <div style='background:#F8F9FA;border-left:4px solid {sub_color};
+                        border-radius:0 12px 12px 0;padding:14px 16px;margin-top:10px;
+                        font-size:13px;line-height:1.7;white-space:pre-wrap;color:#1A1A2E'>
+                        {summary}
+                    </div>""", unsafe_allow_html=True)
+
+    # ── Download ──────────────────────────────────────────────
+    st.markdown("---")
+    syllabus_text = f"{sel_sub} — {sel_grade}\nBoard: {board}\n\n"
+    for ui, unit in enumerate(units):
+        syllabus_text += f"Unit {ui+1}: {unit['unit']}\n"
+        for t in unit["topics"]: syllabus_text += f"  • {t}\n"
+        syllabus_text += "\n"
+    b64 = base64.b64encode(syllabus_text.encode()).decode()
+    st.markdown(
+        f'<a href="data:text/plain;base64,{b64}" download="{sel_sub}_{sel_grade}_syllabus.txt" '
+        f'style="display:inline-block;padding:10px 20px;background:{sub_color};color:#fff;'
+        f'border-radius:12px;font-weight:700;font-size:14px;text-decoration:none;margin-top:8px">'
+        f'⬇️ Download Syllabus</a>',
+        unsafe_allow_html=True
+    )
+
+
+# ─────────────────────────────────────────────────────────────────
+# PROGRESS PAGE
+# ─────────────────────────────────────────────────────────────────
 def page_progress():
     u     = st.session_state.user
-    stats = u.get("stats", {})
-    total = stats.get("total", 0)
+    stats = u.get("stats",{})
+    total = stats.get("total",0)
 
-    st.markdown("### 📊 My Progress")
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: st.metric("❓ Questions",   total)
-    with c2: st.metric("🏆 Badges",      len(u.get("badges",[])))
-    with c3: st.metric("🔥 Streak",      f"{stats.get('streak',0)} days")
-    with c4: st.metric("📅 Member Since", u.get("joined",""))
+    st.markdown("<div class='section-header green'>📊 My Progress</div>", unsafe_allow_html=True)
+    c1,c2,c3,c4 = st.columns(4)
+    with c1: st.metric("❓ Questions",  total)
+    with c2: st.metric("🏆 Badges",     len(u.get("badges",[])))
+    with c3: st.metric("🔥 Streak",     f"{stats.get('streak',0)} days")
+    with c4: st.metric("🎯 Quizzes",    stats.get("quizzes_done",0))
 
     st.markdown("### 📚 Questions Per Subject")
     for name, info in SUBJECTS.items():
-        cnt = stats.get(name, 0)
-        pct = int((cnt / max(total, 1)) * 100)
+        cnt = stats.get(name,0)
+        pct = int((cnt/max(total,1))*100)
         st.markdown(f"""
         <div style='margin-bottom:14px'>
             <div style='display:flex;justify-content:space-between;font-size:13px;
-                font-weight:700;margin-bottom:5px'>
+                font-weight:700;margin-bottom:5px;color:#1A1A2E'>
                 <span>{info['emoji']} {name}</span>
                 <span style='color:{info["color"]}'>{cnt} questions ({pct}%)</span>
             </div>
-            <div class='prog-bar'>
-                <div class='prog-fill' style='width:{pct}%;background:{info["color"]}'></div>
-            </div>
+            <div class='prog-bar'><div class='prog-fill' style='width:{pct}%;background:{info["color"]}'></div></div>
         </div>""", unsafe_allow_html=True)
 
-    st.markdown("### 🛠️ Activity Summary")
-    c1, c2, c3 = st.columns(3)
-    with c1: st.metric("🎨 Images Generated", stats.get("images", 0))
-    with c2: st.metric("✏️ Essays Written",   stats.get("essays", 0))
-    with c3: st.metric("📖 Subjects Studied",
-                        sum(1 for s in ["Maths","Physics","English","Urdu"] if stats.get(s,0)>0))
+    st.markdown("### 🛠️ Activity")
+    c1,c2,c3 = st.columns(3)
+    with c1: st.metric("🎨 Images Generated", stats.get("images",0))
+    with c2: st.metric("📅 Member Since",      u.get("joined",""))
+    with c3: st.metric("📖 Subjects Studied",  sum(1 for s in SUBJECTS if stats.get(s,0)>0))
 
-# ═════════════════════════════════════════════════════════════════
-# HISTORY
-# ═════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────
+# HISTORY PAGE
+# ─────────────────────────────────────────────────────────────────
 def page_history():
     u = st.session_state.user
-    st.markdown("### 🕐 Chat History")
+    st.markdown("<div class='section-header'>🕐 Chat History</div>", unsafe_allow_html=True)
     hist     = load_json(HISTORY_FILE)
-    sessions = sorted(hist.get(u["email"], []),
-                      key=lambda x: x.get("updated",""), reverse=True)
+    sessions = sorted(hist.get(u["email"],[]), key=lambda x:x.get("updated",""), reverse=True)
+
     if not sessions:
         st.info("📭 No chat history yet. Start a conversation with Ustad!")
         return
+
+    if st.button("🗑️ Clear All History", type="secondary"):
+        hist[u["email"]] = []
+        save_json(HISTORY_FILE, hist)
+        st.success("History cleared."); st.rerun()
+
     for sess in sessions:
-        info   = SUBJECTS.get(sess.get("subject",""), {"emoji":"📚","color":"#666"})
-        msgs   = sess.get("messages", [])
-        label  = (f"{info['emoji']} {sess.get('subject','')} — {sess.get('level','')} | "
-                  f"{sess.get('updated','')} ({len(msgs)} msgs)")
+        info  = SUBJECTS.get(sess.get("subject",""), {"emoji":"📚","color":"#666"})
+        msgs  = sess.get("messages",[])
+        label = (f"{info['emoji']} {sess.get('subject','')} — {sess.get('level','')} | "
+                 f"{sess.get('updated','')} ({len(msgs)} msgs)")
         with st.expander(label):
             for m in msgs:
-                if m["role"] == "user":
-                    st.markdown(f"<div class='msg-user' style='margin-left:40px'>{m['content']}</div>",
-                                unsafe_allow_html=True)
+                if m["role"]=="user":
+                    st.markdown(f"<div class='msg-user' style='margin-left:40px'>{m['content']}</div>", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"<div class='msg-bot' style='margin-right:40px'>{m['content']}</div>",
-                                unsafe_allow_html=True)
-            if st.button("🔄 Continue this chat", key=f"cont_{sess['id']}"):
+                    st.markdown(f"<div class='msg-bot' style='margin-right:40px'>{m['content']}</div>", unsafe_allow_html=True)
+            if st.button("🔄 Continue chat", key=f"cont_{sess['id']}"):
                 st.session_state.chat_messages = msgs
                 st.session_state.session_id    = sess["id"]
                 st.session_state.subject       = sess.get("subject","Maths")
-                st.session_state.page          = "chat"
-                st.rerun()
+                st.session_state.page          = "chat"; st.rerun()
 
-# ═════════════════════════════════════════════════════════════════
-# BADGES
-# ═════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────
+# BADGES PAGE
+# ─────────────────────────────────────────────────────────────────
 def page_badges():
     u      = st.session_state.user
-    earned = u.get("badges", [])
-    st.markdown("### 🏆 Badges & Achievements")
-    st.markdown(f"<p style='color:#999;font-size:13px'>Earned "
+    earned = u.get("badges",[])
+    st.markdown("<div class='section-header orange'>🏆 Badges & Achievements</div>", unsafe_allow_html=True)
+    st.markdown(f"<p style='color:#666;font-size:13px'>Earned "
                 f"<b style='color:#1A1A2E'>{len(earned)}</b> of "
                 f"<b style='color:#1A1A2E'>{len(BADGES)}</b> badges</p>", unsafe_allow_html=True)
     cols = st.columns(3)
-    for i, b in enumerate(BADGES):
+    for i,b in enumerate(BADGES):
         is_earned = b["id"] in earned
-        with cols[i % 3]:
+        with cols[i%3]:
             locked = "" if is_earned else "badge-locked"
             status_color = "#059669" if is_earned else "#ccc"
             status_text  = "✅ Earned!" if is_earned else "🔒 Locked"
@@ -1434,26 +1709,24 @@ def page_badges():
                 <span class='badge-icon'>{b['icon']}</span>
                 <div class='badge-name'>{b['name']}</div>
                 <div class='badge-desc'>{b['desc']}</div>
-                <div style='font-size:11px;margin-top:5px;color:{status_color};font-weight:700'>
-                    {status_text}</div>
+                <div style='font-size:11px;margin-top:5px;color:{status_color};font-weight:700'>{status_text}</div>
             </div>""", unsafe_allow_html=True)
 
-# ═════════════════════════════════════════════════════════════════
-# PROFILE
-# ═════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────
+# PROFILE PAGE
+# ─────────────────────────────────────────────────────────────────
 def page_profile():
     u = st.session_state.user
-    st.markdown("### 👤 My Profile")
-    c1, c2 = st.columns([1, 2])
+    st.markdown("<div class='section-header'>👤 My Profile</div>", unsafe_allow_html=True)
+    c1,c2 = st.columns([1,2])
     with c1:
         st.markdown(f"<div style='font-size:80px;text-align:center;background:#F3F4F6;"
-                    f"border-radius:20px;padding:20px'>{u.get('avatar','👦')}</div>",
-                    unsafe_allow_html=True)
+                    f"border-radius:20px;padding:20px'>{u.get('avatar','👦')}</div>", unsafe_allow_html=True)
     with c2:
         st.markdown(f"""
-        <div style='padding:10px 0'>
-            <div style='font-family:"Baloo 2",cursive;font-size:22px;font-weight:800;color:#1A1A2E'>
-                {u['name']}</div>
+        <div style='padding:10px 0;color:#1A1A2E'>
+            <div style='font-family:"Baloo 2",cursive;font-size:22px;font-weight:800'>{u['name']}</div>
             <div style='font-size:13px;color:#999;margin-top:4px'>
                 {'🎒 Student' if u.get('role')=='student' else '👨‍👩‍👦 Parent'} • {u.get('grade','')}
             </div>
@@ -1464,10 +1737,10 @@ def page_profile():
     st.markdown("---")
     st.markdown("#### ✏️ Update Profile")
     with st.form("profile_form"):
-        new_name   = st.text_input("Full Name", value=u.get("name",""))
-        new_grade  = st.selectbox("Default Class", ["-- Select --"] + LEVELS,
-                                  index=get_level_index(u.get("grade","Class 5"))+1)
-        cur_av_key = next((k for k,v in AVATARS.items() if v == u.get("avatar","👦")), list(AVATARS.keys())[0])
+        new_name  = st.text_input("Full Name", value=u.get("name",""))
+        new_grade = st.selectbox("Default Grade", ["-- Select --"]+LEVELS,
+                                 index=get_level_index(u.get("grade","Grade 6"))+1)
+        cur_av_key = next((k for k,v in AVATARS.items() if v==u.get("avatar","👦")), list(AVATARS.keys())[0])
         new_avatar = st.selectbox("Avatar", list(AVATARS.keys()),
                                   index=list(AVATARS.keys()).index(cur_av_key))
         st.markdown("#### 🔒 Change Password")
@@ -1482,239 +1755,17 @@ def page_profile():
             elif new_pw and new_pw != cnf_pw:
                 st.error("New passwords don't match.")
             elif new_pw and len(new_pw) < 6:
-                st.error("New password must be at least 6 characters.")
+                st.error("Min 6 characters.")
             else:
-                if new_name.strip():    eu["name"]   = new_name.strip()
-                if new_grade != "-- Select --": eu["grade"] = new_grade
+                if new_name.strip():           eu["name"]   = new_name.strip()
+                if new_grade != "-- Select --": eu["grade"]  = new_grade
                 eu["avatar"] = AVATARS[new_avatar]
-                if new_pw:              eu["password"] = hash_pw(new_pw)
+                if new_pw:                     eu["password"] = hash_pw(new_pw)
                 users[u["email"]] = eu
                 save_json(USERS_FILE, users)
                 st.session_state.user = eu
-                st.success("✅ Profile updated!")
-                time.sleep(0.5)
-                st.rerun()
+                st.success("✅ Profile updated!"); time.sleep(0.5); st.rerun()
 
-    st.markdown("---")
-    st.markdown("#### 🗑️ Danger Zone")
-    if st.button("🗑️ Clear All My Chat History"):
-        hist = load_json(HISTORY_FILE)
-        hist[u["email"]] = []
-        save_json(HISTORY_FILE, hist)
-        st.success("Chat history cleared.")
-
-
-# ═════════════════════════════════════════════════════════════════
-# SYLLABUS PAGE
-# ═════════════════════════════════════════════════════════════════
-def page_syllabus():
-    u     = st.session_state.user
-    grade = u.get("grade","Class 5")
-
-    st.markdown("### 📚 My Cambridge Syllabus")
-    st.markdown(
-        f"<p style='color:#666;font-size:13px;margin-bottom:16px'>"
-        f"Showing the full syllabus for <b>{grade}</b> — aligned with Cambridge / Pakistan National Curriculum.</p>",
-        unsafe_allow_html=True
-    )
-
-    # ── Class & Subject selectors ──────────────────────────────
-    c1, c2 = st.columns(2)
-    with c1:
-        sel_grade = st.selectbox("🏫 Class", LEVELS,
-            index=get_level_index(grade),
-            key="syl_grade")
-    with c2:
-        sel_sub = st.selectbox("📖 Subject", list(SUBJECTS.keys()),
-            index=list(SUBJECTS.keys()).index(st.session_state.syl_subject),
-            key="syl_sub_sel")
-    st.session_state.syl_subject = sel_sub
-
-    curr = CAMBRIDGE_CURRICULUM.get(sel_sub, {}).get(sel_grade, {})
-    board = curr.get("board", "Pakistan National Curriculum")
-    units = curr.get("units", [])
-
-    # ── Board badge ────────────────────────────────────────────
-    sub_color = SUBJECTS[sel_sub]["color"]
-    sub_emoji = SUBJECTS[sel_sub]["emoji"]
-    st.markdown(f"""
-    <div style='background:{sub_color}18;border:2px solid {sub_color};
-        border-radius:14px;padding:14px 18px;margin-bottom:18px;
-        display:flex;align-items:center;gap:12px'>
-        <div style='font-size:36px'>{sub_emoji}</div>
-        <div>
-            <div style='font-weight:800;font-size:16px;color:{sub_color}'>{sel_sub} — {sel_grade}</div>
-            <div style='font-size:12px;color:#666;margin-top:2px'>🎓 {board}</div>
-            <div style='font-size:12px;color:#999;margin-top:1px'>📋 {len(units)} Units</div>
-        </div>
-    </div>""", unsafe_allow_html=True)
-
-    if not units:
-        st.info("Curriculum data coming soon for this combination.")
-        return
-
-    # ── Progress tracker (which units studied) ─────────────────
-    studied_topics = u.get("studied_topics", {})
-    key = f"{sel_sub}_{sel_grade}"
-    done_topics = studied_topics.get(key, [])
-    total_topics = sum(len(un["topics"]) for un in units)
-    done_count   = sum(1 for un in units for t in un["topics"] if f"{un['unit']}::{t}" in done_topics)
-    pct = int((done_count / max(total_topics,1)) * 100)
-
-    st.markdown(f"""
-    <div style='margin-bottom:16px'>
-        <div style='display:flex;justify-content:space-between;font-size:13px;
-            font-weight:700;color:#666;margin-bottom:6px'>
-            <span>📊 Syllabus Progress</span>
-            <span style='color:{sub_color}'>{done_count}/{total_topics} topics studied ({pct}%)</span>
-        </div>
-        <div class='prog-bar'>
-            <div class='prog-fill' style='width:{pct}%;background:{sub_color}'></div>
-        </div>
-    </div>""", unsafe_allow_html=True)
-
-    # ── Unit cards ─────────────────────────────────────────────
-    for ui, unit in enumerate(units):
-        unit_done = [t for t in unit["topics"] if f"{unit['unit']}::{t}" in done_topics]
-        unit_pct  = int((len(unit_done)/len(unit["topics"]))*100)
-
-        with st.expander(
-            f"{'✅' if unit_pct==100 else '🔵' if unit_pct>0 else '⚪'}  "
-            f"Unit {ui+1}: {unit['unit']}   ({unit_pct}% done)",
-            expanded=(ui==0)
-        ):
-            # Mini progress bar
-            st.markdown(f"""
-            <div class='prog-bar' style='margin-bottom:12px'>
-                <div class='prog-fill' style='width:{unit_pct}%;background:{sub_color}'></div>
-            </div>""", unsafe_allow_html=True)
-
-            for topic in unit["topics"]:
-                topic_key = f"{unit['unit']}::{topic}"
-                is_done   = topic_key in done_topics
-
-                tc1, tc2, tc3 = st.columns([3, 1, 1])
-                with tc1:
-                    icon = "✅" if is_done else "📖"
-                    st.markdown(
-                        f"<div style='padding:6px 0;font-size:14px;color:{'#059669' if is_done else '#1A1A2E'};font-weight:{'700' if is_done else '400'}'>"
-                        f"{icon} {topic}</div>",
-                        unsafe_allow_html=True
-                    )
-                with tc2:
-                    if st.button("💬 Ask", key=f"ask_{ui}_{topic[:20]}", use_container_width=True):
-                        # Go to chat with this topic pre-loaded
-                        st.session_state.subject       = sel_sub
-                        st.session_state.level         = sel_grade
-                        st.session_state.chat_messages = [{
-                            "role": "user",
-                            "content": f"Please explain this topic from my {sel_grade} {sel_sub} syllabus: {topic}"
-                        }]
-                        st.session_state.session_id = None
-                        st.session_state.page       = "chat"
-                        st.rerun()
-                with tc3:
-                    btn_label = "✅ Done" if is_done else "Mark ✓"
-                    if st.button(btn_label, key=f"done_{ui}_{topic[:20]}", use_container_width=True):
-                        users = load_json(USERS_FILE)
-                        eu    = users.get(u["email"], u)
-                        st_map = eu.get("studied_topics", {})
-                        tlist  = st_map.get(key, [])
-                        if topic_key in tlist:
-                            tlist.remove(topic_key)
-                        else:
-                            tlist.append(topic_key)
-                        st_map[key] = tlist
-                        eu["studied_topics"] = st_map
-                        users[u["email"]] = eu
-                        save_json(USERS_FILE, users)
-                        st.session_state.user = eu
-                        st.rerun()
-
-            # Quick action buttons
-            st.markdown("<div style='margin-top:12px;display:flex;gap:8px;flex-wrap:wrap'>", unsafe_allow_html=True)
-            ba, bb, bc = st.columns(3)
-            with ba:
-                if st.button(f"📝 Quiz on this unit", key=f"qunit_{ui}", use_container_width=True):
-                    topics_str = ", ".join(unit["topics"])
-                    with st.spinner("Generating unit quiz..."):
-                        raw = call_ai(
-                            [{"role":"user","content":
-                              f"Create 5 MCQ questions specifically about this unit: '{unit['unit']}' "
-                              f"covering these topics: {topics_str}. "
-                              f"For {sel_grade} level {sel_sub} students ({board}). "
-                              f"Return ONLY raw JSON: "
-                              f'{{"questions":[{{"q":"...","options":["A. ...","B. ...","C. ...","D. ..."],"answer":"A. ...","explanation":"..."}}]}}'}],
-                            "Quiz generator. Return ONLY valid raw JSON.", 1200
-                        )
-                        try:
-                            clean = raw.replace("```json","").replace("```","").strip()
-                            data  = json.loads(clean)
-                            st.session_state.quiz = {
-                                "questions": data["questions"],
-                                "current":0,"score":0,"answers":[],"done":False,
-                                "sub":sel_sub,"lvl":sel_grade
-                            }
-                            st.session_state.page = "quiz"
-                            st.rerun()
-                        except:
-                            st.error("Could not generate quiz. Try again.")
-            with bb:
-                if st.button(f"🎨 Diagram", key=f"imgunit_{ui}", use_container_width=True):
-                    st.session_state.page = "image"
-                    st.rerun()
-            with bc:
-                if st.button(f"📖 Summary", key=f"sumunit_{ui}", use_container_width=True):
-                    topics_str = ", ".join(unit["topics"])
-                    with st.spinner("Generating summary..."):
-                        summary = call_ai(
-                            [{"role":"user","content":
-                              f"Give a clear, concise revision summary of '{unit['unit']}' for a {sel_grade} "
-                              f"{sel_sub} student ({board}). Cover these key topics: {topics_str}. "
-                              f"Use bullet points, include key formulas or rules, and keep it under 300 words."}],
-                            f"You are a {sel_sub} teacher. Give revision summaries in clear simple English.", 800
-                        )
-                    st.markdown(f"""
-                    <div style='background:#F8F9FA;border-left:4px solid {sub_color};
-                        border-radius:0 12px 12px 0;padding:14px 16px;margin-top:10px;
-                        font-size:13px;line-height:1.7;white-space:pre-wrap;color:#1A1A2E'>
-                        {summary}
-                    </div>""", unsafe_allow_html=True)
-
-    # ── Full syllabus overview ─────────────────────────────────
-    st.markdown("---")
-    st.markdown("### 📋 Full Syllabus Overview")
-    for ui, unit in enumerate(units):
-        topics_html = "".join(
-            f"<span style='display:inline-block;background:{sub_color}18;border:1px solid {sub_color}44;"
-            f"border-radius:20px;padding:3px 10px;font-size:11px;color:{sub_color};margin:3px 3px 3px 0;"
-            f"font-weight:600'>{t}</span>"
-            for t in unit["topics"]
-        )
-        st.markdown(f"""
-        <div style='background:#fff;border-radius:14px;padding:14px 16px;
-            margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border:1px solid #F0F0F5'>
-            <div style='font-weight:800;font-size:14px;color:#1A1A2E;margin-bottom:8px'>
-                {ui+1}. {unit["unit"]}
-            </div>
-            <div>{topics_html}</div>
-        </div>""", unsafe_allow_html=True)
-
-    # ── Download syllabus ──────────────────────────────────────
-    syllabus_text = f"{sel_sub} — {sel_grade}\nBoard: {board}\n\n"
-    for ui, unit in enumerate(units):
-        syllabus_text += f"Unit {ui+1}: {unit['unit']}\n"
-        for t in unit["topics"]:
-            syllabus_text += f"  • {t}\n"
-        syllabus_text += "\n"
-    b64 = base64.b64encode(syllabus_text.encode()).decode()
-    st.markdown(
-        f'<a href="data:text/plain;base64,{b64}" download="{sel_sub}_{sel_grade}_syllabus.txt" '
-        f'style="display:inline-block;padding:10px 20px;background:{sub_color};color:#fff;'
-        f'border-radius:12px;font-weight:700;font-size:14px;text-decoration:none;margin-top:8px">'
-        f'⬇️ Download Syllabus as Text</a>',
-        unsafe_allow_html=True
-    )
 
 # ═════════════════════════════════════════════════════════════════
 # ROUTER
@@ -1723,9 +1774,8 @@ if not st.session_state.logged_in:
     page_auth()
 else:
     render_sidebar()
-    # Mobile navigation hint (shown once per session)
     if not st.session_state.get("mobile_hint_shown", False):
-        st.info("📱 **On mobile?** Tap the **☰ arrow** at top-left to open the menu and navigate between features!", icon="📱")
+        st.info("📱 **On mobile?** Tap the **☰ arrow** at top-left to open the menu!", icon="📱")
         st.session_state.mobile_hint_shown = True
 
     p = st.session_state.page
@@ -1733,9 +1783,8 @@ else:
     elif p == "chat":     page_chat()
     elif p == "syllabus": page_syllabus()
     elif p == "quiz":     page_quiz()
+    elif p == "friends":  page_friends()
     elif p == "image":    page_image()
-    elif p == "essay":    page_essay()
-    elif p == "tools":    page_tools()
     elif p == "progress": page_progress()
     elif p == "history":  page_history()
     elif p == "badges":   page_badges()

@@ -1,34 +1,27 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# ZM Academy — Complete Streamlit App
-# Updated with: Enhanced Quiz, Friends Group, Improved Image Gen,
-#               Redesigned Syllabus, Removed Essay/StudyTools
+# ZM Academy — Futuristic AI Edition 🤖✨
+# UI: Neon Cosmos Dark Theme with AI Mascot Characters
 # ═══════════════════════════════════════════════════════════════════════════════
 import streamlit as st
 import json, hashlib, datetime, time, os, base64, random
 from anthropic import Anthropic
 from curriculum import CAMBRIDGE_CURRICULUM
 
-# ─────────────────────────────────────────────────────────────────
-# PAGE CONFIG
-# ─────────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="ZM Academy 📚",
-    page_icon="📚",
+    page_title="ZM Academy 🤖",
+    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# ─────────────────────────────────────────────────────────────────
-# CONSTANTS & LOOKUPS
-# ─────────────────────────────────────────────────────────────────
 SUBJECTS = {
-    "Maths":           {"emoji": "🔢", "color": "#E8472A"},
-    "Physics":         {"emoji": "⚡", "color": "#2563EB"},
-    "Chemistry":       {"emoji": "🧪", "color": "#7C3AED"},
-    "Biology":         {"emoji": "🌱", "color": "#059669"},
-    "English":         {"emoji": "📖", "color": "#0891B2"},
-    "Computer Science":{"emoji": "💻", "color": "#6D28D9"},
-    "Urdu":            {"emoji": "🖊️", "color": "#B45309"},
+    "Maths":           {"emoji": "🔢", "color": "#00FFD1"},
+    "Physics":         {"emoji": "⚡", "color": "#60A5FA"},
+    "Chemistry":       {"emoji": "🧪", "color": "#A78BFA"},
+    "Biology":         {"emoji": "🌱", "color": "#34D399"},
+    "English":         {"emoji": "📖", "color": "#F472B6"},
+    "Computer Science":{"emoji": "💻", "color": "#818CF8"},
+    "Urdu":            {"emoji": "🖊️", "color": "#FBBF24"},
 }
 
 LEVELS = [
@@ -37,7 +30,6 @@ LEVELS = [
     "O Level","A Level"
 ]
 
-# Legacy compat mapping (old "Class X" keys → new "Grade X")
 _LEVEL_ALIAS = {f"Class {i}": f"Grade {i}" for i in range(1,11)}
 _LEVEL_ALIAS.update({"Class 5": "Grade 5"})
 
@@ -52,12 +44,12 @@ def get_level_index(grade):
         return 5
 
 AVATARS = {
+    "🤖 Robot":"🤖","🚀 Astronaut":"🚀","🧑‍🔬 Scientist":"🧑‍🔬",
+    "🧝 Elf":"🧝","🦸 Superhero":"🦸","🧙 Wizard":"🧙",
     "👦 Boy":"👦","👧 Girl":"👧","👨 Dad":"👨","👩 Mom":"👩",
-    "👨‍🏫 Teacher":"👨‍🏫","🧑‍🚀 Astronaut":"🧑‍🚀",
-    "🧑‍🔬 Scientist":"🧑‍🔬","🧑‍🎨 Artist":"🧑‍🎨"
+    "👨‍🏫 Teacher":"👨‍🏫","🧑‍🎨 Artist":"🧑‍🎨"
 }
 
-# ── Image styles ─────────────────────────────────────────────────
 IMAGE_STYLES = {
     "📐 Educational Diagram": "a clean labeled educational diagram with arrows, colorful sections, white background",
     "🎨 Cartoon":             "a bright fun cartoon illustration with cheerful bold colors suitable for students",
@@ -66,7 +58,6 @@ IMAGE_STYLES = {
     "🔬 Realistic / Scientific": "a detailed realistic scientific illustration like a textbook diagram, accurate and labeled",
 }
 
-# ── Badge definitions ─────────────────────────────────────────────
 BADGES = [
     {"id":"first_q",  "icon":"🌟","name":"First Step",        "desc":"Asked first question",    "req": lambda s: s.get("total",0)>=1},
     {"id":"curious",  "icon":"🧠","name":"Curious Mind",      "desc":"Asked 5 questions",       "req": lambda s: s.get("total",0)>=5},
@@ -91,7 +82,6 @@ QUICK_PROMPTS = {
     "Urdu":            ["اردو گرامر کی بنیادی باتیں","نظم اور نثر میں کیا فرق ہے؟","اچھا مضمون کیسے لکھیں؟","محاورے کیا ہوتے ہیں؟"],
 }
 
-# ── Cambridge syllabus subjects per grade ────────────────────────
 CAMBRIDGE_SUBJECTS = {
     "Grade 6":  ["Mathematics","Physics","Chemistry","Biology","English","Computer Science","Urdu"],
     "Grade 7":  ["Mathematics","Physics","Chemistry","Biology","English","Computer Science","Urdu"],
@@ -103,6 +93,131 @@ CAMBRIDGE_SUBJECTS = {
 }
 for g in ["Grade 1","Grade 2","Grade 3","Grade 4","Grade 5"]:
     CAMBRIDGE_SUBJECTS[g] = ["Mathematics","English","Urdu","Science","Islamiyat"]
+
+# ── AI Mascot SVG Characters ──────────────────────────────────────
+# USTAD: Friendly robot tutor with glowing cyan eyes
+MASCOT_USTAD_SVG = """
+<svg width="90" height="90" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bodyGrad" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#1A3A6A"/>
+      <stop offset="100%" stop-color="#0A1628"/>
+    </radialGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <!-- Antenna -->
+  <line x1="45" y1="8" x2="45" y2="18" stroke="#00FFD1" stroke-width="2"/>
+  <circle cx="45" cy="6" r="3" fill="#00FFD1" filter="url(#glow)"/>
+  <!-- Head -->
+  <rect x="20" y="18" width="50" height="40" rx="12" fill="url(#bodyGrad)" stroke="#00FFD1" stroke-width="1.5"/>
+  <!-- Eyes -->
+  <ellipse cx="33" cy="34" rx="7" ry="7" fill="#000D1A"/>
+  <ellipse cx="57" cy="34" rx="7" ry="7" fill="#000D1A"/>
+  <ellipse cx="33" cy="34" rx="4.5" ry="4.5" fill="#00FFD1" filter="url(#glow)"/>
+  <ellipse cx="57" cy="34" rx="4.5" ry="4.5" fill="#00FFD1" filter="url(#glow)"/>
+  <circle cx="34" cy="33" r="1.5" fill="white"/>
+  <circle cx="58" cy="33" r="1.5" fill="white"/>
+  <!-- Mouth panel -->
+  <rect x="30" y="46" width="30" height="6" rx="3" fill="#000D1A"/>
+  <rect x="32" y="47" width="6" height="4" rx="2" fill="#00FFD1" opacity="0.8"/>
+  <rect x="40" y="47" width="6" height="4" rx="2" fill="#00FFD1" opacity="0.6"/>
+  <rect x="48" y="47" width="6" height="4" rx="2" fill="#00FFD1" opacity="0.4"/>
+  <!-- Body -->
+  <rect x="25" y="60" width="40" height="22" rx="8" fill="url(#bodyGrad)" stroke="#00FFD1" stroke-width="1"/>
+  <!-- Chest panel -->
+  <rect x="33" y="64" width="24" height="12" rx="4" fill="#000D1A"/>
+  <circle cx="40" cy="70" r="3" fill="#8B5CF6" filter="url(#glow)"/>
+  <circle cx="50" cy="70" r="3" fill="#00FFD1" filter="url(#glow)"/>
+  <!-- Graduation cap -->
+  <rect x="18" y="16" width="54" height="5" rx="2" fill="#8B5CF6"/>
+  <rect x="40" y="11" width="10" height="6" rx="1" fill="#8B5CF6"/>
+  <line x1="60" y1="18" x2="65" y2="25" stroke="#FFD700" stroke-width="2"/>
+  <circle cx="66" cy="26" r="2" fill="#FFD700"/>
+</svg>
+"""
+
+# ZARA: Anime-style girl mascot (for younger grades)
+MASCOT_ZARA_SVG = """
+<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="skinGrad" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#FFD9B0"/>
+      <stop offset="100%" stop-color="#FFBE85"/>
+    </radialGradient>
+    <filter id="glow2"><feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <!-- Hair top -->
+  <ellipse cx="40" cy="22" rx="20" ry="16" fill="#2D1B69"/>
+  <!-- Face -->
+  <ellipse cx="40" cy="32" rx="18" ry="16" fill="url(#skinGrad)"/>
+  <!-- Hair sides -->
+  <ellipse cx="22" cy="30" rx="6" ry="12" fill="#2D1B69"/>
+  <ellipse cx="58" cy="30" rx="6" ry="12" fill="#2D1B69"/>
+  <!-- Hair accessory star -->
+  <polygon points="40,8 42,14 48,14 43,18 45,24 40,20 35,24 37,18 32,14 38,14" fill="#FFD700" filter="url(#glow2)"/>
+  <!-- Eyes - big anime style -->
+  <ellipse cx="32" cy="32" rx="6" ry="7" fill="#1A0A4A"/>
+  <ellipse cx="48" cy="32" rx="6" ry="7" fill="#1A0A4A"/>
+  <ellipse cx="32" cy="32" rx="4" ry="5" fill="#8B5CF6"/>
+  <ellipse cx="48" cy="32" rx="4" ry="5" fill="#8B5CF6"/>
+  <ellipse cx="32" cy="32" rx="2" ry="3" fill="#000"/>
+  <ellipse cx="48" cy="32" rx="2" ry="3" fill="#000"/>
+  <circle cx="34" cy="30" r="1.5" fill="white"/>
+  <circle cx="50" cy="30" r="1.5" fill="white"/>
+  <!-- Blush -->
+  <ellipse cx="25" cy="37" rx="5" ry="3" fill="#FF9BB0" opacity="0.4"/>
+  <ellipse cx="55" cy="37" rx="5" ry="3" fill="#FF9BB0" opacity="0.4"/>
+  <!-- Smile -->
+  <path d="M34 40 Q40 45 46 40" stroke="#CC6B7A" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <!-- Body/uniform -->
+  <rect x="24" y="50" width="32" height="25" rx="8" fill="#2D1B69"/>
+  <!-- Collar -->
+  <path d="M32 50 L40 58 L48 50" fill="#8B5CF6"/>
+  <!-- Stars on uniform -->
+  <circle cx="35" cy="62" r="2" fill="#FFD700" filter="url(#glow2)"/>
+  <circle cx="45" cy="62" r="2" fill="#00FFD1" filter="url(#glow2)"/>
+</svg>
+"""
+
+# NOVA: Space explorer/astronaut (cool for older students)
+MASCOT_NOVA_SVG = """
+<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="helmetGrad" cx="50%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#1E3A5F"/>
+      <stop offset="100%" stop-color="#0A1628"/>
+    </radialGradient>
+    <filter id="glow3"><feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <!-- Helmet -->
+  <circle cx="40" cy="28" r="22" fill="url(#helmetGrad)" stroke="#60A5FA" stroke-width="1.5"/>
+  <!-- Visor -->
+  <ellipse cx="40" cy="28" rx="14" ry="12" fill="#000D2A"/>
+  <ellipse cx="40" cy="28" rx="14" ry="12" fill="none" stroke="#60A5FA" stroke-width="1" opacity="0.5"/>
+  <!-- Face in visor -->
+  <ellipse cx="36" cy="26" rx="3" ry="3.5" fill="#00FFD1" filter="url(#glow3)"/>
+  <ellipse cx="44" cy="26" rx="3" ry="3.5" fill="#00FFD1" filter="url(#glow3)"/>
+  <path d="M35 33 Q40 37 45 33" stroke="#60A5FA" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <!-- Visor reflection -->
+  <path d="M28 20 Q35 16 42 18" stroke="white" stroke-width="1" fill="none" opacity="0.3"/>
+  <!-- Suit body -->
+  <rect x="22" y="48" width="36" height="26" rx="10" fill="#0E2A4A" stroke="#60A5FA" stroke-width="1"/>
+  <!-- Suit details -->
+  <rect x="30" y="53" width="20" height="12" rx="4" fill="#000D1A"/>
+  <circle cx="37" cy="59" r="2.5" fill="#FF2D78" filter="url(#glow3)"/>
+  <circle cx="43" cy="59" r="2.5" fill="#00FFD1" filter="url(#glow3)"/>
+  <!-- Shoulder lights -->
+  <circle cx="24" cy="52" r="3" fill="#FFD700" filter="url(#glow3)"/>
+  <circle cx="56" cy="52" r="3" fill="#FFD700" filter="url(#glow3)"/>
+  <!-- Pakistan flag patch -->
+  <rect x="28" y="55" width="8" height="5" rx="1" fill="#01411C"/>
+  <circle cx="31" cy="57" r="1.5" fill="white" opacity="0.8"/>
+</svg>
+"""
+
 
 # ─────────────────────────────────────────────────────────────────
 # DATA STORAGE
@@ -140,9 +255,6 @@ def save_json(filepath, data):
 def hash_pw(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# ─────────────────────────────────────────────────────────────────
-# STATS & BADGES
-# ─────────────────────────────────────────────────────────────────
 DAILY_LIMITS = {"free":10, "basic":50, "premium":9999}
 
 def init_stats():
@@ -188,14 +300,11 @@ def bump_stats(subject_field=None, extra_field=None):
     elif s.get("lastDate","") == yest:  s["streak"] = s.get("streak",0)+1
     else:                               s["streak"] = 1
     s["lastDate"] = today
-    # track study_dates for streak calendar
     study_dates = s.get("study_dates", [])
     if today not in study_dates:
         study_dates.append(today)
-        # keep only last 60 days
         study_dates = study_dates[-60:]
     s["study_dates"] = study_dates
-    # daily counter
     if s.get("dailyDate","") != today:
         s["dailyQs"]  = 0
         s["dailyDate"] = today
@@ -208,9 +317,6 @@ def bump_stats(subject_field=None, extra_field=None):
     for b in new_badges:
         st.toast(f"🏆 Badge Earned: {b['icon']} {b['name']}!", icon="🎉")
 
-# ─────────────────────────────────────────────────────────────────
-# SESSION STATE
-# ─────────────────────────────────────────────────────────────────
 defaults = {
     "logged_in": False, "user": None, "page": "home",
     "subject": "Maths", "level": "Grade 6",
@@ -218,13 +324,11 @@ defaults = {
     "quiz": None,
     "word_of_day": None, "wod_loaded": False,
     "syl_subject": "Maths", "syl_unit": None,
-    # Syllabus selections
     "syl_curriculum": "Cambridge",
     "syl_grade": "Grade 8",
     "syl_subject_name": "Mathematics",
     "syl_custom_grade": "",
     "syl_custom_subject": "",
-    # Friends group
     "group_session": None,
     "group_player_idx": 0,
 }
@@ -232,9 +336,6 @@ for k, v in defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
-# ─────────────────────────────────────────────────────────────────
-# ANTHROPIC CLIENT
-# ─────────────────────────────────────────────────────────────────
 @st.cache_resource
 def get_client():
     key = st.secrets.get("ANTHROPIC_API_KEY","") or os.environ.get("ANTHROPIC_API_KEY","")
@@ -271,436 +372,339 @@ def call_ai_svg(messages, system):
     except Exception as e:
         return f"ERROR: {e}"
 
+
 # ─────────────────────────────────────────────────────────────────
-# CSS — ZM Academy Premium UI  🇵🇰  Dark Luxury + Emerald Gold
+# CSS — ZM Academy FUTURISTIC AI THEME 🤖🌌
+# Neon Cosmos Dark + Holographic UI + AI Mascot Characters
 # ─────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Sora:wght@700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800;900&family=Exo+2:ital,wght@0,300;0,400;0,600;0,700;0,800;1,400&family=Rajdhani:wght@400;500;600;700&display=swap');
 
-/* ══════════════════════════════════════════
-   ROOT TOKENS
-══════════════════════════════════════════ */
 :root{
-  --bg:        #F0F4F0;
-  --surface:   #FFFFFF;
-  --surface2:  #F7FAF7;
-  --border:    #E2EAE2;
-  --green:     #0D6E3F;
-  --green-mid: #1A8C50;
-  --green-lt:  #27A862;
-  --gold:      #C9A84C;
-  --gold-lt:   #E8C96A;
-  --crimson:   #C0392B;
-  --text:      #0D1F0D;
-  --text2:     #3D5C3D;
-  --text3:     #7A9A7A;
-  --white:     #FFFFFF;
-  --shadow-sm: 0 2px 8px rgba(13,110,63,0.08);
-  --shadow-md: 0 6px 24px rgba(13,110,63,0.12);
-  --shadow-lg: 0 16px 48px rgba(13,110,63,0.16);
-  --radius:    16px;
-  --radius-sm: 10px;
+  --bg:#03040A; --bg2:#060B18; --surface:#0A1628; --surface2:#0D1E36;
+  --border:rgba(0,255,200,0.15); --border2:rgba(120,80,255,0.2);
+  --cyan:#00FFD1; --cyan-dim:#00BFA5; --purple:#8B5CF6; --purple-lt:#A78BFA;
+  --pink:#FF2D78; --gold:#FFD700; --blue:#3B82F6;
+  --text:#E0F4FF; --text2:#94B4CC; --text3:#4A6A80; --white:#FFFFFF;
+  --glow-cyan:0 0 20px rgba(0,255,209,0.4),0 0 40px rgba(0,255,209,0.15);
+  --glow-purple:0 0 20px rgba(139,92,246,0.4);
+  --glow-pink:0 0 20px rgba(255,45,120,0.4);
+  --shadow-card:0 8px 32px rgba(0,0,0,0.6),0 0 0 1px rgba(0,255,209,0.06);
+  --radius:18px; --radius-sm:12px;
 }
 
-/* ══════════════════════════════════════════
-   BASE
-══════════════════════════════════════════ */
 html,body,[class*="css"]{
-  font-family:'Plus Jakarta Sans',sans-serif !important;
-  background:var(--bg) !important;
-  color:var(--text) !important;
+  font-family:'Exo 2',sans-serif !important;
+  background:var(--bg) !important; color:var(--text) !important;
 }
 .main .block-container{
-  padding-top:1.2rem !important; padding-bottom:4rem !important;
-  max-width:960px !important;
+  padding-top:1rem !important; padding-bottom:4rem !important;
+  max-width:980px !important;
   padding-left:1.4rem !important; padding-right:1.4rem !important;
-  background:var(--bg) !important;
+  background:transparent !important;
 }
-#MainMenu,footer,header{ visibility:hidden; }
+#MainMenu,footer,header{visibility:hidden;}
 
-/* ── Animated grain overlay for depth ── */
 .main::before{
-  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
-  opacity:.4;
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse at 20% 50%,rgba(139,92,246,0.07) 0%,transparent 50%),
+    radial-gradient(ellipse at 80% 20%,rgba(0,255,209,0.05) 0%,transparent 40%),
+    radial-gradient(ellipse at 60% 80%,rgba(255,45,120,0.04) 0%,transparent 35%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Ccircle cx='50' cy='80' r='1' fill='white' opacity='0.5'/%3E%3Ccircle cx='150' cy='30' r='0.5' fill='white' opacity='0.7'/%3E%3Ccircle cx='250' cy='120' r='1' fill='%2300FFD1' opacity='0.35'/%3E%3Ccircle cx='80' cy='200' r='1' fill='%238B5CF6' opacity='0.4'/%3E%3Ccircle cx='220' cy='260' r='0.8' fill='white' opacity='0.5'/%3E%3Ccircle cx='180' cy='150' r='1.2' fill='%2300FFD1' opacity='0.25'/%3E%3Ccircle cx='290' cy='80' r='0.7' fill='%23FFD700' opacity='0.35'/%3E%3C/svg%3E");
 }
 
-/* ══════════════════════════════════════════
-   MOBILE
-══════════════════════════════════════════ */
+@keyframes scan{0%{transform:translateY(-100vh)}100%{transform:translateY(100vh)}}
+.main::after{
+  content:'';position:fixed;left:0;right:0;height:2px;pointer-events:none;z-index:1;
+  background:linear-gradient(90deg,transparent,rgba(0,255,209,0.25),transparent);
+  animation:scan 10s linear infinite;
+}
+
 @media(max-width:768px){
-  .main .block-container{ padding-left:.6rem !important; padding-right:.6rem !important; }
-  .stButton>button{ min-height:48px !important; font-size:14px !important; }
-  .msg-user{ margin-left:6px !important; }
-  .msg-bot{  margin-right:6px !important; }
-  div[data-testid="column"]{ padding:2px !important; }
-  .stTextInput>div>div>input{ font-size:16px !important; padding:12px !important; }
+  .main .block-container{padding-left:.6rem !important;padding-right:.6rem !important;}
+  .stButton>button{min-height:48px !important;font-size:13px !important;}
+  div[data-testid="column"]{padding:2px !important;}
+  .stTextInput>div>div>input{font-size:16px !important;padding:12px !important;}
 }
 
-/* ══════════════════════════════════════════
-   MAIN BUTTONS
-══════════════════════════════════════════ */
+@keyframes borderGlow{
+  0%,100%{box-shadow:0 0 8px rgba(0,255,209,0.25),inset 0 0 8px rgba(0,255,209,0.04)}
+  50%{box-shadow:0 0 18px rgba(0,255,209,0.45),inset 0 0 14px rgba(0,255,209,0.07)}
+}
+@keyframes shimmer{
+  0%{left:-100%}100%{left:100%}
+}
+
 .stButton>button{
-  background:var(--surface) !important;
-  border:1.5px solid var(--border) !important;
-  color:var(--text) !important;
-  font-family:'Plus Jakarta Sans',sans-serif !important;
-  font-weight:700 !important; font-size:13.5px !important;
-  border-radius:var(--radius-sm) !important;
-  padding:10px 18px !important;
-  transition:all .2s cubic-bezier(.4,0,.2,1) !important;
-  box-shadow:var(--shadow-sm) !important;
+  background:linear-gradient(135deg,rgba(10,22,40,0.9),rgba(13,30,54,0.95)) !important;
+  border:1px solid rgba(0,255,209,0.25) !important;
+  color:var(--cyan) !important;
+  font-family:'Rajdhani',sans-serif !important;
+  font-weight:700 !important; font-size:13.5px !important; letter-spacing:.6px !important;
+  border-radius:var(--radius-sm) !important; padding:10px 20px !important;
+  transition:all .25s cubic-bezier(.4,0,.2,1) !important;
+  box-shadow:0 0 10px rgba(0,255,209,0.1),inset 0 0 10px rgba(0,255,209,0.02) !important;
+  text-transform:uppercase !important; position:relative !important; overflow:hidden !important;
 }
 .stButton>button:hover{
-  border-color:var(--green-mid) !important;
-  color:var(--green) !important;
-  box-shadow:var(--shadow-md) !important;
-  transform:translateY(-1px) !important;
+  border-color:var(--cyan) !important; color:#fff !important;
+  box-shadow:var(--glow-cyan) !important;
+  transform:translateY(-2px) scale(1.02) !important;
+  background:linear-gradient(135deg,rgba(0,255,209,0.1),rgba(10,22,40,0.95)) !important;
 }
 .stButton>button[kind="primary"]{
-  background:linear-gradient(135deg,var(--green) 0%,var(--green-lt) 100%) !important;
-  color:#fff !important; border:none !important;
-  box-shadow:0 6px 20px rgba(13,110,63,0.35) !important;
+  background:linear-gradient(135deg,rgba(0,255,209,0.12) 0%,rgba(0,180,165,0.16) 100%) !important;
+  border:1px solid var(--cyan) !important; color:var(--cyan) !important;
+  box-shadow:var(--glow-cyan),inset 0 0 20px rgba(0,255,209,0.04) !important;
   font-weight:800 !important;
+  animation:borderGlow 3s ease-in-out infinite !important;
 }
 .stButton>button[kind="primary"]:hover{
-  box-shadow:0 8px 28px rgba(13,110,63,0.5) !important;
-  transform:translateY(-2px) !important;
+  background:linear-gradient(135deg,rgba(0,255,209,0.22),rgba(0,200,180,0.25)) !important;
   color:#fff !important;
+  box-shadow:0 0 30px rgba(0,255,209,0.6),0 0 60px rgba(0,255,209,0.2) !important;
+  transform:translateY(-3px) scale(1.03) !important;
 }
 
-/* ══════════════════════════════════════════
-   SIDEBAR — Deep Forest Dark
-══════════════════════════════════════════ */
 [data-testid="stSidebar"]{
-  background:linear-gradient(180deg,#061A0E 0%,#0A2414 40%,#071510 100%) !important;
-  border-right:1px solid rgba(201,168,76,0.15) !important;
+  background:linear-gradient(180deg,#020510 0%,#04091A 40%,#060B20 100%) !important;
+  border-right:1px solid rgba(0,255,209,0.1) !important;
 }
-[data-testid="stSidebar"] *{ color:#fff !important; }
-[data-testid="stSidebar"] p,
-[data-testid="stSidebar"] span,
-[data-testid="stSidebar"] div,
-[data-testid="stSidebar"] label{ color:#fff !important; }
+[data-testid="stSidebar"] *{color:var(--text) !important;}
+[data-testid="stSidebar"] p,[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] div,[data-testid="stSidebar"] label{color:var(--text) !important;}
 
 [data-testid="stSidebar"] .stButton>button{
-  background:rgba(255,255,255,0.05) !important;
-  border:1px solid rgba(201,168,76,0.12) !important;
-  color:#E8F5EE !important; font-weight:600 !important;
-  font-size:13.5px !important; text-align:left !important;
-  padding:11px 16px !important; border-radius:10px !important;
+  background:rgba(0,255,209,0.03) !important;
+  border:1px solid rgba(0,255,209,0.08) !important;
+  color:var(--text2) !important; font-weight:600 !important;
+  font-size:13px !important; text-align:left !important;
+  padding:10px 14px !important; border-radius:10px !important;
   margin-bottom:3px !important; width:100% !important;
-  transition:all .18s ease !important;
-  box-shadow:none !important; transform:none !important;
+  text-transform:none !important; letter-spacing:0 !important;
+  animation:none !important; box-shadow:none !important;
 }
 [data-testid="stSidebar"] .stButton>button:hover{
-  background:rgba(201,168,76,0.12) !important;
-  border-color:rgba(201,168,76,0.35) !important;
-  color:#E8C96A !important;
-  transform:translateX(3px) !important;
+  background:rgba(0,255,209,0.07) !important;
+  border-color:rgba(0,255,209,0.3) !important;
+  color:var(--cyan) !important;
+  transform:translateX(4px) !important;
+  box-shadow:3px 0 14px rgba(0,255,209,0.12) !important;
 }
 [data-testid="stSidebar"] .stButton>button[kind="primary"]{
-  background:linear-gradient(135deg,#0D6E3F,#1A8C50) !important;
-  border:1px solid rgba(201,168,76,0.4) !important;
-  color:#FFD700 !important; font-weight:800 !important;
-  box-shadow:0 4px 16px rgba(13,110,63,0.5),0 0 0 1px rgba(201,168,76,0.2) !important;
+  background:linear-gradient(135deg,rgba(0,255,209,0.1),rgba(0,180,165,0.07)) !important;
+  border:1px solid rgba(0,255,209,0.35) !important;
+  color:var(--cyan) !important; font-weight:800 !important;
+  box-shadow:0 0 12px rgba(0,255,209,0.18) !important;
+  animation:borderGlow 3s ease-in-out infinite !important;
 }
 
-/* ══════════════════════════════════════════
-   CARDS
-══════════════════════════════════════════ */
+@keyframes cardPulse{0%,100%{border-color:rgba(0,255,209,0.12)}50%{border-color:rgba(0,255,209,0.25)}}
 .stat-card{
-  background:var(--surface); border-radius:var(--radius);
-  padding:18px 14px; text-align:center;
-  box-shadow:var(--shadow-sm); border:1.5px solid var(--border);
-  transition:box-shadow .2s, transform .2s;
-  position:relative; overflow:hidden;
+  background:linear-gradient(135deg,rgba(10,22,40,0.96),rgba(6,11,24,0.99));
+  border-radius:var(--radius);padding:18px 14px;text-align:center;
+  box-shadow:var(--shadow-card);border:1px solid rgba(0,255,209,0.15);
+  transition:all .3s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden;
+  animation:cardPulse 4s ease-in-out infinite;
 }
 .stat-card::before{
-  content:''; position:absolute; top:0; left:0; right:0; height:3px;
-  background:linear-gradient(90deg,var(--green),var(--gold));
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--cyan),transparent);
 }
-.stat-card:hover{ box-shadow:var(--shadow-md); transform:translateY(-2px); }
-.stat-num{ font-size:30px; font-weight:900; color:var(--green); font-family:'Sora',sans-serif; }
-.stat-lbl{ font-size:11px; color:var(--text3); margin-top:4px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; }
+.stat-card:hover{box-shadow:var(--glow-cyan),var(--shadow-card);transform:translateY(-4px);border-color:rgba(0,255,209,0.4);}
+.stat-num{font-size:30px;font-weight:900;color:var(--cyan);font-family:'Orbitron',monospace;text-shadow:var(--glow-cyan);}
+.stat-lbl{font-size:10px;color:var(--text3);margin-top:4px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;font-family:'Rajdhani',sans-serif;}
 
 .feature-card{
-  background:var(--surface); border-radius:var(--radius);
-  padding:18px 20px; border-left:4px solid var(--green);
-  box-shadow:var(--shadow-sm); margin-bottom:10px; color:var(--text);
-  transition:box-shadow .2s, transform .2s;
+  background:linear-gradient(135deg,rgba(10,22,40,0.96),rgba(6,11,24,0.99));
+  border-radius:var(--radius);padding:18px 20px;border-left:3px solid var(--cyan);
+  box-shadow:var(--shadow-card);margin-bottom:10px;color:var(--text);transition:all .25s ease;
 }
-.feature-card:hover{ box-shadow:var(--shadow-md); transform:translateY(-1px); }
+.feature-card:hover{box-shadow:var(--glow-cyan),var(--shadow-card);transform:translateY(-2px) translateX(2px);}
 
 .hist-card{
-  background:var(--surface); border-radius:var(--radius);
-  padding:14px 16px; box-shadow:var(--shadow-sm);
-  border:1.5px solid var(--border); margin-bottom:10px;
+  background:linear-gradient(135deg,rgba(10,22,40,0.9),rgba(6,11,24,0.96));
+  border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-card);
+  border:1px solid var(--border);margin-bottom:10px;
 }
 
-/* ══════════════════════════════════════════
-   SECTION HEADERS
-══════════════════════════════════════════ */
 .section-header{
-  background:linear-gradient(135deg,#0D6E3F 0%,#1A8C50 60%,#0A5A32 100%);
-  color:#fff; border-radius:var(--radius); padding:16px 22px; margin-bottom:20px;
-  font-family:'Sora',sans-serif; font-size:20px; font-weight:800;
-  border:1px solid rgba(201,168,76,0.25);
-  box-shadow:0 6px 24px rgba(13,110,63,0.25);
-  letter-spacing:-.3px; position:relative; overflow:hidden;
+  background:linear-gradient(135deg,rgba(0,255,209,0.07) 0%,rgba(10,22,40,0.97) 40%,rgba(0,100,80,0.05) 100%);
+  color:var(--cyan);border-radius:var(--radius);padding:16px 22px;margin-bottom:20px;
+  font-family:'Orbitron',monospace;font-size:17px;font-weight:800;
+  border:1px solid rgba(0,255,209,0.25);
+  box-shadow:var(--glow-cyan),inset 0 0 40px rgba(0,255,209,0.02);
+  letter-spacing:1.5px;position:relative;overflow:hidden;text-transform:uppercase;
 }
-.section-header::after{
-  content:''; position:absolute; top:-40px; right:-30px;
-  width:120px; height:120px; border-radius:50%;
-  background:rgba(201,168,76,0.15);
-}
-.section-header.orange{
-  background:linear-gradient(135deg,#8B1A0A 0%,#C0392B 60%,#E74C3C 100%);
-  border-color:rgba(255,200,100,0.2);
-  box-shadow:0 6px 24px rgba(192,57,43,0.3);
-}
-.section-header.gold{
-  background:linear-gradient(135deg,#7A5C00 0%,#C9A84C 60%,#E8C96A 100%);
-  border-color:rgba(255,255,255,0.2);
-  box-shadow:0 6px 24px rgba(201,168,76,0.35);
-}
-.section-header.blue{
-  background:linear-gradient(135deg,#0A2F6B 0%,#1A56C4 60%,#2E7DD1 100%);
-  border-color:rgba(100,180,255,0.2);
-}
-.section-header.purple{
-  background:linear-gradient(135deg,#3A0A6B 0%,#6B21A8 60%,#8B5CF6 100%);
-  border-color:rgba(200,150,255,0.2);
-}
+.section-header::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);}
+.section-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,255,209,0.3),transparent);}
+.section-header.orange{background:linear-gradient(135deg,rgba(255,45,120,0.07),rgba(10,22,40,0.97));color:var(--pink);border-color:rgba(255,45,120,0.25);box-shadow:var(--glow-pink),inset 0 0 40px rgba(255,45,120,0.02);}
+.section-header.orange::before{background:linear-gradient(90deg,transparent,var(--pink),transparent);}
+.section-header.gold{background:linear-gradient(135deg,rgba(255,215,0,0.07),rgba(10,22,40,0.97));color:var(--gold);border-color:rgba(255,215,0,0.25);box-shadow:0 0 20px rgba(255,215,0,0.25);}
+.section-header.blue{background:linear-gradient(135deg,rgba(59,130,246,0.07),rgba(10,22,40,0.97));color:#60A5FA;border-color:rgba(59,130,246,0.25);box-shadow:0 0 20px rgba(59,130,246,0.25);}
+.section-header.blue::before{background:linear-gradient(90deg,transparent,#60A5FA,transparent);}
+.section-header.purple{background:linear-gradient(135deg,rgba(139,92,246,0.07),rgba(10,22,40,0.97));color:var(--purple-lt);border-color:rgba(139,92,246,0.25);box-shadow:var(--glow-purple),inset 0 0 40px rgba(139,92,246,0.02);}
+.section-header.purple::before{background:linear-gradient(90deg,transparent,var(--purple-lt),transparent);}
 
-/* ══════════════════════════════════════════
-   CHAT BUBBLES
-══════════════════════════════════════════ */
 .msg-user{
-  background:linear-gradient(135deg,#0D6E3F,#1A8C50);
-  color:#fff; border-radius:18px 18px 4px 18px;
-  padding:13px 18px; margin:5px 0 5px 50px;
-  font-size:14px; line-height:1.7;
-  box-shadow:0 4px 16px rgba(13,110,63,0.25);
+  background:linear-gradient(135deg,rgba(0,255,209,0.1),rgba(0,180,165,0.07));
+  color:var(--text);border-radius:18px 18px 4px 18px;padding:13px 18px;
+  margin:5px 0 5px 50px;font-size:14px;line-height:1.7;
+  border:1px solid rgba(0,255,209,0.2);box-shadow:0 0 15px rgba(0,255,209,0.08);
 }
 .msg-bot{
-  background:var(--surface); color:var(--text);
-  border-radius:18px 18px 18px 4px; padding:13px 18px;
-  margin:5px 50px 5px 0; font-size:14px; line-height:1.75;
-  box-shadow:var(--shadow-sm); border:1.5px solid var(--border);
+  background:linear-gradient(135deg,rgba(10,22,40,0.96),rgba(6,11,24,0.99));
+  color:var(--text);border-radius:18px 18px 18px 4px;padding:13px 18px;
+  margin:5px 50px 5px 0;font-size:14px;line-height:1.75;
+  box-shadow:var(--shadow-card);border:1px solid rgba(139,92,246,0.18);
 }
-.msg-lbl{ font-size:11px; color:var(--text3); margin-bottom:3px; font-weight:600; }
-.msg-lbl-r{ text-align:right; }
+.msg-lbl{font-size:10px;color:var(--text3);margin-bottom:3px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;font-family:'Rajdhani',sans-serif;}
+.msg-lbl-r{text-align:right;}
 
-/* ══════════════════════════════════════════
-   PROGRESS BARS
-══════════════════════════════════════════ */
-.prog-bar{
-  background:rgba(13,110,63,0.08); border-radius:99px;
-  height:10px; overflow:hidden; margin-bottom:4px;
-}
-.prog-fill{ height:100%; border-radius:99px; transition:width .6s cubic-bezier(.4,0,.2,1); }
+@keyframes energyFlow{0%{background-position:0 0}100%{background-position:40px 0}}
+.prog-bar{background:rgba(0,255,209,0.04);border-radius:99px;height:10px;overflow:hidden;margin-bottom:4px;border:1px solid rgba(0,255,209,0.07);}
+.prog-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--cyan),var(--purple-lt),var(--cyan));background-size:40px 100%;animation:energyFlow 2s linear infinite;box-shadow:0 0 8px rgba(0,255,209,0.4);}
 
-/* ══════════════════════════════════════════
-   BADGES
-══════════════════════════════════════════ */
+@keyframes badgeFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 .badge-card{
-  background:linear-gradient(135deg,#FFFDF0,#FFF8E0);
-  border:1.5px solid rgba(201,168,76,0.45); border-radius:var(--radius);
-  padding:14px 10px; text-align:center;
-  box-shadow:0 2px 12px rgba(201,168,76,0.15);
-  transition:transform .2s, box-shadow .2s;
+  background:linear-gradient(135deg,rgba(10,22,40,0.96),rgba(6,11,24,0.99));
+  border:1px solid rgba(255,215,0,0.2);border-radius:var(--radius);
+  padding:14px 10px;text-align:center;
+  box-shadow:0 0 15px rgba(255,215,0,0.08),var(--shadow-card);transition:all .3s ease;
 }
-.badge-card:hover{ transform:translateY(-3px); box-shadow:0 8px 24px rgba(201,168,76,0.3); }
-.badge-locked{ opacity:0.3; filter:grayscale(1); }
-.badge-icon{ font-size:30px; display:block; }
-.badge-name{ font-size:12px; font-weight:800; color:#7A5C00; margin-top:6px; }
-.badge-desc{ font-size:10px; color:var(--text3); margin-top:3px; }
+.badge-card:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 0 25px rgba(255,215,0,0.28),var(--shadow-card);border-color:rgba(255,215,0,0.45);}
+.badge-locked{opacity:0.18;filter:grayscale(1);}
+.badge-icon{font-size:30px;display:block;}
+.badge-name{font-size:10.5px;font-weight:800;color:var(--gold);margin-top:6px;font-family:'Orbitron',monospace;letter-spacing:.5px;}
+.badge-desc{font-size:10px;color:var(--text3);margin-top:3px;}
 
-/* ══════════════════════════════════════════
-   WORD CARD
-══════════════════════════════════════════ */
 .word-card{
-  background:linear-gradient(135deg,#061A0E 0%,#0A2414 50%,#071510 100%);
-  border-radius:var(--radius); padding:20px 22px; margin-bottom:16px;
-  color:#fff; border:1px solid rgba(201,168,76,0.25);
-  box-shadow:0 8px 32px rgba(6,26,14,0.3);
-  position:relative; overflow:hidden;
+  background:linear-gradient(135deg,#020510 0%,#04091A 50%,#060B20 100%);
+  border-radius:var(--radius);padding:20px 22px;margin-bottom:16px;
+  color:var(--text);border:1px solid rgba(0,255,209,0.18);
+  box-shadow:var(--glow-cyan),var(--shadow-card);position:relative;overflow:hidden;
 }
-.word-card::before{
-  content:''; position:absolute; top:-20px; right:-20px;
-  width:100px; height:100px; border-radius:50%;
-  background:radial-gradient(circle,rgba(201,168,76,0.2),transparent 70%);
-}
+.word-card::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(0,255,209,0.12),transparent 70%);}
 
-/* ══════════════════════════════════════════
-   MISC
-══════════════════════════════════════════ */
 .reminder{
-  background:linear-gradient(135deg,#FFFDF0,#FFF8DC);
-  border:1.5px solid rgba(201,168,76,0.4); border-radius:var(--radius);
-  padding:13px 18px; margin-bottom:16px; font-size:13px; color:var(--text);
-  box-shadow:0 2px 10px rgba(201,168,76,0.12);
+  background:linear-gradient(135deg,rgba(255,215,0,0.05),rgba(10,22,40,0.96));
+  border:1px solid rgba(255,215,0,0.2);border-radius:var(--radius);
+  padding:13px 18px;margin-bottom:16px;font-size:13px;color:var(--text);
+  box-shadow:0 0 15px rgba(255,215,0,0.07);
 }
 
-/* ── Leaderboard ── */
 .lb-row{
-  display:flex; align-items:center; gap:12px; padding:13px 18px;
-  background:var(--surface); border-radius:var(--radius); margin-bottom:8px;
-  box-shadow:var(--shadow-sm); border:1.5px solid var(--border); color:var(--text);
-  transition:box-shadow .2s, transform .2s;
+  display:flex;align-items:center;gap:12px;padding:13px 18px;
+  background:linear-gradient(135deg,rgba(10,22,40,0.96),rgba(6,11,24,0.99));
+  border-radius:var(--radius);margin-bottom:8px;
+  box-shadow:var(--shadow-card);border:1px solid var(--border);color:var(--text);transition:all .2s ease;
 }
-.lb-row:hover{ box-shadow:var(--shadow-md); transform:translateX(3px); }
-.lb-rank{ font-size:22px; font-weight:900; width:32px; text-align:center; }
-.lb-name{ flex:1; font-weight:700; font-size:14px; }
-.lb-score{ font-weight:900; font-size:18px; color:var(--green); font-family:'Sora',sans-serif; }
+.lb-row:hover{box-shadow:var(--glow-cyan),var(--shadow-card);transform:translateX(4px);border-color:rgba(0,255,209,0.28);}
+.lb-rank{font-size:22px;font-weight:900;width:32px;text-align:center;}
+.lb-name{flex:1;font-weight:700;font-size:14px;}
+.lb-score{font-weight:900;font-size:18px;color:var(--cyan);font-family:'Orbitron',monospace;text-shadow:var(--glow-cyan);}
 
-/* ── Syllabus ── */
-.syl-step{
-  background:linear-gradient(135deg,#F0FAF3,#F5FFF7);
-  border-radius:var(--radius); padding:16px 18px; margin-bottom:14px;
-  border:1.5px solid rgba(13,110,63,0.12); color:var(--text);
-}
-.syl-step-title{
-  font-size:11px; font-weight:800; color:var(--green);
-  text-transform:uppercase; letter-spacing:1.2px; margin-bottom:8px;
-}
-.topic-chip{
-  display:inline-block; border-radius:20px; padding:4px 12px;
-  font-size:11px; font-weight:700; margin:3px 3px 3px 0;
-}
+.syl-step{background:linear-gradient(135deg,rgba(0,255,209,0.03),rgba(10,22,40,0.96));border-radius:var(--radius);padding:14px 18px;margin-bottom:14px;border:1px solid rgba(0,255,209,0.1);color:var(--text);}
+.syl-step-title{font-size:10px;font-weight:800;color:var(--cyan);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;font-family:'Orbitron',monospace;}
+.topic-chip{display:inline-block;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;margin:3px 3px 3px 0;}
 
-/* ══════════════════════════════════════════
-   INPUTS & SELECTS
-══════════════════════════════════════════ */
-[data-testid="stSelectbox"]>div>div{
-  background:var(--surface) !important; border:2px solid var(--border) !important;
-  border-radius:var(--radius-sm) !important; color:var(--text) !important;
-}
-[data-testid="stSelectbox"]>div>div>div{ color:var(--text) !important; font-weight:600 !important; }
-[data-baseweb="popover"],[data-baseweb="menu"],[role="listbox"]{
-  background:var(--surface) !important; border:1.5px solid var(--border) !important;
-  border-radius:var(--radius) !important;
-  box-shadow:0 12px 40px rgba(13,110,63,0.15) !important;
-}
-[role="option"]{ color:var(--text) !important; background:var(--surface) !important; font-size:14px !important; padding:10px 14px !important; }
-[role="option"]:hover,[role="option"][aria-selected="true"]{
-  background:rgba(13,110,63,0.08) !important; color:var(--green) !important; font-weight:700 !important;
-}
-.stTextInput>div>div>input,
-.stTextArea>div>div>textarea{
-  border-radius:var(--radius-sm) !important; border:2px solid var(--border) !important;
-  color:var(--text) !important; background:var(--surface) !important;
-  font-family:'Plus Jakarta Sans',sans-serif !important;
-}
-.stTextInput>div>div>input:focus,
-.stTextArea>div>div>textarea:focus{
-  border-color:var(--green) !important;
-  box-shadow:0 0 0 3px rgba(13,110,63,0.12) !important;
-}
-label,[data-testid="stLabel"]>label{ color:var(--text) !important; font-weight:700 !important; font-size:13px !important; }
+[data-testid="stSelectbox"]>div>div{background:rgba(10,22,40,0.96) !important;border:1px solid rgba(0,255,209,0.22) !important;border-radius:var(--radius-sm) !important;color:var(--text) !important;box-shadow:0 0 10px rgba(0,255,209,0.04) !important;}
+[data-testid="stSelectbox"]>div>div>div{color:var(--text) !important;font-weight:600 !important;}
+[data-baseweb="popover"],[data-baseweb="menu"],[role="listbox"]{background:rgba(6,11,24,0.99) !important;border:1px solid rgba(0,255,209,0.18) !important;border-radius:var(--radius) !important;box-shadow:var(--glow-cyan),0 20px 60px rgba(0,0,0,0.85) !important;}
+[role="option"]{color:var(--text) !important;background:transparent !important;font-size:14px !important;padding:10px 14px !important;}
+[role="option"]:hover,[role="option"][aria-selected="true"]{background:rgba(0,255,209,0.07) !important;color:var(--cyan) !important;font-weight:700 !important;}
 
-/* ── Tabs ── */
-.stTabs [data-baseweb="tab-list"]{
-  background:var(--surface2) !important; border-radius:var(--radius-sm) !important;
-  padding:4px !important; border:1.5px solid var(--border) !important;
-  gap:4px !important;
+.stTextInput>div>div>input,.stTextArea>div>div>textarea{
+  border-radius:var(--radius-sm) !important;border:1px solid rgba(0,255,209,0.18) !important;
+  color:var(--text) !important;background:rgba(10,22,40,0.96) !important;
+  font-family:'Exo 2',sans-serif !important;box-shadow:0 0 10px rgba(0,255,209,0.04) !important;
 }
-.stTabs [data-baseweb="tab"]{
-  background:transparent !important; color:var(--text2) !important;
-  font-weight:700 !important; font-size:13px !important;
-  border-radius:8px !important; padding:8px 16px !important;
-  border:none !important;
-}
-.stTabs [aria-selected="true"]{
-  background:linear-gradient(135deg,var(--green),var(--green-lt)) !important;
-  color:#fff !important; box-shadow:0 3px 10px rgba(13,110,63,0.3) !important;
-}
+.stTextInput>div>div>input:focus,.stTextArea>div>div>textarea:focus{border-color:var(--cyan) !important;box-shadow:var(--glow-cyan) !important;}
 
-/* ── Expanders ── */
-[data-testid="stExpander"]{
-  background:var(--surface) !important; border:1.5px solid var(--border) !important;
-  border-radius:var(--radius-sm) !important; margin-bottom:6px !important;
-}
-[data-testid="stExpander"] summary{
-  font-weight:700 !important; color:var(--text) !important;
-}
+label,[data-testid="stLabel"]>label{color:var(--cyan) !important;font-weight:700 !important;font-size:11.5px !important;letter-spacing:1.2px !important;text-transform:uppercase !important;font-family:'Rajdhani',sans-serif !important;}
 
-/* ── Metrics ── */
-[data-testid="stMetricValue"]{ color:var(--green) !important; font-family:'Sora',sans-serif !important; font-weight:900 !important; }
-[data-testid="stMetricLabel"]{ color:var(--text2) !important; font-weight:700 !important; }
+.stTabs [data-baseweb="tab-list"]{background:rgba(10,22,40,0.8) !important;border-radius:var(--radius-sm) !important;padding:4px !important;border:1px solid rgba(0,255,209,0.1) !important;gap:4px !important;}
+.stTabs [data-baseweb="tab"]{background:transparent !important;color:var(--text3) !important;font-weight:700 !important;font-size:12.5px !important;border-radius:8px !important;padding:8px 16px !important;border:none !important;letter-spacing:.8px !important;text-transform:uppercase !important;font-family:'Rajdhani',sans-serif !important;}
+.stTabs [aria-selected="true"]{background:linear-gradient(135deg,rgba(0,255,209,0.1),rgba(0,180,165,0.07)) !important;color:var(--cyan) !important;box-shadow:var(--glow-cyan) !important;border:1px solid rgba(0,255,209,0.28) !important;}
 
-/* ── st.info / success / error ── */
-[data-testid="stAlert"]{
-  border-radius:var(--radius-sm) !important;
-  border-left-width:4px !important;
-}
+[data-testid="stExpander"]{background:rgba(10,22,40,0.8) !important;border:1px solid rgba(0,255,209,0.1) !important;border-radius:var(--radius-sm) !important;margin-bottom:6px !important;}
+[data-testid="stExpander"] summary{font-weight:700 !important;color:var(--text) !important;}
 
-/* ── Radio/checkbox ── */
-.stRadio label,[data-testid="stRadio"] label{ color:var(--text) !important; font-weight:600 !important; }
-.stCheckbox label{ color:var(--text) !important; font-weight:600 !important; }
+[data-testid="stMetricValue"]{color:var(--cyan) !important;font-family:'Orbitron',monospace !important;font-weight:900 !important;text-shadow:var(--glow-cyan) !important;}
+[data-testid="stMetricLabel"]{color:var(--text2) !important;font-weight:700 !important;}
 
-/* ── Slider ── */
-[data-testid="stSlider"] [data-baseweb="slider"] [data-testid="stThumbValue"]{
-  color:var(--green) !important; font-weight:800 !important;
-}
+[data-testid="stAlert"]{background:rgba(10,22,40,0.9) !important;border-radius:var(--radius-sm) !important;border-left-width:3px !important;color:var(--text) !important;}
 
-/* ── Scrollbar ── */
-::-webkit-scrollbar{ width:6px; height:6px; }
-::-webkit-scrollbar-track{ background:var(--bg); }
-::-webkit-scrollbar-thumb{ background:rgba(13,110,63,0.25); border-radius:99px; }
-::-webkit-scrollbar-thumb:hover{ background:rgba(13,110,63,0.45); }
+.stRadio label,[data-testid="stRadio"] label{color:var(--text) !important;font-weight:600 !important;}
+.stCheckbox label{color:var(--text) !important;font-weight:600 !important;}
+
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:rgba(0,255,209,0.25);border-radius:99px;}
+::-webkit-scrollbar-thumb:hover{background:rgba(0,255,209,0.5);}
+
+@keyframes float{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-8px) rotate(1deg)}}
+@keyframes glowPulse{0%,100%{filter:drop-shadow(0 0 6px rgba(0,255,209,0.5))}50%{filter:drop-shadow(0 0 16px rgba(0,255,209,0.9))}}
+.mascot-float{animation:float 4s ease-in-out infinite,glowPulse 3s ease-in-out infinite;display:inline-block;cursor:pointer;}
 </style>
 """, unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────
-# AUTH PAGE
+# AUTH PAGE — Futuristic Login Terminal
 # ─────────────────────────────────────────────────────────────────
 def page_auth():
-    # Full-page premium background
     st.markdown("""
     <style>
-    .main .block-container{ max-width:480px !important; padding-top:2rem !important; }
-    [data-testid="stForm"]{ background:var(--surface) !important; border-radius:20px !important; padding:24px !important; border:1.5px solid var(--border) !important; box-shadow:var(--shadow-lg) !important; }
+    .main .block-container{max-width:500px !important;padding-top:1.5rem !important;}
+    [data-testid="stForm"]{background:rgba(10,22,40,0.95) !important;border-radius:20px !important;padding:24px !important;border:1px solid rgba(0,255,209,0.2) !important;box-shadow:0 0 40px rgba(0,255,209,0.08),0 20px 60px rgba(0,0,0,0.6) !important;}
     </style>""", unsafe_allow_html=True)
 
-    st.markdown("""
-    <div style='text-align:center;padding:32px 0 24px'>
-        <div style='display:inline-flex;align-items:center;justify-content:center;
-            width:80px;height:80px;border-radius:24px;margin-bottom:16px;
-            background:linear-gradient(135deg,#0D6E3F,#1A8C50);
-            box-shadow:0 8px 32px rgba(13,110,63,0.4)'>
-            <span style='font-size:40px;line-height:1'>📚</span>
+    # Hero with mascot
+    st.markdown(f"""
+    <div style='text-align:center;padding:24px 0 20px'>
+        <div style='display:flex;justify-content:center;align-items:flex-end;gap:16px;margin-bottom:16px'>
+            <div class='mascot-float'>{MASCOT_ZARA_SVG}</div>
+            <div style='display:inline-flex;align-items:center;justify-content:center;
+                width:80px;height:80px;border-radius:22px;
+                background:linear-gradient(135deg,rgba(0,255,209,0.1),rgba(10,22,40,0.9));
+                box-shadow:0 0 30px rgba(0,255,209,0.3),0 0 60px rgba(0,255,209,0.1);
+                border:1px solid rgba(0,255,209,0.3)'>
+                <span style='font-size:42px;line-height:1'>🤖</span>
+            </div>
+            <div class='mascot-float' style='animation-delay:.8s'>{MASCOT_NOVA_SVG}</div>
         </div>
-        <h1 style='font-family:"Sora",sans-serif;font-size:32px;font-weight:900;
-            color:#0D1F0D;margin:0 0 6px;letter-spacing:-1px'>ZM Academy</h1>
-        <p style='color:#3D5C3D;font-size:14px;font-weight:600;margin:0'>
-            🇵🇰 Pakistan's <b style="color:#0D6E3F">#1</b> AI-Powered Education Platform
+        <h1 style='font-family:"Orbitron",monospace;font-size:28px;font-weight:900;
+            color:#00FFD1;margin:0 0 4px;letter-spacing:2px;
+            text-shadow:0 0 20px rgba(0,255,209,0.6)'>ZM ACADEMY</h1>
+        <p style='color:#94B4CC;font-size:12px;font-weight:600;margin:0;letter-spacing:2px;text-transform:uppercase;font-family:"Rajdhani",sans-serif'>
+            🇵🇰 Pakistan's AI-Powered Education System
         </p>
-        <div style='display:flex;justify-content:center;gap:8px;margin-top:10px;flex-wrap:wrap'>
-            <span style='background:rgba(13,110,63,0.08);color:#0D6E3F;padding:3px 12px;
-                border-radius:99px;font-size:11px;font-weight:700;border:1px solid rgba(13,110,63,0.15)'>
-                Grades 1–10</span>
-            <span style='background:rgba(13,110,63,0.08);color:#0D6E3F;padding:3px 12px;
-                border-radius:99px;font-size:11px;font-weight:700;border:1px solid rgba(13,110,63,0.15)'>
-                O Level</span>
-            <span style='background:rgba(13,110,63,0.08);color:#0D6E3F;padding:3px 12px;
-                border-radius:99px;font-size:11px;font-weight:700;border:1px solid rgba(13,110,63,0.15)'>
-                A Level</span>
-            <span style='background:rgba(201,168,76,0.15);color:#7A5C00;padding:3px 12px;
-                border-radius:99px;font-size:11px;font-weight:700;border:1px solid rgba(201,168,76,0.25)'>
-                🤖 AI Powered</span>
+        <div style='display:flex;justify-content:center;gap:8px;margin-top:12px;flex-wrap:wrap'>
+            <span style='background:rgba(0,255,209,0.08);color:#00FFD1;padding:3px 12px;
+                border-radius:6px;font-size:10px;font-weight:700;border:1px solid rgba(0,255,209,0.2);
+                font-family:"Rajdhani",sans-serif;letter-spacing:1px'>GRADES 1–10</span>
+            <span style='background:rgba(0,255,209,0.08);color:#00FFD1;padding:3px 12px;
+                border-radius:6px;font-size:10px;font-weight:700;border:1px solid rgba(0,255,209,0.2);
+                font-family:"Rajdhani",sans-serif;letter-spacing:1px'>O LEVEL</span>
+            <span style='background:rgba(0,255,209,0.08);color:#00FFD1;padding:3px 12px;
+                border-radius:6px;font-size:10px;font-weight:700;border:1px solid rgba(0,255,209,0.2);
+                font-family:"Rajdhani",sans-serif;letter-spacing:1px'>A LEVEL</span>
+            <span style='background:rgba(139,92,246,0.12);color:#A78BFA;padding:3px 12px;
+                border-radius:6px;font-size:10px;font-weight:700;border:1px solid rgba(139,92,246,0.25);
+                font-family:"Rajdhani",sans-serif;letter-spacing:1px'>🤖 AI POWERED</span>
         </div>
     </div>""", unsafe_allow_html=True)
 
-    tab_login, tab_signup, tab_forgot = st.tabs(["🔑  Login","✨  Sign Up","🔓  Reset"])
+    tab_login, tab_signup, tab_forgot = st.tabs(["🔑  LOGIN","✨  SIGN UP","🔓  RESET"])
 
     with tab_login:
         with st.form("login_form"):
             email    = st.text_input("📧 Email", placeholder="you@example.com")
             password = st.text_input("🔒 Password", type="password")
-            if st.form_submit_button("Login to ZM Academy →", use_container_width=True, type="primary"):
+            if st.form_submit_button("⚡ LOGIN TO ZM ACADEMY", use_container_width=True, type="primary"):
                 users = load_json(USERS_FILE)
                 if email in users and users[email]["password"] == hash_pw(password):
                     users[email]["last_login"] = datetime.date.today().isoformat()
@@ -717,11 +721,11 @@ def page_auth():
             name   = st.text_input("👤 Full Name", placeholder="Ahmed Khan")
             email2 = st.text_input("📧 Email", placeholder="you@example.com")
             role   = st.selectbox("👥 I am a", ["Student 🎒","Parent 👨‍👩‍👦","Teacher 👨‍🏫","Admin 🛡️"])
-            avatar = st.selectbox("🧑 Choose Avatar", list(AVATARS.keys()))
+            avatar = st.selectbox("🎮 Choose Avatar", list(AVATARS.keys()))
             grade  = st.selectbox("🏫 Grade", ["-- Select --"]+LEVELS)
             pw     = st.text_input("🔒 Password", type="password", placeholder="Min 6 characters")
             pw2    = st.text_input("🔒 Confirm Password", type="password")
-            if st.form_submit_button("Create My Account →", use_container_width=True, type="primary"):
+            if st.form_submit_button("🚀 CREATE ACCOUNT", use_container_width=True, type="primary"):
                 users = load_json(USERS_FILE)
                 if not name or not email2 or not pw:   st.error("Please fill all required fields.")
                 elif len(pw) < 6:                      st.error("Password must be at least 6 characters.")
@@ -748,15 +752,15 @@ def page_auth():
 
     with tab_forgot:
         st.markdown("""
-        <div style='background:rgba(13,110,63,0.06);border-radius:10px;padding:12px 14px;
-            font-size:13px;color:#0D6E3F;margin-bottom:14px;border:1px solid rgba(13,110,63,0.12)'>
+        <div style='background:rgba(0,255,209,0.04);border-radius:10px;padding:12px 14px;
+            font-size:13px;color:#00FFD1;margin-bottom:14px;border:1px solid rgba(0,255,209,0.15)'>
             🔒 Enter your email and a new password to reset your account.
         </div>""", unsafe_allow_html=True)
         with st.form("forgot_form"):
             fp_email = st.text_input("📧 Your registered email")
             fp_new   = st.text_input("🔒 New Password", type="password")
             fp_new2  = st.text_input("🔒 Confirm New Password", type="password")
-            if st.form_submit_button("Reset Password →", use_container_width=True, type="primary"):
+            if st.form_submit_button("🔓 RESET PASSWORD", use_container_width=True, type="primary"):
                 users = load_json(USERS_FILE)
                 if fp_email not in users:    st.error("⚠️ Email not found.")
                 elif len(fp_new) < 6:        st.error("Min 6 characters.")
@@ -767,86 +771,92 @@ def page_auth():
                     st.success("✅ Password reset! You can now login.")
 
     st.markdown("""
-    <p style='text-align:center;color:#7A9A7A;font-size:11px;margin-top:20px;font-weight:600'>
-        🔒 Secure &nbsp;·&nbsp; 🆓 Free to use &nbsp;·&nbsp; 🇵🇰 Pakistan National Curriculum
+    <p style='text-align:center;color:#4A6A80;font-size:10px;margin-top:20px;font-weight:700;
+        font-family:"Rajdhani",sans-serif;letter-spacing:1.5px'>
+        🔒 SECURE &nbsp;·&nbsp; 🆓 FREE &nbsp;·&nbsp; 🇵🇰 PAKISTAN CURRICULUM
     </p>""", unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────
-# SIDEBAR
+# SIDEBAR — Holographic Command Center
 # ─────────────────────────────────────────────────────────────────
 def render_sidebar():
     u = st.session_state.user
     role_info = {
-        "student": ("🎒", "Student",  "#27A862"),
-        "parent":  ("👨‍👩‍👦","Parent",  "#1A8C50"),
-        "teacher": ("👨‍🏫","Teacher", "#C9A84C"),
-        "admin":   ("🛡️", "Admin",    "#C0392B"),
+        "student": ("🎒", "Student",  "#00FFD1"),
+        "parent":  ("👨‍👩‍👦","Parent",  "#34D399"),
+        "teacher": ("👨‍🏫","Teacher", "#FFD700"),
+        "admin":   ("🛡️", "Admin",    "#FF2D78"),
     }
-    r_icon, r_label, r_color = role_info.get(u.get("role","student"), ("👤","User","#27A862"))
+    r_icon, r_label, r_color = role_info.get(u.get("role","student"), ("👤","User","#00FFD1"))
     role = u.get("role", "student")
 
     with st.sidebar:
-
-        # ── App logo lockup ────────────────────────────
-        st.markdown("""
+        # App logo
+        st.markdown(f"""
         <div style='display:flex;align-items:center;gap:10px;
-            padding:14px 14px 12px;border-bottom:1px solid rgba(201,168,76,0.18)'>
-            <div style='width:36px;height:36px;border-radius:10px;flex-shrink:0;
-                background:linear-gradient(135deg,#0D6E3F,#1A8C50);
-                display:flex;align-items:center;justify-content:center;font-size:20px;
-                box-shadow:0 3px 10px rgba(13,110,63,0.5)'>📚</div>
+            padding:14px 14px 12px;border-bottom:1px solid rgba(0,255,209,0.1)'>
+            <div style='width:38px;height:38px;border-radius:11px;flex-shrink:0;
+                background:linear-gradient(135deg,rgba(0,255,209,0.12),rgba(10,22,40,0.9));
+                display:flex;align-items:center;justify-content:center;font-size:22px;
+                border:1px solid rgba(0,255,209,0.3);
+                box-shadow:0 0 16px rgba(0,255,209,0.25)'>🤖</div>
             <div>
-                <div style='font-family:"Sora",sans-serif;font-weight:900;font-size:15px;
-                    color:#fff;letter-spacing:-.3px;line-height:1.1'>ZM Academy</div>
-                <div style='font-size:9px;color:rgba(201,168,76,0.7);font-weight:700;
-                    letter-spacing:.8px;text-transform:uppercase'>🇵🇰 Pakistan's #1 AI Tutor</div>
+                <div style='font-family:"Orbitron",monospace;font-weight:900;font-size:14px;
+                    color:#00FFD1;letter-spacing:1.5px;
+                    text-shadow:0 0 12px rgba(0,255,209,0.5)'>ZM ACADEMY</div>
+                <div style='font-size:8.5px;color:rgba(0,255,209,0.45);font-weight:700;
+                    letter-spacing:1.2px;text-transform:uppercase;font-family:"Rajdhani",sans-serif'>
+                    🇵🇰 AI Education Platform</div>
             </div>
         </div>""", unsafe_allow_html=True)
 
-        # ── Profile card ──────────────────────────────
+        # Profile card with mascot
+        stats = u.get("stats", {})
+        mascot = MASCOT_USTAD_SVG if u.get("role","student") == "teacher" else (MASCOT_ZARA_SVG if u.get("avatar","🤖") in ["👧","🧝","🧙"] else MASCOT_NOVA_SVG)
         st.markdown(f"""
-        <div style='padding:14px 12px 14px;border-bottom:1px solid rgba(201,168,76,0.15)'>
+        <div style='padding:12px 10px 14px;border-bottom:1px solid rgba(0,255,209,0.1)'>
             <div style='display:flex;flex-direction:column;align-items:center'>
-                <div style='width:62px;height:62px;border-radius:18px;
-                    background:linear-gradient(135deg,rgba(201,168,76,0.2),rgba(13,110,63,0.3));
-                    display:flex;align-items:center;justify-content:center;
-                    font-size:34px;line-height:1;margin-bottom:8px;
-                    border:2px solid rgba(201,168,76,0.3);box-shadow:0 4px 20px rgba(0,0,0,0.3)'>
-                    {u.get("avatar","👦")}
-                </div>
-                <div style='font-family:"Sora",sans-serif;font-weight:800;font-size:14px;
-                    color:#fff;text-align:center;letter-spacing:-.3px'>{u["name"]}</div>
-                <div style='display:inline-flex;align-items:center;gap:5px;margin-top:5px;
-                    background:rgba(255,255,255,0.07);border-radius:99px;
-                    padding:3px 10px;border:1px solid rgba(201,168,76,0.2)'>
-                    <span style='font-size:11px'>{r_icon}</span>
-                    <span style='font-size:11px;font-weight:700;color:{r_color}'>{r_label}</span>
-                    {"<span style='font-size:10px;color:rgba(255,255,255,0.35)'>·</span><span style='font-size:10px;color:rgba(255,255,255,0.5);font-weight:600'>" + u.get("grade","") + "</span>" if u.get("grade") else ""}
+                <div style='display:flex;align-items:center;gap:8px;margin-bottom:8px'>
+                    <div style='width:54px;height:54px;border-radius:16px;flex-shrink:0;
+                        background:linear-gradient(135deg,rgba(0,255,209,0.1),rgba(10,22,40,0.9));
+                        display:flex;align-items:center;justify-content:center;font-size:30px;
+                        border:1px solid rgba(0,255,209,0.25);
+                        box-shadow:0 0 16px rgba(0,255,209,0.15)'>{u.get("avatar","🤖")}</div>
+                    <div style='flex:1'>
+                        <div style='font-family:"Orbitron",monospace;font-weight:800;font-size:12px;
+                            color:#E0F4FF;letter-spacing:.5px'>{u["name"]}</div>
+                        <div style='display:inline-flex;align-items:center;gap:4px;margin-top:4px;
+                            background:rgba(0,255,209,0.06);border-radius:6px;
+                            padding:2px 8px;border:1px solid rgba(0,255,209,0.15)'>
+                            <span style='font-size:10px'>{r_icon}</span>
+                            <span style='font-size:10px;font-weight:700;color:{r_color};font-family:"Rajdhani",sans-serif;letter-spacing:.8px'>{r_label.upper()}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div style='display:flex;justify-content:center;gap:0;margin-top:12px;
-                background:rgba(0,0,0,0.25);border-radius:10px;
-                border:1px solid rgba(201,168,76,0.12);overflow:hidden'>
-                <div style='flex:1;text-align:center;padding:8px 4px;
-                    border-right:1px solid rgba(201,168,76,0.1)'>
-                    <div style='font-family:"Sora",sans-serif;font-size:16px;font-weight:900;
-                        color:#E8C96A'>{u.get("stats",{}).get("total",0)}</div>
-                    <div style='font-size:9px;color:rgba(255,255,255,0.4);
-                        text-transform:uppercase;letter-spacing:.8px;font-weight:700'>Qs</div>
+            <div style='display:flex;justify-content:center;gap:0;
+                background:rgba(0,0,0,0.3);border-radius:10px;
+                border:1px solid rgba(0,255,209,0.08);overflow:hidden'>
+                <div style='flex:1;text-align:center;padding:7px 4px;
+                    border-right:1px solid rgba(0,255,209,0.07)'>
+                    <div style='font-family:"Orbitron",monospace;font-size:15px;font-weight:900;
+                        color:#00FFD1;text-shadow:0 0 8px rgba(0,255,209,0.5)'>{stats.get("total",0)}</div>
+                    <div style='font-size:8px;color:rgba(0,255,209,0.3);
+                        text-transform:uppercase;letter-spacing:1px;font-weight:700;font-family:"Rajdhani",sans-serif'>QS</div>
                 </div>
-                <div style='flex:1;text-align:center;padding:8px 4px;
-                    border-right:1px solid rgba(201,168,76,0.1)'>
-                    <div style='font-family:"Sora",sans-serif;font-size:16px;font-weight:900;
-                        color:#E8C96A'>{len(u.get("badges",[]))}</div>
-                    <div style='font-size:9px;color:rgba(255,255,255,0.4);
-                        text-transform:uppercase;letter-spacing:.8px;font-weight:700'>Badges</div>
+                <div style='flex:1;text-align:center;padding:7px 4px;
+                    border-right:1px solid rgba(0,255,209,0.07)'>
+                    <div style='font-family:"Orbitron",monospace;font-size:15px;font-weight:900;
+                        color:#FFD700;text-shadow:0 0 8px rgba(255,215,0,0.5)'>{len(u.get("badges",[]))}</div>
+                    <div style='font-size:8px;color:rgba(255,215,0,0.3);
+                        text-transform:uppercase;letter-spacing:1px;font-weight:700;font-family:"Rajdhani",sans-serif'>BDGS</div>
                 </div>
-                <div style='flex:1;text-align:center;padding:8px 4px'>
-                    <div style='font-family:"Sora",sans-serif;font-size:16px;font-weight:900;
-                        color:#E8C96A'>{u.get("stats",{}).get("streak",0)}</div>
-                    <div style='font-size:9px;color:rgba(255,255,255,0.4);
-                        text-transform:uppercase;letter-spacing:.8px;font-weight:700'>Streak</div>
+                <div style='flex:1;text-align:center;padding:7px 4px'>
+                    <div style='font-family:"Orbitron",monospace;font-size:15px;font-weight:900;
+                        color:#FF2D78;text-shadow:0 0 8px rgba(255,45,120,0.5)'>{stats.get("streak",0)}</div>
+                    <div style='font-size:8px;color:rgba(255,45,120,0.3);
+                        text-transform:uppercase;letter-spacing:1px;font-weight:700;font-family:"Rajdhani",sans-serif'>STRK</div>
                 </div>
             </div>
         </div>""", unsafe_allow_html=True)
@@ -859,103 +869,97 @@ def render_sidebar():
                          use_container_width=True, type=btn_type):
                 st.session_state.page = key; st.rerun()
 
-        def section_label(text, color="rgba(201,168,76,0.65)"):
+        def section_label(text, color="rgba(0,255,209,0.5)"):
             st.markdown(
-                f"<div style='font-size:9.5px;font-weight:800;color:{color};"
-                f"text-transform:uppercase;letter-spacing:1.4px;"
-                f"padding:14px 4px 4px;margin-top:2px;"
-                f"border-top:1px solid rgba(255,255,255,0.06)'>{text}</div>",
+                f"<div style='font-size:9px;font-weight:800;color:{color};"
+                f"text-transform:uppercase;letter-spacing:1.8px;"
+                f"padding:14px 4px 4px;margin-top:2px;font-family:\"Rajdhani\",sans-serif;"
+                f"border-top:1px solid rgba(0,255,209,0.06)'>{text}</div>",
                 unsafe_allow_html=True
             )
 
-        # ══ ROLE-BASED NAV ════════════════════════════
-        # Every role sees Dashboard + their own section + Account
-        # ── DASHBOARD (all) ──────────────────────────
         section_label("📊  Dashboard")
         nav_btn("🏠", "Home",            "home")
         nav_btn("📚", "Syllabus",        "syllabus")
         nav_btn("🎨", "Image Generator", "image")
         nav_btn("📈", "My Progress",     "progress")
 
-        # ── STUDENT / PARENT ─────────────────────────
         if role in ("student", "parent"):
-            section_label("🎒  Student")
+            section_label("🎒  Student", "rgba(0,255,209,0.45)")
             nav_btn("💬", "Chat Tutor",    "chat",    "_s")
             nav_btn("📝", "Practice Quiz", "quiz")
             nav_btn("👥", "Friendz Quiz",  "friends")
             nav_btn("🕐", "Chat History",  "history", "_s")
             nav_btn("🏆", "Badges",        "badges")
 
-        # ── TEACHER ──────────────────────────────────
         if role == "teacher":
-            section_label("👨‍🏫  Teacher", "#C9A84C")
+            section_label("👨‍🏫  Teacher", "rgba(255,215,0,0.5)")
             nav_btn("📋", "Create Homework",     "homework", "_t")
             nav_btn("💬", "Chat Tutor",          "chat",     "_t")
             nav_btn("📊", "Student Performance", "admin",    "_t")
             nav_btn("🏆", "Badges",              "badges",   "_t")
 
-        # ── ADMIN ────────────────────────────────────
         if role == "admin":
-            section_label("🛡️  Admin", "#E87070")
+            section_label("🛡️  Admin", "rgba(255,45,120,0.5)")
             nav_btn("📊", "Student Performance", "admin",    "_a")
             nav_btn("🕐", "Chat History",        "history",  "_a")
             nav_btn("📋", "Homework Tracker",    "homework", "_a")
             nav_btn("💬", "Chat Tutor",          "chat",     "_a")
 
-        # ── ACCOUNT ──────────────────────────────────
         section_label("👤  Account")
         nav_btn("👤", "Profile", "profile")
 
-        # ── LOGOUT (visually separated) ───────────────
-        st.markdown("""
-        <div style='margin:16px 0 4px;border-top:1px solid rgba(255,255,255,0.08);
-            padding-top:12px'></div>""", unsafe_allow_html=True)
+        st.markdown("""<div style='margin:16px 0 4px;border-top:1px solid rgba(0,255,209,0.06);padding-top:12px'></div>""", unsafe_allow_html=True)
         if st.button("🚪  Logout", key="logout_btn", use_container_width=True):
             for k in list(st.session_state.keys()): del st.session_state[k]
             st.rerun()
 
 
 # ─────────────────────────────────────────────────────────────────
-# HOME PAGE
+# HOME PAGE — Futuristic Dashboard with Characters
 # ─────────────────────────────────────────────────────────────────
 def page_home():
     u     = st.session_state.user
     sub   = st.session_state.subject
-    col   = SUBJECTS.get(sub, SUBJECTS["Maths"])["color"]
     h     = datetime.datetime.now().hour
-    greet = "Good morning" if h < 12 else "Good afternoon" if h < 17 else "Good evening"
+    greet = "GOOD MORNING" if h < 12 else "GOOD AFTERNOON" if h < 17 else "GOOD EVENING"
     role  = u.get("role", "student")
     stats = u.get("stats", {})
 
-    # ── Onboarding for new users ──────────────────────────────
+    # ── Onboarding for new users ──
     if u.get("is_new") and not st.session_state.get("onboarding_done"):
         step = st.session_state.get("onboard_step", 1)
+        mascots = [MASCOT_ZARA_SVG, MASCOT_USTAD_SVG, MASCOT_NOVA_SVG]
         steps = [
-            {"emoji":"🎓","title":f"Welcome to ZM Academy, {u['name'].split()[0]}! 🎉",
-             "body":"Pakistan's <b>AI-powered study app</b> for Grades 1–10, O Level & A Level.<br><br>Your personal AI tutor <b>Ustad</b> is here to help!","btn":"Next →"},
-            {"emoji":"💬","title":"Everything you need to study",
-             "body":"<b>💬 Chat Tutor</b> — Ask any question in any subject<br><br><b>📝 Practice Quiz</b> — Custom quizzes with difficulty levels<br><br><b>📚 My Syllabus</b> — Full Cambridge curriculum<br><br><b>🎨 Image Generator</b> — AI draws educational diagrams","btn":"Next →"},
-            {"emoji":"🏆","title":"Earn Badges & Challenge Friends",
-             "body":"Earn <b>11 achievement badges</b> as you study.<br><br>Use <b>👥 Friends Quiz</b> to compete with up to 3 friends on the same quiz — and see who tops the leaderboard!","btn":"🚀 Start Learning!"},
+            {"title":f"Welcome to ZM Academy, {u['name'].split()[0]}!",
+             "body":"Pakistan's <b style='color:#00FFD1'>AI-powered study platform</b> for Grades 1–10, O Level & A Level.<br><br>Your AI tutor <b style='color:#A78BFA'>Ustad 🤖</b> is ready to help!","btn":"NEXT →"},
+            {"title":"Your Learning Arsenal",
+             "body":"<b style='color:#00FFD1'>💬 Chat Tutor</b> — Ask anything<br><br><b style='color:#A78BFA'>📝 Practice Quiz</b> — Custom difficulty quizzes<br><br><b style='color:#FFD700'>📚 My Syllabus</b> — Cambridge curriculum<br><br><b style='color:#FF2D78'>🎨 Image Gen</b> — AI draws diagrams","btn":"NEXT →"},
+            {"title":"Earn Badges & Challenge Friends",
+             "body":"Unlock <b style='color:#FFD700'>11 achievement badges</b> as you study.<br><br>Use <b style='color:#A78BFA'>👥 Friends Quiz</b> to compete with up to 3 friends on the same quiz!","btn":"🚀 START LEARNING!"},
         ]
         s = steps[step-1]
         _, c, _ = st.columns([1,2,1])
         with c:
             dots = "".join(
-                f"<span style='display:inline-block;width:9px;height:9px;border-radius:50%;"
-                f"background:{'#E8C96A' if i+1==step else 'rgba(255,255,255,0.2)'};margin:0 3px'></span>"
+                f"<span style='display:inline-block;width:8px;height:8px;border-radius:50%;"
+                f"background:{'#00FFD1' if i+1==step else 'rgba(0,255,209,0.15)'};margin:0 3px;"
+                f"box-shadow:{'0 0 8px rgba(0,255,209,0.7)' if i+1==step else 'none'}'></span>"
                 for i in range(3)
             )
             st.markdown(f"""
-            <div style='background:linear-gradient(135deg,#061A0E,#0D6E3F);border-radius:24px;
-                padding:32px 28px;color:#fff;text-align:center;margin-top:20px;
-                border:1px solid rgba(201,168,76,0.25);
-                box-shadow:0 16px 48px rgba(6,26,14,0.5)'>
+            <div style='background:linear-gradient(135deg,#020510,#04091A,#060B20);
+                border-radius:24px;padding:32px 28px;color:#E0F4FF;text-align:center;margin-top:20px;
+                border:1px solid rgba(0,255,209,0.2);
+                box-shadow:0 0 40px rgba(0,255,209,0.1),0 20px 60px rgba(0,0,0,0.7)'>
                 <div style='margin-bottom:14px'>{dots}</div>
-                <div style='font-size:56px;margin-bottom:14px'>{s['emoji']}</div>
-                <div style='font-family:"Sora",sans-serif;font-size:22px;font-weight:900;
-                    margin-bottom:14px;letter-spacing:-.5px'>{s['title']}</div>
-                <div style='font-size:14px;opacity:.85;line-height:1.8'>{s['body']}</div>
+                <div class='mascot-float' style='display:flex;justify-content:center;margin-bottom:12px'>
+                    {mascots[step-1]}
+                </div>
+                <div style='font-family:"Orbitron",monospace;font-size:20px;font-weight:900;
+                    color:#00FFD1;margin-bottom:14px;letter-spacing:.5px;
+                    text-shadow:0 0 16px rgba(0,255,209,0.5)'>{s['title']}</div>
+                <div style='font-size:13px;opacity:.85;line-height:1.9'>{s['body']}</div>
             </div>""", unsafe_allow_html=True)
             st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
             if st.button(s["btn"], use_container_width=True, type="primary", key=f"ob_{step}"):
@@ -968,9 +972,9 @@ def page_home():
                         save_json(USERS_FILE, users)
                         st.session_state.user = users[u["email"]]
                     st.session_state.onboarding_done = True; st.rerun()
-            if step > 1 and st.button("← Back", key=f"ob_back_{step}", use_container_width=True):
+            if step > 1 and st.button("← BACK", key=f"ob_back_{step}", use_container_width=True):
                 st.session_state.onboard_step = step-1; st.rerun()
-            if st.button("Skip intro", key="skip_ob", use_container_width=True):
+            if st.button("SKIP INTRO", key="skip_ob", use_container_width=True):
                 users = load_json(USERS_FILE)
                 if u["email"] in users:
                     users[u["email"]]["is_new"] = False
@@ -979,7 +983,7 @@ def page_home():
                 st.session_state.onboarding_done = True; st.rerun()
         return
 
-    # ── Hero banner with dynamic quote ───────────────────────
+    # ── Hero Banner ──
     streak = stats.get("streak", 0)
     streak_fire = "🔥" * min(streak, 5) if streak > 0 else ""
     quotes = [
@@ -990,69 +994,79 @@ def page_home():
         ("علم روشنی ہے", "Knowledge is light"),
     ]
     q_urdu, q_eng = quotes[datetime.date.today().toordinal() % len(quotes)]
+    grade_num = u.get("grade","Grade 6")
+    # Pick mascot by grade
+    try:
+        g_idx = get_level_index(grade_num)
+        hero_mascot = MASCOT_ZARA_SVG if g_idx < 5 else (MASCOT_NOVA_SVG if g_idx >= 9 else MASCOT_USTAD_SVG)
+    except:
+        hero_mascot = MASCOT_USTAD_SVG
 
     st.markdown(f"""
-    <div style='background:linear-gradient(135deg,#061A0E 0%,#0D6E3F 55%,#0A5A32 100%);
-        border-radius:20px;padding:22px 24px;margin-bottom:16px;color:#fff;
-        border:1px solid rgba(201,168,76,0.2);box-shadow:0 8px 32px rgba(6,26,14,0.25);
+    <div style='background:linear-gradient(135deg,#020510 0%,#04091A 50%,#060B20 100%);
+        border-radius:20px;padding:20px 22px;margin-bottom:16px;color:#E0F4FF;
+        border:1px solid rgba(0,255,209,0.18);
+        box-shadow:0 0 30px rgba(0,255,209,0.08),0 12px 40px rgba(0,0,0,0.5);
         position:relative;overflow:hidden'>
-        <div style='position:absolute;top:-30px;right:-30px;width:150px;height:150px;border-radius:50%;
-            background:radial-gradient(circle,rgba(201,168,76,0.18),transparent 70%)'></div>
-        <div style='position:absolute;bottom:-20px;left:10px;width:90px;height:90px;border-radius:50%;
-            background:radial-gradient(circle,rgba(39,168,98,0.15),transparent 70%)'></div>
-        <div style='display:flex;align-items:center;gap:16px;position:relative;margin-bottom:14px'>
-            <div style='width:58px;height:58px;border-radius:16px;flex-shrink:0;
-                background:rgba(255,255,255,0.1);display:flex;align-items:center;
-                justify-content:center;font-size:32px;border:1.5px solid rgba(201,168,76,0.3)'>
-                {u.get("avatar","👦")}</div>
+        <div style='position:absolute;top:-20px;right:-20px;width:140px;height:140px;border-radius:50%;
+            background:radial-gradient(circle,rgba(0,255,209,0.1),transparent 70%)'></div>
+        <div style='position:absolute;bottom:-30px;left:20px;width:100px;height:100px;border-radius:50%;
+            background:radial-gradient(circle,rgba(139,92,246,0.1),transparent 70%)'></div>
+        <div style='display:flex;align-items:center;gap:14px;position:relative;margin-bottom:12px'>
+            <div class='mascot-float' style='flex-shrink:0'>{hero_mascot}</div>
             <div style='flex:1'>
-                <div style='font-family:"Sora",sans-serif;font-size:20px;font-weight:900;
-                    letter-spacing:-.5px;line-height:1.2'>
-                    {greet}, {u["name"].split()[0]}! {streak_fire or "👋"}</div>
-                <div style='font-size:12px;opacity:.7;margin-top:4px;font-weight:500'>
+                <div style='font-family:"Rajdhani",sans-serif;font-size:10px;font-weight:700;
+                    color:rgba(0,255,209,0.5);letter-spacing:2.5px;text-transform:uppercase;
+                    margin-bottom:4px'>{greet}</div>
+                <div style='font-family:"Orbitron",monospace;font-size:18px;font-weight:900;
+                    letter-spacing:-.5px;line-height:1.2;color:#00FFD1;
+                    text-shadow:0 0 16px rgba(0,255,209,0.4)'>
+                    {u["name"].split()[0]}! {streak_fire or "👋"}</div>
+                <div style='font-size:11px;color:#94B4CC;margin-top:4px;font-weight:500'>
                     🇵🇰 Pakistan's #1 AI Study Platform
-                    {"&nbsp;·&nbsp;🔥 " + str(streak) + "-day streak!" if streak > 1 else ""}
+                    {"&nbsp;&nbsp;<span style='color:#FF2D78;font-weight:800'>🔥 " + str(streak) + "-day streak!</span>" if streak > 1 else ""}
                 </div>
             </div>
         </div>
-        <div style='background:rgba(0,0,0,0.2);border-radius:10px;padding:10px 14px;
-            border-left:3px solid rgba(201,168,76,0.5);position:relative'>
-            <div style='font-size:13px;font-weight:700;color:#E8C96A;margin-bottom:2px'>{q_urdu}</div>
-            <div style='font-size:11px;opacity:.65;font-style:italic'>{q_eng}</div>
+        <div style='background:rgba(0,0,0,0.35);border-radius:10px;padding:10px 14px;
+            border-left:2px solid rgba(0,255,209,0.4);position:relative'>
+            <div style='font-size:13px;font-weight:700;color:#FFD700;margin-bottom:2px'>{q_urdu}</div>
+            <div style='font-size:11px;color:#94B4CC;font-style:italic'>{q_eng}</div>
         </div>
     </div>""", unsafe_allow_html=True)
 
     today_str = datetime.date.today().isoformat()
     if stats.get("lastDate","") != today_str:
-        st.markdown("""<div class='reminder'>🔔 <b>Daily Reminder:</b> You haven't studied today! Even 15 minutes makes a difference 💪</div>""", unsafe_allow_html=True)
+        st.markdown("""<div class='reminder'>⚡ <b style='color:#FFD700'>Daily Mission:</b> You haven't studied today! Even 15 minutes powers up your streak 💪</div>""", unsafe_allow_html=True)
 
-    # ── 7-Day Streak Calendar ─────────────────────────────────
+    # ── 7-Day Streak Calendar ──
     study_dates = set(stats.get("study_dates", []))
     today = datetime.date.today()
-    day_labels = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]
+    day_labels = ["MON","TUE","WED","THU","FRI","SAT","SUN"]
     cols_7 = st.columns(7)
     for i in range(7):
         day = today - datetime.timedelta(days=6-i)
         day_str = day.isoformat()
         studied = day_str in study_dates
         is_today = (day == today)
-        bg  = "#0D6E3F" if studied else ("rgba(201,168,76,0.15)" if is_today else "rgba(255,255,255,0.04)")
-        bdr = "#E8C96A" if is_today else ("#0D6E3F" if studied else "rgba(255,255,255,0.08)")
+        bdr = "#FFD700" if is_today else ("#00FFD1" if studied else "rgba(0,255,209,0.08)")
         icon = "✅" if studied else ("📍" if is_today else "⬜")
         with cols_7[i]:
             st.markdown(f"""
-            <div style='background:var(--surface);border:1.5px solid {bdr};
-                border-radius:10px;padding:8px 4px;text-align:center;
-                box-shadow:{"0 3px 12px rgba(13,110,63,0.2)" if studied else "none"}'>
+            <div style='background:rgba(10,22,40,0.96);border:1px solid {bdr};
+                border-radius:10px;padding:7px 4px;text-align:center;
+                box-shadow:{"0 0 12px rgba(0,255,209,0.2)" if studied else ("0 0 12px rgba(255,215,0,0.2)" if is_today else "none")}'>
                 <div style='font-size:14px'>{icon}</div>
-                <div style='font-size:9px;font-weight:800;color:{"#0D6E3F" if studied else ("#C9A84C" if is_today else "#7A9A7A")};
-                    text-transform:uppercase;letter-spacing:.5px;margin-top:2px'>{day_labels[day.weekday()]}</div>
-                <div style='font-size:8px;color:#7A9A7A;margin-top:1px'>{day.day}</div>
+                <div style='font-size:8px;font-weight:800;
+                    color:{"#00FFD1" if studied else ("#FFD700" if is_today else "#4A6A80")};
+                    text-transform:uppercase;letter-spacing:.5px;margin-top:2px;
+                    font-family:"Rajdhani",sans-serif'>{day_labels[day.weekday()]}</div>
+                <div style='font-size:8px;color:#4A6A80;margin-top:1px'>{day.day}</div>
             </div>""", unsafe_allow_html=True)
 
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
-    # ── Word of the Day ───────────────────────────────────────
+    # ── Word of the Day ──
     if not st.session_state.wod_loaded:
         with st.spinner("Loading Word of the Day..."):
             grade = u.get("grade","Grade 6")
@@ -1078,50 +1092,50 @@ def page_home():
         w = st.session_state.word_of_day
         st.markdown(f"""
         <div class='word-card' style='margin-bottom:16px'>
-            <div style='font-size:10px;font-weight:800;opacity:.5;text-transform:uppercase;
-                letter-spacing:1px;margin-bottom:8px'>📖 Word of the Day</div>
+            <div style='font-size:9px;font-weight:800;color:rgba(0,255,209,0.4);text-transform:uppercase;
+                letter-spacing:2px;margin-bottom:8px;font-family:"Rajdhani",sans-serif'>
+                📖 WORD OF THE DAY</div>
             <div style='display:flex;align-items:baseline;gap:12px;flex-wrap:wrap'>
-                <span style='font-family:"Sora",sans-serif;font-size:24px;font-weight:900;color:#E8C96A'>{w.get("word","")}</span>
-                <span style='font-size:13px;opacity:.6'>— {w.get("urdu","")}</span>
+                <span style='font-family:"Orbitron",monospace;font-size:22px;font-weight:900;
+                    color:#00FFD1;text-shadow:0 0 16px rgba(0,255,209,0.5)'>{w.get("word","")}</span>
+                <span style='font-size:13px;color:#94B4CC'>— {w.get("urdu","")}</span>
             </div>
-            <div style='font-size:13px;opacity:.75;margin-top:6px'>{w.get("meaning","")}</div>
-            <div style='font-size:12px;opacity:.5;margin-top:4px;font-style:italic'>"{w.get("example","")}"</div>
-            <div style='font-size:11px;color:#E8C96A;margin-top:6px'>💡 {w.get("tip","")}</div>
+            <div style='font-size:13px;color:#E0F4FF;margin-top:6px;opacity:.8'>{w.get("meaning","")}</div>
+            <div style='font-size:12px;color:#4A6A80;margin-top:4px;font-style:italic'>"{w.get("example","")}"</div>
+            <div style='font-size:11px;color:#FFD700;margin-top:6px'>💡 {w.get("tip","")}</div>
         </div>""", unsafe_allow_html=True)
 
-    # ── Stats row with goal bars ──────────────────────────────
+    # ── Stats ──
     total_q   = stats.get("total", 0)
     streak_v  = stats.get("streak", 0)
     badges_v  = len(u.get("badges", []))
     quizzes_v = stats.get("quizzes_done", 0)
-
-    # Goal thresholds
     goals = {"q": 50, "streak": 7, "badges": 11, "quiz": 10}
     c1,c2,c3,c4 = st.columns(4)
     for col_w, icon, val, lbl, accent, pct in [
-        (c1,"❓", total_q,             "Questions",  "#0D6E3F", min(100, int(total_q/goals["q"]*100))),
-        (c2,"🔥", f"{streak_v}d",      "Streak",     "#C0392B", min(100, int(streak_v/goals["streak"]*100))),
-        (c3,"🏆", badges_v,            "Badges",     "#C9A84C", min(100, int(badges_v/goals["badges"]*100))),
-        (c4,"📝", quizzes_v,           "Quizzes",    "#1A56C4", min(100, int(quizzes_v/goals["quiz"]*100))),
+        (c1,"❓", total_q,             "Questions",  "#00FFD1", min(100, int(total_q/goals["q"]*100))),
+        (c2,"🔥", f"{streak_v}d",      "Streak",     "#FF2D78", min(100, int(streak_v/goals["streak"]*100))),
+        (c3,"🏆", badges_v,            "Badges",     "#FFD700", min(100, int(badges_v/goals["badges"]*100))),
+        (c4,"📝", quizzes_v,           "Quizzes",    "#A78BFA", min(100, int(quizzes_v/goals["quiz"]*100))),
     ]:
         with col_w:
             st.markdown(f"""
             <div class='stat-card'>
                 <div style='font-size:20px;margin-bottom:3px'>{icon}</div>
-                <div style='font-family:"Sora",sans-serif;font-size:24px;font-weight:900;
-                    color:{accent};line-height:1'>{val}</div>
+                <div class='stat-num'>{val}</div>
                 <div class='stat-lbl'>{lbl}</div>
-                <div style='background:rgba(13,110,63,0.08);border-radius:99px;height:5px;
-                    overflow:hidden;margin-top:8px'>
+                <div style='background:rgba(0,0,0,0.4);border-radius:99px;height:5px;
+                    overflow:hidden;margin-top:8px;border:1px solid rgba(0,255,209,0.06)'>
                     <div style='width:{pct}%;height:100%;border-radius:99px;background:{accent};
-                        transition:width .6s'></div>
+                        box-shadow:0 0 6px {accent}88;transition:width .6s'></div>
                 </div>
-                <div style='font-size:9px;color:#7A9A7A;margin-top:3px;font-weight:700'>{pct}% goal</div>
+                <div style='font-size:9px;color:#4A6A80;margin-top:3px;font-weight:700;
+                    font-family:"Rajdhani",sans-serif;letter-spacing:.8px'>{pct}% GOAL</div>
             </div>""", unsafe_allow_html=True)
 
     st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
 
-    # ── Upcoming Homework (student / parent only) ─────────────
+    # ── Upcoming Homework ──
     if role in ("student","parent"):
         homework = load_json(HOMEWORK_FILE)
         upcoming = []
@@ -1134,34 +1148,34 @@ def page_home():
             except: pass
         upcoming.sort(key=lambda x: x["days_left"])
         if upcoming:
-            st.markdown(f"""<div style='font-family:"Sora",sans-serif;font-size:15px;font-weight:800;
-                color:#0D1F0D;margin-bottom:10px;letter-spacing:-.3px'>📅 Upcoming Homework</div>""",
+            st.markdown(f"""<div style='font-family:"Orbitron",monospace;font-size:13px;font-weight:800;
+                color:#00FFD1;margin-bottom:10px;letter-spacing:1px'>📅 UPCOMING HOMEWORK</div>""",
                 unsafe_allow_html=True)
             for hw in upcoming[:3]:
                 dl = hw["days_left"]
-                dl_color = "#C0392B" if dl == 0 else "#E8770A" if dl <= 2 else "#0D6E3F"
-                dl_label = "Due Today!" if dl == 0 else f"Due in {dl} day{'s' if dl!=1 else ''}"
-                subj_info = SUBJECTS.get(hw.get("subject","Maths"), {"emoji":"📚","color":"#0D6E3F"})
+                dl_color = "#FF2D78" if dl == 0 else "#FFD700" if dl <= 2 else "#00FFD1"
+                dl_label = "DUE TODAY!" if dl == 0 else f"DUE IN {dl}D"
+                subj_info = SUBJECTS.get(hw.get("subject","Maths"), {"emoji":"📚","color":"#00FFD1"})
                 st.markdown(f"""
-                <div style='background:#fff;border:1.5px solid #E2EAE2;border-radius:12px;
-                    padding:11px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;
-                    box-shadow:0 2px 8px rgba(13,110,63,0.05)'>
-                    <div style='font-size:24px;flex-shrink:0'>{subj_info["emoji"]}</div>
+                <div style='background:rgba(10,22,40,0.96);border:1px solid rgba(0,255,209,0.12);
+                    border-radius:12px;padding:11px 14px;margin-bottom:8px;
+                    display:flex;align-items:center;gap:12px;
+                    box-shadow:0 0 10px rgba(0,255,209,0.04)'>
+                    <div style='font-size:22px;flex-shrink:0'>{subj_info["emoji"]}</div>
                     <div style='flex:1;min-width:0'>
-                        <div style='font-weight:800;font-size:13px;color:#0D1F0D;
+                        <div style='font-weight:800;font-size:13px;color:#E0F4FF;
                             white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>
                             {hw.get("data",{}).get("title", hw.get("topic","Homework"))}</div>
-                        <div style='font-size:11px;color:#7A9A7A;margin-top:1px'>
+                        <div style='font-size:11px;color:#4A6A80;margin-top:1px'>
                             {hw.get("subject","")} · {hw.get("grade","")}</div>
                     </div>
-                    <span style='background:{dl_color}15;color:{dl_color};
-                        border:1px solid {dl_color}30;border-radius:99px;
-                        padding:3px 9px;font-size:10px;font-weight:800;white-space:nowrap'>
-                        {dl_label}</span>
+                    <span style='background:rgba(0,0,0,0.4);color:{dl_color};
+                        border:1px solid {dl_color}44;border-radius:6px;
+                        padding:3px 9px;font-size:10px;font-weight:800;white-space:nowrap;
+                        font-family:"Rajdhani",sans-serif;letter-spacing:.8px'>{dl_label}</span>
                 </div>""", unsafe_allow_html=True)
-            st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
 
-    # ── Continue Last Chat shortcut ───────────────────────────
+    # ── Continue Last Chat ──
     hist = load_json(HISTORY_FILE)
     user_hist = hist.get(u["email"], [])
     if user_hist:
@@ -1172,53 +1186,48 @@ def page_home():
             last_q = next((m["content"][:55] for m in reversed(last_msgs) if m["role"]=="user"), "")
             if last_q:
                 st.markdown(f"""
-                <div style='background:linear-gradient(135deg,rgba(13,110,63,0.06),rgba(13,110,63,0.02));
-                    border:1.5px solid rgba(13,110,63,0.15);border-radius:12px;
+                <div style='background:linear-gradient(135deg,rgba(0,255,209,0.05),rgba(10,22,40,0.96));
+                    border:1px solid rgba(0,255,209,0.12);border-radius:12px;
                     padding:11px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px'>
                     <div style='font-size:20px'>💬</div>
                     <div style='flex:1;min-width:0'>
-                        <div style='font-size:10px;font-weight:800;color:#0D6E3F;
-                            text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px'>
-                            Continue last chat · {last_sub}</div>
-                        <div style='font-size:12px;color:#3D5C3D;font-weight:600;
+                        <div style='font-size:9px;font-weight:800;color:#00FFD1;
+                            text-transform:uppercase;letter-spacing:1.2px;margin-bottom:2px;
+                            font-family:"Rajdhani",sans-serif'>CONTINUE LAST CHAT · {last_sub}</div>
+                        <div style='font-size:12px;color:#94B4CC;font-weight:600;
                             white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>
                             "{last_q}{"..." if len(last_q)==55 else ""}"</div>
                     </div>
                 </div>""", unsafe_allow_html=True)
-                if st.button("▶  Continue Chat", key="home_continue_chat", use_container_width=False):
+                if st.button("▶  CONTINUE CHAT", key="home_continue_chat"):
                     st.session_state.page = "chat"; st.rerun()
                 st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
 
-    # ── Quick Access (full-card buttons) ──────────────────────
-    st.markdown(f"""<div style='font-family:"Sora",sans-serif;font-size:15px;font-weight:800;
-        color:#0D1F0D;margin-bottom:10px;letter-spacing:-.3px'>⚡ Quick Access</div>""",
-        unsafe_allow_html=True)
+    # ── Quick Access ──
+    st.markdown(f"""<div style='font-family:"Orbitron",monospace;font-size:13px;font-weight:800;
+        color:#00FFD1;margin-bottom:10px;letter-spacing:1px;
+        text-shadow:0 0 12px rgba(0,255,209,0.4)'>⚡ QUICK ACCESS</div>""", unsafe_allow_html=True)
 
     qa_items = [
-        ("💬","Chat Tutor",    "chat",    "#0D6E3F", "#27A862"),
-        ("📝","Practice Quiz", "quiz",    "#0A2F6B", "#1A56C4"),
-        ("👥","Friendz Quiz",  "friends", "#4A0D6B", "#7C3AED"),
-        ("🎨","Image Gen",     "image",   "#7A5C00", "#C9A84C"),
+        ("💬","Chat Tutor",    "chat"),
+        ("📝","Practice Quiz", "quiz"),
+        ("👥","Friendz Quiz",  "friends"),
+        ("🎨","Image Gen",     "image"),
     ]
     qa_cols = st.columns(4)
-    for col_w, (icon, label, page, g, accent) in zip(qa_cols, qa_items):
+    for col_w, (icon, label, page) in zip(qa_cols, qa_items):
         with col_w:
-            # Use a styled button that fills the visual card
             is_active = (st.session_state.page == page)
-            if st.button(
-                f"{icon}\n{label}",
-                key=f"home_go_{page}",
-                use_container_width=True,
-                type="primary" if is_active else "secondary",
-            ):
+            if st.button(f"{icon}\n{label}", key=f"home_go_{page}",
+                         use_container_width=True,
+                         type="primary" if is_active else "secondary"):
                 st.session_state.page = page; st.rerun()
 
-    # ── Inject card-style CSS for Quick Access buttons ────────
     st.markdown("""
     <style>
     div[data-testid="stHorizontalBlock"] .stButton > button {
         min-height: 80px !important;
-        font-size: 13px !important;
+        font-size: 12.5px !important;
         white-space: pre-line !important;
         line-height: 1.5 !important;
         border-radius: 14px !important;
@@ -1228,7 +1237,7 @@ def page_home():
 
 
 # ─────────────────────────────────────────────────────────────────
-# CHAT / AI TUTOR
+# CHAT / AI TUTOR — with Ustad mascot
 # ─────────────────────────────────────────────────────────────────
 def build_system(u, sub, lvl):
     return f"""You are Ustad, a warm and encouraging homework tutor for Pakistani students.
@@ -1263,7 +1272,22 @@ def save_chat_session(sub, lvl):
 
 def page_chat():
     u = st.session_state.user
-    st.markdown("<div class='section-header'>💬 Chat Tutor — Ask Ustad Anything</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-header'>💬 CHAT TUTOR — ASK USTAD ANYTHING</div>", unsafe_allow_html=True)
+
+    # Ustad mascot header
+    st.markdown(f"""
+    <div style='display:flex;align-items:center;gap:14px;
+        background:linear-gradient(135deg,rgba(0,255,209,0.05),rgba(10,22,40,0.96));
+        border:1px solid rgba(0,255,209,0.15);border-radius:14px;padding:12px 16px;margin-bottom:16px'>
+        <div class='mascot-float'>{MASCOT_USTAD_SVG}</div>
+        <div>
+            <div style='font-family:"Orbitron",monospace;font-size:13px;font-weight:800;
+                color:#00FFD1;text-shadow:0 0 10px rgba(0,255,209,0.4)'>USTAD AI 🤖</div>
+            <div style='font-size:12px;color:#94B4CC;margin-top:3px'>
+                Your personal AI tutor — ask me anything in any subject!</div>
+        </div>
+    </div>""", unsafe_allow_html=True)
+
     c1, c2 = st.columns(2)
     with c1:
         sub = st.selectbox("📚 Subject", list(SUBJECTS.keys()),
@@ -1273,12 +1297,12 @@ def page_chat():
         lvl = st.selectbox("🏫 Grade", LEVELS, index=lvl_idx)
     st.session_state.subject = sub
 
-    if st.button("🆕 New Chat", type="secondary"):
+    if st.button("🆕 NEW CHAT", type="secondary"):
         st.session_state.chat_messages = []
         st.session_state.session_id    = None
         st.rerun()
 
-    st.markdown("<div style='font-size:11px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin:10px 0 6px'>⚡ Quick Questions</div>", unsafe_allow_html=True)
+    st.markdown("<div style='font-size:9px;font-weight:800;color:rgba(0,255,209,0.4);text-transform:uppercase;letter-spacing:2px;margin:10px 0 6px;font-family:\"Rajdhani\",sans-serif'>⚡ QUICK QUESTIONS</div>", unsafe_allow_html=True)
     qc = st.columns(2)
     for i, p in enumerate(QUICK_PROMPTS.get(sub, [])):
         with qc[i%2]:
@@ -1290,22 +1314,27 @@ def page_chat():
                 bump_stats(sub); save_chat_session(sub, lvl); st.rerun()
 
     if not st.session_state.chat_messages:
-        st.info(f"👋 Assalam-o-Alaikum {u['name'].split()[0]}! I'm Ustad, your {sub} tutor for {lvl}. Ask me anything!")
+        st.markdown(f"""
+        <div style='background:rgba(10,22,40,0.8);border:1px solid rgba(0,255,209,0.12);
+            border-radius:14px;padding:16px;text-align:center;color:#94B4CC;font-size:13px'>
+            👋 Assalam-o-Alaikum <b style='color:#00FFD1'>{u['name'].split()[0]}</b>!
+            I'm Ustad, your <b style='color:#A78BFA'>{sub}</b> tutor for {lvl}. Ask me anything!
+        </div>""", unsafe_allow_html=True)
 
     for m in st.session_state.chat_messages:
         if m["role"] == "user":
-            st.markdown(f"<div class='msg-lbl msg-lbl-r'>You</div><div class='msg-user'>{m['content']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='msg-lbl msg-lbl-r'>YOU</div><div class='msg-user'>{m['content']}</div>", unsafe_allow_html=True)
         else:
-            st.markdown(f"<div class='msg-lbl'>🎓 Ustad</div><div class='msg-bot'>{m['content']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='msg-lbl'>🤖 USTAD AI</div><div class='msg-bot'>{m['content']}</div>", unsafe_allow_html=True)
 
     with st.form("chat_form", clear_on_submit=True):
         ph  = "یہاں سوال لکھیں..." if sub=="Urdu" else f"Ask your {sub} question here..."
         txt = st.text_area("Q", placeholder=ph, height=80, label_visibility="collapsed")
         c1f, c2f = st.columns([3,1])
         with c1f:
-            send = st.form_submit_button("📤 Send", use_container_width=True, type="primary")
+            send = st.form_submit_button("📤 SEND", use_container_width=True, type="primary")
         with c2f:
-            clear = st.form_submit_button("🗑️ Clear", use_container_width=True)
+            clear = st.form_submit_button("🗑️ CLEAR", use_container_width=True)
         if clear:
             st.session_state.chat_messages = []
             st.session_state.session_id    = None
@@ -1319,37 +1348,35 @@ def page_chat():
 
 
 # ═════════════════════════════════════════════════════════════════
-# 1. PRACTICE QUIZ — Enhanced with topic, difficulty, num questions
+# PRACTICE QUIZ
 # ═════════════════════════════════════════════════════════════════
 def page_quiz():
     u = st.session_state.user
-    st.markdown("<div class='section-header orange'>📝 Practice Quiz</div>", unsafe_allow_html=True)
-
+    st.markdown("<div class='section-header orange'>📝 PRACTICE QUIZ</div>", unsafe_allow_html=True)
     q = st.session_state.quiz
 
-    # ── Results screen ────────────────────────────────────────
     if q is not None and q["done"]:
         total = len(q["questions"]); score = q["score"]
         pct   = int((score/total)*100)
         emoji = "🏆" if pct>=80 else "👍" if pct>=60 else "💪"
-        col   = "#059669" if pct>=80 else "#F59E0B" if pct>=60 else "#E8472A"
-
+        col   = "#00FFD1" if pct>=80 else "#FFD700" if pct>=60 else "#FF2D78"
         st.markdown(f"""
-        <div style='text-align:center;background:#fff;border-radius:20px;padding:28px;
-            box-shadow:0 4px 20px rgba(0,0,0,0.08);margin-bottom:18px'>
+        <div style='text-align:center;background:linear-gradient(135deg,rgba(10,22,40,0.96),rgba(6,11,24,0.99));
+            border-radius:20px;padding:28px;box-shadow:var(--shadow-card);margin-bottom:18px;
+            border:1px solid rgba(0,255,209,0.15)'>
             <div style='font-size:56px'>{emoji}</div>
-            <h2 style='font-family:"Baloo 2",cursive;font-size:26px;font-weight:800;color:#1A1A2E'>
-                Quiz Complete!</h2>
-            <div style='font-size:48px;font-weight:900;color:{col};margin:8px 0'>{score}/{total}</div>
-            <div style='font-size:15px;color:#666'>
-                {pct}% — {"Excellent! ⭐" if pct>=80 else "Good effort! 📚" if pct>=60 else "Keep practicing! 💪"}
+            <h2 style='font-family:"Orbitron",monospace;font-size:22px;font-weight:800;color:{col};
+                text-shadow:0 0 16px {col}88'>QUIZ COMPLETE!</h2>
+            <div style='font-size:48px;font-weight:900;color:{col};margin:8px 0;
+                font-family:"Orbitron",monospace'>{score}/{total}</div>
+            <div style='font-size:15px;color:#94B4CC'>
+                {pct}% — {"Excellent! ⭐" if pct>=80 else "Good effort! 📚" if pct>=60 else "Keep going! 💪"}
             </div>
-            <div style='font-size:13px;color:#999;margin-top:4px'>
-                Topic: {q.get("topic","Custom")} · {q.get("difficulty","Medium")} · {q.get("sub","")} {q.get("lvl","")}
+            <div style='font-size:12px;color:#4A6A80;margin-top:4px'>
+                {q.get("topic","Custom")} · {q.get("difficulty","Medium")} · {q.get("sub","")} {q.get("lvl","")}
             </div>
         </div>""", unsafe_allow_html=True)
 
-        # Update quiz count stat
         users = load_json(USERS_FILE)
         eu    = users.get(u["email"], u)
         eu.setdefault("stats", init_stats())
@@ -1364,67 +1391,52 @@ def page_quiz():
         st.markdown("### 📋 Review Answers")
         for i,(ques,ans) in enumerate(zip(q["questions"],q["answers"])):
             correct = ans["chosen"] == ques["answer"]
-            bg     = "#F0FDF4" if correct else "#FFF1EE"
-            border = "#059669" if correct else "#E8472A"
-            wrong_line = "" if correct else f'<div style="font-size:13px;color:#059669;margin-top:2px">✅ Correct: <b>{ques["answer"]}</b></div>'
+            bg  = "rgba(0,255,209,0.05)" if correct else "rgba(255,45,120,0.05)"
+            bdr = "rgba(0,255,209,0.3)"  if correct else "rgba(255,45,120,0.3)"
+            wrong_line = "" if correct else f'<div style="font-size:13px;color:#00FFD1;margin-top:2px">✅ Correct: <b>{ques["answer"]}</b></div>'
             st.markdown(f"""
-            <div style='background:{bg};border:1.5px solid {border};border-radius:12px;
-                padding:14px 16px;margin-bottom:10px;color:#1A1A2E'>
+            <div style='background:{bg};border:1px solid {bdr};border-radius:12px;
+                padding:14px 16px;margin-bottom:10px;color:#E0F4FF'>
                 <div style='font-weight:700;font-size:14px'>Q{i+1}. {ques["q"]}</div>
-                <div style='font-size:13px;margin-top:5px'>
-                    Your answer: <b>{ans["chosen"]}</b> {"✅" if correct else "❌"}
-                </div>
+                <div style='font-size:13px;margin-top:5px'>Your answer: <b>{ans["chosen"]}</b> {"✅" if correct else "❌"}</div>
                 {wrong_line}
-                <div style='font-size:12px;color:#555;margin-top:5px;padding:6px 10px;background:rgba(0,0,0,.04);border-radius:8px'>
+                <div style='font-size:12px;color:#94B4CC;margin-top:5px;padding:6px 10px;background:rgba(0,0,0,0.3);border-radius:8px'>
                     💡 {ques.get("explanation","")}
                 </div>
             </div>""", unsafe_allow_html=True)
 
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("🔄 New Quiz", use_container_width=True, type="primary"):
+            if st.button("🔄 NEW QUIZ", use_container_width=True, type="primary"):
                 st.session_state.quiz = None; st.rerun()
         with col2:
-            if st.button("👥 Challenge Friends", use_container_width=True):
+            if st.button("👥 CHALLENGE FRIENDS", use_container_width=True):
                 st.session_state.page = "friends"; st.rerun()
         return
 
-    # ── Active quiz ───────────────────────────────────────────
     if q is not None and not q["done"]:
         info    = SUBJECTS.get(q.get("sub","Maths"), SUBJECTS["Maths"])
         current = q["current"]
         ques    = q["questions"][current]
         pct_bar = int((current/len(q["questions"]))*100)
-
-        # Header strip
         st.markdown(f"""
-        <div style='background:{info["color"]}18;border-radius:14px;padding:12px 16px;
-            margin-bottom:14px;display:flex;justify-content:space-between;align-items:center'>
+        <div style='background:rgba(10,22,40,0.9);border-radius:14px;padding:12px 16px;
+            margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;
+            border:1px solid rgba(0,255,209,0.1)'>
             <div>
-                <span style='font-weight:800;color:{info["color"]}'>{info["emoji"]} {q.get("sub","")} Quiz</span>
-                <span style='font-size:12px;color:#888;margin-left:10px'>{q.get("topic","")} · {q.get("difficulty","")}</span>
+                <span style='font-weight:800;color:{info["color"]}'>{info["emoji"]} {q.get("sub","")} QUIZ</span>
+                <span style='font-size:12px;color:#4A6A80;margin-left:10px'>{q.get("topic","")} · {q.get("difficulty","")}</span>
             </div>
-            <span style='font-weight:700;color:{info["color"]}'>Score: {q["score"]}/{current}</span>
+            <span style='font-family:"Orbitron",monospace;font-weight:700;color:{info["color"]}'>
+                {q["score"]}/{current}</span>
         </div>""", unsafe_allow_html=True)
-
-        # Progress bar
+        st.markdown(f"""<div class='prog-bar'><div class='prog-fill' style='width:{pct_bar}%'></div></div><br>""", unsafe_allow_html=True)
         st.markdown(f"""
-        <div style='display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:4px'>
-            <span>Question {current+1} of {len(q["questions"])}</span>
-            <span>{pct_bar}% complete</span>
-        </div>
-        <div class='prog-bar'><div class='prog-fill' style='width:{pct_bar}%;background:{info["color"]}'></div></div>
-        <br>""", unsafe_allow_html=True)
-
-        # Question
-        st.markdown(f"""
-        <div style='background:#fff;border-radius:16px;padding:18px 20px;margin-bottom:14px;
-            box-shadow:0 3px 16px rgba(0,0,0,0.07);font-weight:800;font-size:15px;
-            color:#1A1A2E;line-height:1.55;border-left:5px solid {info["color"]}'>
+        <div style='background:rgba(10,22,40,0.96);border-radius:16px;padding:18px 20px;
+            margin-bottom:14px;box-shadow:var(--shadow-card);font-weight:800;font-size:15px;
+            color:#E0F4FF;line-height:1.55;border-left:3px solid {info["color"]}'>
             Q{current+1}. {ques["q"]}
         </div>""", unsafe_allow_html=True)
-
-        # Options as styled buttons
         for opt in ques["options"]:
             if st.button(opt, key=f"opt_{current}_{opt}", use_container_width=True):
                 q["answers"].append({"chosen":opt})
@@ -1437,205 +1449,153 @@ def page_quiz():
                 st.session_state.quiz = q; st.rerun()
         return
 
-    # ── Quiz setup (no active quiz) ───────────────────────────
     st.markdown("""
-    <div style='background:#EFF4FF;border-radius:14px;padding:14px 18px;
-        margin-bottom:18px;font-size:13px;color:#1B4FD8;border-left:4px solid #2563EB'>
-        📝 <b>Custom Quiz Generator</b> — Enter any topic, pick your difficulty and number of questions!
+    <div style='background:rgba(0,255,209,0.04);border-radius:14px;padding:14px 18px;
+        margin-bottom:18px;font-size:13px;color:#00FFD1;border:1px solid rgba(0,255,209,0.15)'>
+        📝 <b>Custom Quiz Generator</b> — Enter any topic, pick difficulty and number of questions!
     </div>""", unsafe_allow_html=True)
 
-    with st.container():
-        st.markdown("#### 🔧 Quiz Settings")
+    st.markdown("#### ⚙️ QUIZ SETTINGS")
+    c1, c2 = st.columns(2)
+    with c1: quiz_sub = st.selectbox("📚 Subject", list(SUBJECTS.keys()), key="quiz_sub")
+    with c2:
+        lvl_idx  = get_level_index(u.get("grade","Grade 6"))
+        quiz_lvl = st.selectbox("🏫 Grade", LEVELS, index=lvl_idx, key="quiz_lvl")
+    quiz_topic = st.text_input("✏️ Topic (optional)", placeholder="e.g. Photosynthesis, Quadratic equations...", key="quiz_topic_input")
+    c3, c4 = st.columns(2)
+    with c3: difficulty = st.selectbox("🎯 Difficulty", ["Easy","Medium","Hard"], index=1, key="quiz_diff")
+    with c4: num_qs = st.selectbox("🔢 Questions", [5,10,15,20], index=0, key="quiz_num")
+    diff_colors = {"Easy":"#00FFD1","Medium":"#FFD700","Hard":"#FF2D78"}
+    diff_info = {"Easy":("🟢","Basic recall — perfect for revision."),
+                 "Medium":("🟡","Mixed conceptual + application."),
+                 "Hard":("🔴","Analytical higher-order thinking.")}
+    d_icon, d_text = diff_info[difficulty]
+    st.markdown(f"""<div style='background:rgba(0,0,0,0.3);border-radius:10px;padding:10px 14px;
+        font-size:12px;color:{diff_colors[difficulty]};margin-bottom:14px;
+        border:1px solid {diff_colors[difficulty]}22'>{d_icon} <b>{difficulty}:</b> {d_text}</div>""",
+        unsafe_allow_html=True)
 
-        c1, c2 = st.columns(2)
-        with c1:
-            quiz_sub = st.selectbox("📚 Subject", list(SUBJECTS.keys()), key="quiz_sub")
-        with c2:
-            lvl_idx  = get_level_index(u.get("grade","Grade 6"))
-            quiz_lvl = st.selectbox("🏫 Grade", LEVELS, index=lvl_idx, key="quiz_lvl")
-
-        quiz_topic = st.text_input(
-            "✏️ Topic (optional — leave blank for general quiz)",
-            placeholder="e.g. Photosynthesis, Quadratic equations, World War II, Pythagoras...",
-            key="quiz_topic_input"
-        )
-
-        c3, c4 = st.columns(2)
-        with c3:
-            difficulty = st.selectbox("🎯 Difficulty Level", ["Easy","Medium","Hard"], index=1, key="quiz_diff")
-        with c4:
-            num_qs = st.selectbox("🔢 Number of Questions", [5,10,15,20], index=0, key="quiz_num")
-
-        # Difficulty description
-        diff_info = {
-            "Easy":   ("🟢","Straightforward recall questions. Perfect for revision."),
-            "Medium": ("🟡","Mixed conceptual and application questions."),
-            "Hard":   ("🔴","Challenging analytical and higher-order thinking questions."),
-        }
-        d_icon, d_text = diff_info[difficulty]
-        st.markdown(f"""
-        <div style='background:#F8F9FA;border-radius:10px;padding:10px 14px;
-            font-size:12px;color:#555;margin-bottom:14px'>
-            {d_icon} <b>{difficulty}:</b> {d_text}
-        </div>""", unsafe_allow_html=True)
-
-        if st.button("🚀 Generate Quiz", use_container_width=True, type="primary", key="gen_quiz_btn"):
-            topic_str = quiz_topic.strip() if quiz_topic.strip() else f"{quiz_sub} general topics"
-            with st.spinner(f"✨ Generating {num_qs} {difficulty} questions on '{topic_str}'..."):
-                raw = call_ai(
-                    [{"role":"user","content":
-                      f"Create exactly {num_qs} {difficulty}-level multiple choice questions "
-                      f"about '{topic_str}' for {quiz_lvl} {quiz_sub} students in Pakistan. "
-                      f"Easy=basic recall, Medium=understanding+application, Hard=analysis+evaluation. "
-                      f"Return ONLY raw JSON: "
-                      f'{{"questions":[{{"q":"question text","options":["A. option","B. option","C. option","D. option"],"answer":"A. option","explanation":"why"}}]}}'}],
-                    "Quiz generator. Return ONLY valid raw JSON. No backticks. No markdown.", 2000
-                )
-            try:
-                clean = raw.replace("```json","").replace("```","").strip()
-                data  = json.loads(clean)
-                st.session_state.quiz = {
-                    "questions": data["questions"][:num_qs],
-                    "current":0, "score":0, "answers":[], "done":False,
-                    "sub":quiz_sub, "lvl":quiz_lvl,
-                    "topic":topic_str, "difficulty":difficulty
-                }
-                st.rerun()
-            except:
-                st.error("⚠️ Could not generate quiz. Please try again with a different topic.")
-                with st.expander("Debug info"): st.code(raw[:500])
+    if st.button("🚀 GENERATE QUIZ", use_container_width=True, type="primary", key="gen_quiz_btn"):
+        topic_str = quiz_topic.strip() if quiz_topic.strip() else f"{quiz_sub} general topics"
+        with st.spinner(f"✨ Generating {num_qs} {difficulty} questions on '{topic_str}'..."):
+            raw = call_ai(
+                [{"role":"user","content":
+                  f"Create exactly {num_qs} {difficulty}-level MCQ questions about '{topic_str}' "
+                  f"for {quiz_lvl} {quiz_sub} students in Pakistan. "
+                  f'Return ONLY raw JSON: {{"questions":[{{"q":"question text","options":["A. option","B. option","C. option","D. option"],"answer":"A. option","explanation":"why"}}]}}'}],
+                "Quiz generator. Return ONLY valid raw JSON. No backticks.", 2000
+            )
+        try:
+            clean = raw.replace("```json","").replace("```","").strip()
+            data  = json.loads(clean)
+            st.session_state.quiz = {
+                "questions": data["questions"][:num_qs], "current":0, "score":0,
+                "answers":[], "done":False, "sub":quiz_sub, "lvl":quiz_lvl,
+                "topic":topic_str, "difficulty":difficulty
+            }
+            st.rerun()
+        except:
+            st.error("⚠️ Could not generate quiz. Try again with a different topic.")
 
 
-# ═════════════════════════════════════════════════════════════════
-# 4. FRIENDS GROUP QUIZ — Session-based leaderboard
-# ═════════════════════════════════════════════════════════════════
+# ═══════════════ FRIENDS QUIZ ════════════════════════════════════
 def page_friends():
     u = st.session_state.user
-    st.markdown("<div class='section-header purple'>👥 Friends Group Quiz</div>", unsafe_allow_html=True)
-
+    st.markdown("<div class='section-header purple'>👥 FRIENDS GROUP QUIZ</div>", unsafe_allow_html=True)
     grp = st.session_state.group_session
 
-    # ── Results / Leaderboard ─────────────────────────────────
     if grp is not None and grp.get("done"):
-        st.markdown("## 🏆 Final Leaderboard")
+        st.markdown("## 🏆 FINAL LEADERBOARD")
         players = sorted(grp["players"], key=lambda p: p["score"], reverse=True)
         rank_icons = ["🥇","🥈","🥉","4️⃣"]
         for i, p in enumerate(players):
             total = len(grp["questions"])
             pct   = int((p["score"]/total)*100)
-            st.markdown(f"""
-            <div class='lb-row'>
+            st.markdown(f"""<div class='lb-row'>
                 <span class='lb-rank'>{rank_icons[i]}</span>
                 <span class='lb-name'>{p['name']} {p['avatar']}</span>
-                <span style='font-size:12px;color:#888'>{pct}%</span>
+                <span style='font-size:12px;color:#4A6A80'>{pct}%</span>
                 <span class='lb-score'>{p['score']}/{total}</span>
             </div>""", unsafe_allow_html=True)
-
         winner = players[0]
         st.markdown(f"""
-        <div style='text-align:center;background:linear-gradient(135deg,#FFF8E7,#FFFBF0);
-            border-radius:16px;padding:20px;margin-top:14px;border:2px solid #F5CC4A'>
+        <div style='text-align:center;background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(10,22,40,0.96));
+            border-radius:16px;padding:20px;margin-top:14px;border:1px solid rgba(255,215,0,0.25);
+            box-shadow:0 0 20px rgba(255,215,0,0.15)'>
             <div style='font-size:40px'>🎉</div>
-            <div style='font-family:"Baloo 2",cursive;font-size:20px;font-weight:800;color:#A07820'>
-                {winner['name']} wins with {winner['score']}/{len(grp['questions'])}!
-            </div>
+            <div style='font-family:"Orbitron",monospace;font-size:18px;font-weight:800;color:#FFD700;
+                text-shadow:0 0 16px rgba(255,215,0,0.5)'>
+                {winner['name']} WINS {winner['score']}/{len(grp['questions'])}!</div>
         </div>""", unsafe_allow_html=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("🔄 Play Again", use_container_width=True, type="primary"):
+        if st.button("🔄 PLAY AGAIN", use_container_width=True, type="primary"):
             st.session_state.group_session = None; st.rerun()
         return
 
-    # ── Active group quiz — player turn ──────────────────────
     if grp is not None and not grp.get("done"):
         pidx    = grp["current_player"]
         player  = grp["players"][pidx]
         qidx    = player.get("q_index", 0)
         total_q = len(grp["questions"])
-
-        # Check if this player is done
         if qidx >= total_q:
-            # Move to next player
             grp["current_player"] = pidx + 1
-            if grp["current_player"] >= len(grp["players"]):
-                grp["done"] = True
+            if grp["current_player"] >= len(grp["players"]): grp["done"] = True
             st.session_state.group_session = grp; st.rerun()
             return
-
         ques = grp["questions"][qidx]
-
-        # Scoreboard strip
-        st.markdown("<div style='display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap'>", unsafe_allow_html=True)
         for i, p in enumerate(grp["players"]):
             active = (i == pidx)
-            bg     = "#E8472A" if active else "#F0F0F5"
-            color  = "#fff"    if active else "#555"
+            bg   = "rgba(139,92,246,0.15)" if active else "rgba(10,22,40,0.8)"
+            col  = "#A78BFA" if active else "#4A6A80"
+            bdr  = "rgba(139,92,246,0.4)" if active else "rgba(0,255,209,0.08)"
             st.markdown(f"""
-            <div style='background:{bg};color:{color};border-radius:99px;
-                padding:6px 14px;font-size:12px;font-weight:800;display:inline-block'>
+            <div style='display:inline-block;background:{bg};color:{col};border-radius:8px;
+                padding:5px 14px;font-size:12px;font-weight:800;margin-right:6px;
+                border:1px solid {bdr};font-family:"Rajdhani",sans-serif;letter-spacing:.5px'>
                 {p['avatar']} {p['name']}: {p['score']}/{total_q} {"← NOW" if active else ""}
             </div>""", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-
+        st.markdown(f"""<br><div style='background:rgba(139,92,246,0.07);border-radius:14px;
+            padding:12px 16px;margin:10px 0;font-size:12px;color:#A78BFA;font-weight:700;
+            border:1px solid rgba(139,92,246,0.2)'>
+            🎮 {player['name']}'s turn — Q{qidx+1} of {total_q}</div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div class='prog-bar'><div class='prog-fill' style='width:{int((qidx/total_q)*100)}%'></div></div><br>""", unsafe_allow_html=True)
         st.markdown(f"""
-        <div style='background:linear-gradient(135deg,#7C3AED18,#A78BFA18);border-radius:14px;
-            padding:12px 16px;margin-bottom:10px;font-size:12px;color:#7C3AED;font-weight:700'>
-            🎮 {player['name']}'s turn — Q{qidx+1} of {total_q}
-        </div>""", unsafe_allow_html=True)
-
-        pct_bar = int((qidx/total_q)*100)
-        st.markdown(f"""<div class='prog-bar'><div class='prog-fill'
-            style='width:{pct_bar}%;background:#7C3AED'></div></div><br>""", unsafe_allow_html=True)
-
-        st.markdown(f"""
-        <div style='background:#fff;border-radius:16px;padding:18px 20px;margin-bottom:14px;
-            box-shadow:0 3px 16px rgba(0,0,0,0.07);font-weight:800;font-size:15px;
-            color:#1A1A2E;border-left:5px solid #7C3AED'>
-            Q{qidx+1}. {ques["q"]}
-        </div>""", unsafe_allow_html=True)
-
+        <div style='background:rgba(10,22,40,0.96);border-radius:16px;padding:18px 20px;
+            margin-bottom:14px;box-shadow:var(--shadow-card);font-weight:800;font-size:15px;
+            color:#E0F4FF;border-left:3px solid #A78BFA'>Q{qidx+1}. {ques["q"]}</div>""", unsafe_allow_html=True)
         for opt in ques["options"]:
             if st.button(opt, key=f"grp_{pidx}_{qidx}_{opt}", use_container_width=True):
                 if opt == ques["answer"]:
-                    grp["players"][pidx]["score"] += 1
-                    st.toast("✅ Correct!", icon="🎉")
-                else:
-                    st.toast(f"❌ Correct: {ques['answer']}", icon="💡")
+                    grp["players"][pidx]["score"] += 1; st.toast("✅ Correct!", icon="🎉")
+                else: st.toast(f"❌ Correct: {ques['answer']}", icon="💡")
                 grp["players"][pidx]["q_index"] = qidx + 1
                 st.session_state.group_session = grp; st.rerun()
         return
 
-    # ── Group setup ───────────────────────────────────────────
     st.markdown("""
-    <div style='background:#F5F0FF;border-radius:14px;padding:14px 18px;
-        margin-bottom:18px;font-size:13px;color:#5B21B6;border-left:4px solid #7C3AED'>
-        👥 <b>Friends Group Quiz</b> — Take turns answering the same questions. Whoever scores highest wins!
+    <div style='background:rgba(139,92,246,0.06);border-radius:14px;padding:14px 18px;
+        margin-bottom:18px;font-size:13px;color:#A78BFA;border:1px solid rgba(139,92,246,0.18)'>
+        👥 <b>Friends Group Quiz</b> — Take turns answering the same questions. Highest scorer wins!
     </div>""", unsafe_allow_html=True)
 
-    num_friends = st.selectbox("👥 Number of players (including you)", [2,3,4], index=0)
-
-    st.markdown("#### 🎮 Player Names")
-    player_names = [u["name"]]  # first player is always the current user
+    num_friends = st.selectbox("👥 Players (including you)", [2,3,4], index=0)
+    st.markdown("#### 🎮 PLAYER NAMES")
+    player_names = [u["name"]]
     for i in range(1, num_friends):
         name = st.text_input(f"Player {i+1} name", placeholder=f"Friend {i}", key=f"friend_name_{i}")
         player_names.append(name.strip() if name.strip() else f"Player {i+1}")
 
-    st.markdown("#### 📚 Quiz Settings")
+    st.markdown("#### 📚 QUIZ SETTINGS")
     c1, c2 = st.columns(2)
-    with c1:
-        grp_sub  = st.selectbox("Subject", list(SUBJECTS.keys()), key="grp_sub")
+    with c1: grp_sub  = st.selectbox("Subject", list(SUBJECTS.keys()), key="grp_sub")
     with c2:
-        lvl_idx  = get_level_index(u.get("grade","Grade 6"))
-        grp_lvl  = st.selectbox("Grade", LEVELS, index=lvl_idx, key="grp_lvl")
-
+        lvl_idx = get_level_index(u.get("grade","Grade 6"))
+        grp_lvl = st.selectbox("Grade", LEVELS, index=lvl_idx, key="grp_lvl")
     grp_topic = st.text_input("Topic (optional)", placeholder="Any topic...", key="grp_topic")
     c3, c4 = st.columns(2)
-    with c3:
-        grp_diff = st.selectbox("Difficulty", ["Easy","Medium","Hard"], index=1, key="grp_diff")
-    with c4:
-        grp_num  = st.selectbox("Questions per player", [5,10], index=0, key="grp_num")
+    with c3: grp_diff = st.selectbox("Difficulty", ["Easy","Medium","Hard"], index=1, key="grp_diff")
+    with c4: grp_num  = st.selectbox("Questions per player", [5,10], index=0, key="grp_num")
 
-    if st.button("🚀 Start Group Quiz", use_container_width=True, type="primary"):
+    if st.button("🚀 START GROUP QUIZ", use_container_width=True, type="primary"):
         topic_str = grp_topic.strip() if grp_topic.strip() else f"{grp_sub} general"
         with st.spinner(f"Generating {grp_num} questions..."):
             raw = call_ai(
@@ -1648,38 +1608,29 @@ def page_friends():
         try:
             clean = raw.replace("```json","").replace("```","").strip()
             data  = json.loads(clean)
-            questions = data["questions"][:grp_num]
-            avatars   = ["👦","👧","🧑","👨","👩","🧒"]
-            players   = [
-                {"name":n, "avatar":avatars[i%len(avatars)],
-                 "score":0, "q_index":0}
-                for i,n in enumerate(player_names)
-            ]
+            avatars = ["🤖","🚀","🧙","🦸","🧝","🧑‍🔬"]
+            players = [{"name":n,"avatar":avatars[i%len(avatars)],"score":0,"q_index":0}
+                       for i,n in enumerate(player_names)]
             st.session_state.group_session = {
-                "questions":questions, "players":players,
-                "current_player":0, "done":False,
-                "topic":topic_str, "difficulty":grp_diff
+                "questions":data["questions"][:grp_num],"players":players,
+                "current_player":0,"done":False,
+                "topic":topic_str,"difficulty":grp_diff
             }
             st.rerun()
         except:
             st.error("⚠️ Could not generate quiz. Please try again.")
 
 
-# ═════════════════════════════════════════════════════════════════
-# 5. IMAGE GENERATOR — Upgraded with styles, gallery grid, download
-# ═════════════════════════════════════════════════════════════════
+# ═══════════════ IMAGE GENERATOR ═════════════════════════════════
 def page_image():
     u = st.session_state.user
-    st.markdown("<div class='section-header purple'>🎨 AI Image Generator</div>", unsafe_allow_html=True)
-
+    st.markdown("<div class='section-header purple'>🎨 AI IMAGE GENERATOR</div>", unsafe_allow_html=True)
     st.markdown("""
-    <div style='background:#F5F0FF;border:1.5px solid #7C3AED;border-radius:12px;
-        padding:12px 16px;margin-bottom:16px;font-size:13px;color:#5B21B6'>
-        🖌️ Claude AI draws a <b>custom SVG diagram</b> — choose your style!
-        Generation takes 20–40 seconds. Works fully offline.
+    <div style='background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.2);border-radius:12px;
+        padding:12px 16px;margin-bottom:16px;font-size:13px;color:#A78BFA'>
+        🖌️ Claude AI draws a <b>custom SVG diagram</b> — choose your style! Takes 20–40 seconds.
     </div>""", unsafe_allow_html=True)
 
-    # ── Controls ──────────────────────────────────────────────
     c1, c2 = st.columns(2)
     with c1:
         img_sub = st.selectbox("📚 Subject", list(SUBJECTS.keys()), key="img_sub")
@@ -1689,133 +1640,91 @@ def page_image():
 
     style_choice = st.selectbox("🎨 Art Style", list(IMAGE_STYLES.keys()), key="img_style")
     style_hint   = IMAGE_STYLES[style_choice]
-
-    # Style preview chips
     style_colors = {
-        "📐 Educational Diagram":"#2563EB",
-        "🎨 Cartoon":            "#E8472A",
-        "🎌 Anime Style":        "#7C3AED",
-        "🤖 AI Art":             "#059669",
-        "🔬 Realistic / Scientific":"#B45309",
+        "📐 Educational Diagram":"#60A5FA",
+        "🎨 Cartoon":            "#FF2D78",
+        "🎌 Anime Style":        "#A78BFA",
+        "🤖 AI Art":             "#00FFD1",
+        "🔬 Realistic / Scientific":"#FFD700",
     }
-    sc = style_colors.get(style_choice,"#666")
-    st.markdown(f"""
-    <div style='background:{sc}18;border:1.5px solid {sc}44;border-radius:10px;
+    sc = style_colors.get(style_choice,"#00FFD1")
+    st.markdown(f"""<div style='background:{sc}0F;border:1px solid {sc}33;border-radius:10px;
         padding:8px 14px;font-size:12px;color:{sc};font-weight:700;margin-bottom:12px'>
-        {style_choice} — {style_hint[:60]}...
-    </div>""", unsafe_allow_html=True)
+        {style_choice} — {style_hint[:60]}...</div>""", unsafe_allow_html=True)
 
-    prompt = st.text_area(
-        "📝 Describe what you want to see",
-        placeholder=(
-            "e.g. Diagram showing how photosynthesis works with labeled parts\n"
-            "e.g. Solar system with all 8 planets in order\n"
-            "e.g. Water cycle showing evaporation, clouds and rain\n"
-            "e.g. Human heart with blood flow direction"
-        ),
-        height=100, key="img_prompt"
-    )
+    prompt = st.text_area("📝 Describe what you want to see",
+        placeholder="e.g. Diagram showing how photosynthesis works\ne.g. Solar system with all 8 planets\ne.g. Water cycle diagram",
+        height=100, key="img_prompt")
 
-    if st.button("🎨 Generate Image", use_container_width=True, type="primary"):
+    if st.button("🎨 GENERATE IMAGE", use_container_width=True, type="primary"):
         if not prompt.strip():
             st.warning("Please enter a description first!")
             return
-
-        prog = st.progress(0,  text="🎨 Step 1/4 — Planning your diagram...")
-        time.sleep(0.5)
-        prog.progress(20, text="✏️ Step 2/4 — Drawing shapes and structure...")
-        time.sleep(0.5)
-        prog.progress(45, text="🎨 Step 3/4 — Adding colors, labels and arrows...")
+        prog = st.progress(0, text="🎨 Step 1/4 — Planning...")
+        time.sleep(0.5); prog.progress(20, text="✏️ Step 2/4 — Drawing...")
+        time.sleep(0.5); prog.progress(45, text="🎨 Step 3/4 — Adding colors...")
 
         system_msg = (
-            "You are an expert SVG illustrator who creates educational diagrams. "
+            "You are an expert SVG illustrator for educational content. "
             "STRICT OUTPUT RULES:\n"
             "1. Output ONLY the SVG code. No markdown. No backticks. No explanations.\n"
-            "2. Start with exactly: <svg\n"
-            "3. End with exactly: </svg>\n"
+            "2. Start with exactly: <svg\n3. End with exactly: </svg>\n"
             f"4. Use: xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 700 500\" width=\"700\" height=\"500\"\n"
             "5. Include <defs> with at least 3 linearGradient definitions.\n"
             "6. Bold title at top (y=35, font-size=24, font-weight=bold, text-anchor=middle, x=350).\n"
-            "7. BRIGHT colors — use gradient fills on all major shapes.\n"
-            "8. Include 20+ visual elements: shapes, labels, arrows.\n"
-            f"9. Style: {style_hint}\n"
-            "10. Every component must have a clear text label.\n"
-            "11. Make it look like a professional educational poster.\n"
-            "12. DO NOT use any xlink:href or external images."
+            "7. BRIGHT colors — use gradient fills. Include 20+ visual elements.\n"
+            f"8. Style: {style_hint}\n"
+            "9. Every component must have a clear text label.\n"
+            "10. Make it look like a professional educational poster.\n"
+            "11. DO NOT use any xlink:href or external images."
         )
         user_msg = (
-            f"Create a detailed colorful educational SVG illustration:\n"
-            f"TOPIC: {prompt}\nSUBJECT: {img_sub}\nLEVEL: {img_lvl}\nSTYLE: {style_hint}\n\n"
-            f"Include: gradient background, bold title, labeled components, arrows.\n"
+            f"Create a detailed colorful educational SVG: TOPIC: {prompt}\n"
+            f"SUBJECT: {img_sub}\nLEVEL: {img_lvl}\nSTYLE: {style_hint}\n"
             f"Output ONLY the SVG. Start with <svg and end with </svg>."
         )
-
         raw = call_ai_svg([{"role":"user","content":user_msg}], system_msg)
-        prog.progress(90, text="✨ Step 4/4 — Finishing touches...")
-        time.sleep(0.3)
-        prog.progress(100, text="✅ Done!")
-        time.sleep(0.3)
-        prog.empty()
+        prog.progress(90, text="✨ Step 4/4 — Finishing..."); time.sleep(0.3)
+        prog.progress(100, text="✅ Done!"); time.sleep(0.3); prog.empty()
 
         cleaned = raw
-        for fence in ["```svg","```xml","```html","```"]:
-            cleaned = cleaned.replace(fence,"")
+        for fence in ["```svg","```xml","```html","```"]: cleaned = cleaned.replace(fence,"")
         cleaned = cleaned.strip()
-
-        svg_start = cleaned.find("<svg")
-        svg_end   = cleaned.rfind("</svg>")
+        svg_start = cleaned.find("<svg"); svg_end = cleaned.rfind("</svg>")
 
         if svg_start >= 0 and svg_end >= 0:
             final_svg = cleaned[svg_start:svg_end+6]
-
             st.success("✅ Image generated!")
             st.markdown("### 🖼️ Your Educational Image")
             st.components.v1.html(final_svg, height=520, scrolling=False)
-
-            # Download button
             b64 = base64.b64encode(final_svg.encode()).decode()
             st.markdown(
                 f'<a href="data:image/svg+xml;base64,{b64}" download="zm_diagram.svg" '
                 f'style="display:inline-flex;align-items:center;gap:8px;padding:10px 22px;'
-                f'background:linear-gradient(135deg,#7C3AED,#A78BFA);color:#fff;'
-                f'border-radius:12px;font-weight:700;font-size:14px;text-decoration:none;margin-top:10px">'
-                f'⬇️ Download SVG Image</a>',
+                f'background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(10,22,40,0.9));'
+                f'color:#A78BFA;border-radius:12px;font-weight:700;font-size:14px;'
+                f'text-decoration:none;border:1px solid rgba(139,92,246,0.3);margin-top:10px">⬇️ DOWNLOAD SVG</a>',
                 unsafe_allow_html=True
             )
-
-            # Save to gallery
-            imgs  = load_json(IMAGES_FILE)
-            email = u["email"]
+            imgs = load_json(IMAGES_FILE); email = u["email"]
             if email not in imgs: imgs[email] = []
-            imgs[email].insert(0,{
-                "id": str(int(time.time())), "svg": final_svg,
-                "prompt":prompt, "subject":img_sub, "level":img_lvl,
-                "style":style_choice,
-                "created": datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-            })
+            imgs[email].insert(0,{"id":str(int(time.time())),"svg":final_svg,"prompt":prompt,
+                "subject":img_sub,"level":img_lvl,"style":style_choice,
+                "created":datetime.datetime.now().strftime("%Y-%m-%d %H:%M")})
             save_json(IMAGES_FILE, imgs)
-
-            # Update stats
-            users = load_json(USERS_FILE)
-            eu    = users.get(u["email"], u)
+            users = load_json(USERS_FILE); eu = users.get(u["email"], u)
             eu.setdefault("stats", init_stats())
             eu["stats"]["images"] = eu["stats"].get("images",0)+1
-            eu, new_b = check_badges(eu)
-            users[u["email"]] = eu
-            save_json(USERS_FILE, users)
-            st.session_state.user = eu
-            for b in new_b:
-                st.toast(f"🏆 Badge: {b['icon']} {b['name']}!", icon="🎉")
+            eu, new_b = check_badges(eu); users[u["email"]] = eu
+            save_json(USERS_FILE, users); st.session_state.user = eu
+            for b in new_b: st.toast(f"🏆 Badge: {b['icon']} {b['name']}!", icon="🎉")
         else:
             st.error("⚠️ Could not generate image. Try rephrasing your description.")
-            with st.expander("Debug"): st.code(raw[:600])
 
-    # ── Gallery grid ──────────────────────────────────────────
-    imgs      = load_json(IMAGES_FILE)
-    user_imgs = imgs.get(u["email"], [])
+    imgs = load_json(IMAGES_FILE); user_imgs = imgs.get(u["email"], [])
     if user_imgs:
         st.markdown("---")
-        st.markdown("### 🖼️ Your Image Gallery")
+        st.markdown("### 🖼️ YOUR IMAGE GALLERY")
         for i in range(0, min(len(user_imgs), 8), 2):
             cols = st.columns(2)
             for j, c in enumerate(cols):
@@ -1823,81 +1732,41 @@ def page_image():
                     img = user_imgs[i+j]
                     with c:
                         st.markdown(f"""
-                        <div style='background:#fff;border-radius:14px;padding:12px;
-                            box-shadow:0 2px 10px rgba(0,0,0,0.07);border:1px solid #F0F0F5;
-                            margin-bottom:12px'>
-                            <div style='font-size:11px;font-weight:800;color:#7C3AED;margin-bottom:8px'>
-                                {img['style']} · {img['subject']} · {img['created']}
-                            </div>
-                            <div style='font-size:12px;color:#555;margin-bottom:8px'>
-                                📝 {img['prompt'][:60]}...
-                            </div>
+                        <div style='background:rgba(10,22,40,0.96);border-radius:14px;padding:12px;
+                            box-shadow:var(--shadow-card);border:1px solid rgba(0,255,209,0.1);margin-bottom:12px'>
+                            <div style='font-size:10px;font-weight:800;color:#A78BFA;margin-bottom:8px;
+                                font-family:"Rajdhani",sans-serif;letter-spacing:1px'>
+                                {img['style']} · {img['subject']} · {img['created']}</div>
+                            <div style='font-size:12px;color:#94B4CC;margin-bottom:8px'>
+                                📝 {img['prompt'][:60]}...</div>
                         </div>""", unsafe_allow_html=True)
-                        with st.expander("🔍 View full image"):
+                        with st.expander("🔍 View"):
                             st.components.v1.html(img["svg"], height=480, scrolling=False)
-                            b64 = base64.b64encode(img["svg"].encode()).decode()
-                            st.markdown(
-                                f'<a href="data:image/svg+xml;base64,{b64}" download="zm_diagram.svg" '
-                                f'style="display:inline-block;padding:6px 14px;background:#7C3AED;color:#fff;'
-                                f'border-radius:8px;font-weight:700;font-size:12px;text-decoration:none">⬇️ Download</a>',
-                                unsafe_allow_html=True
-                            )
 
 
-# ═════════════════════════════════════════════════════════════════
-# 6. MY SYLLABUS — Redesigned with 4-step dropdown flow
-# ═════════════════════════════════════════════════════════════════
+# ═══════════════ SYLLABUS ════════════════════════════════════════
 def page_syllabus():
     u = st.session_state.user
-    st.markdown("<div class='section-header blue'>📚 My Syllabus</div>", unsafe_allow_html=True)
-
-    # ──────────────────────────────────────────────────────────
-    # STEP 1: Curriculum
-    # ──────────────────────────────────────────────────────────
-    st.markdown("""
-    <div class='syl-step'>
-        <div class='syl-step-title'>📋 Step 1 — Choose Curriculum</div>
-    </div>""", unsafe_allow_html=True)
+    st.markdown("<div class='section-header blue'>📚 MY SYLLABUS</div>", unsafe_allow_html=True)
+    st.markdown("""<div class='syl-step'><div class='syl-step-title'>📋 Step 1 — Choose Curriculum</div></div>""", unsafe_allow_html=True)
     curriculum = st.selectbox("Curriculum", ["Cambridge (Pakistan)"], key="syl_curr")
-
-    # ──────────────────────────────────────────────────────────
-    # STEP 2: Grade
-    # ──────────────────────────────────────────────────────────
-    st.markdown("""
-    <div class='syl-step'>
-        <div class='syl-step-title'>🏫 Step 2 — Choose Grade</div>
-    </div>""", unsafe_allow_html=True)
+    st.markdown("""<div class='syl-step'><div class='syl-step-title'>🏫 Step 2 — Choose Grade</div></div>""", unsafe_allow_html=True)
     default_grade = normalise_level(u.get("grade","Grade 8"))
-    default_grade_idx = get_level_index(default_grade)
-    sel_grade = st.selectbox("Grade", LEVELS, index=default_grade_idx, key="syl_grade_sel")
-
-    # ──────────────────────────────────────────────────────────
-    # STEP 3: Subject
-    # ──────────────────────────────────────────────────────────
-    st.markdown("""
-    <div class='syl-step'>
-        <div class='syl-step-title'>📖 Step 3 — Choose Subject</div>
-    </div>""", unsafe_allow_html=True)
+    sel_grade = st.selectbox("Grade", LEVELS, index=get_level_index(default_grade), key="syl_grade_sel")
+    st.markdown("""<div class='syl-step'><div class='syl-step-title'>📖 Step 3 — Choose Subject</div></div>""", unsafe_allow_html=True)
     available_subjects = CAMBRIDGE_SUBJECTS.get(sel_grade, list(SUBJECTS.keys()))
     sel_sub = st.selectbox("Subject", available_subjects, key="syl_sub_sel")
     st.session_state.syl_subject = sel_sub
 
-    # ──────────────────────────────────────────────────────────
-    # STEP 4: Custom override
-    # ──────────────────────────────────────────────────────────
     with st.expander("➕ Step 4 — Add Custom Class or Subject"):
-        st.markdown("<div style='color:#1A1A2E;font-size:13px;margin-bottom:8px'>Not seeing your class or subject? Add it manually:</div>", unsafe_allow_html=True)
         cc1, cc2 = st.columns(2)
-        with cc1:
-            custom_grade = st.text_input("Custom Grade/Class", placeholder="e.g. Grade 11, A2 Level...", key="custom_grade_inp")
-        with cc2:
-            custom_subject = st.text_input("Custom Subject", placeholder="e.g. Accounting, History...", key="custom_sub_inp")
-        if custom_grade.strip(): sel_grade   = custom_grade.strip()
+        with cc1: custom_grade = st.text_input("Custom Grade", placeholder="e.g. Grade 11...", key="custom_grade_inp")
+        with cc2: custom_subject = st.text_input("Custom Subject", placeholder="e.g. Accounting...", key="custom_sub_inp")
+        if custom_grade.strip(): sel_grade = custom_grade.strip()
         if custom_subject.strip(): sel_sub = custom_subject.strip()
         if custom_grade.strip() or custom_subject.strip():
             st.info(f"✅ Using: **{sel_grade}** · **{sel_sub}**")
 
-    # ── Update user's default grade ───────────────────────────
     if sel_grade != normalise_level(u.get("grade","")):
         users = load_json(USERS_FILE)
         if u["email"] in users:
@@ -1905,35 +1774,27 @@ def page_syllabus():
             save_json(USERS_FILE, users)
             st.session_state.user["grade"] = sel_grade
 
-    # ── Map subject name to SUBJECTS key ─────────────────────
-    subj_key_map = {
-        "Mathematics":"Maths","Maths":"Maths","Physics":"Physics",
-        "Chemistry":"Chemistry","Biology":"Biology",
-        "English":"English","English Language":"English",
-        "Computer Science":"Computer Science","Urdu":"Urdu",
-        "Science":"Biology","Islamiyat":"English",  # fallback
-    }
+    subj_key_map = {"Mathematics":"Maths","Maths":"Maths","Physics":"Physics","Chemistry":"Chemistry",
+                    "Biology":"Biology","English":"English","English Language":"English",
+                    "Computer Science":"Computer Science","Urdu":"Urdu","Science":"Biology","Islamiyat":"English"}
     subj_key  = subj_key_map.get(sel_sub, "Maths")
-    info      = SUBJECTS.get(subj_key, {"emoji":"📚","color":"#666"})
-    sub_color = info["color"]
-    sub_emoji = info["emoji"]
+    info      = SUBJECTS.get(subj_key, {"emoji":"📚","color":"#00FFD1"})
+    sub_color = info["color"]; sub_emoji = info["emoji"]
 
-    # ── Subject header ────────────────────────────────────────
     st.markdown(f"""
-    <div style='background:{sub_color}18;border:2px solid {sub_color}44;
+    <div style='background:rgba(10,22,40,0.96);border:1px solid {sub_color}33;
         border-radius:14px;padding:14px 18px;margin:16px 0;
-        display:flex;align-items:center;gap:12px'>
+        display:flex;align-items:center;gap:12px;box-shadow:0 0 20px {sub_color}11'>
         <div style='font-size:36px'>{sub_emoji}</div>
         <div>
-            <div style='font-weight:800;font-size:16px;color:{sub_color}'>{sel_sub} — {sel_grade}</div>
-            <div style='font-size:12px;color:#666;margin-top:2px'>🎓 {curriculum}</div>
+            <div style='font-weight:800;font-size:16px;color:{sub_color};
+                font-family:"Orbitron",monospace;letter-spacing:.5px'>{sel_sub} — {sel_grade}</div>
+            <div style='font-size:12px;color:#4A6A80;margin-top:2px'>🎓 {curriculum}</div>
         </div>
     </div>""", unsafe_allow_html=True)
 
-    # ── Curriculum data ───────────────────────────────────────
     curr  = CAMBRIDGE_CURRICULUM.get(subj_key, {}).get(sel_grade, {})
     if not curr:
-        # Try Grade alias (old "Class X" format)
         for alias_old, alias_new in _LEVEL_ALIAS.items():
             if alias_new == sel_grade:
                 curr = CAMBRIDGE_CURRICULUM.get(subj_key, {}).get(alias_old, {})
@@ -1943,18 +1804,14 @@ def page_syllabus():
     units = curr.get("units",[])
 
     if not units:
-        st.info(f"📋 No pre-loaded syllabus for {sel_sub} — {sel_grade}. Use the AI to explore topics!")
-        if st.button(f"💬 Ask Ustad about {sel_sub} {sel_grade}", use_container_width=True, type="primary"):
+        st.info(f"📋 No pre-loaded syllabus for {sel_sub} — {sel_grade}. Use the AI to explore!")
+        if st.button(f"💬 ASK USTAD ABOUT {sel_sub} {sel_grade}", use_container_width=True, type="primary"):
             st.session_state.subject = subj_key
-            st.session_state.chat_messages = [{
-                "role":"user",
-                "content":f"Give me an overview of the {sel_sub} syllabus for {sel_grade} in Pakistan. "
-                          f"What are the main topics and units I need to study?"
-            }]
+            st.session_state.chat_messages = [{"role":"user","content":
+                f"Give me an overview of the {sel_sub} syllabus for {sel_grade} in Pakistan."}]
             st.session_state.page = "chat"; st.rerun()
         return
 
-    # ── Progress tracker ──────────────────────────────────────
     studied_topics = u.get("studied_topics",{})
     key = f"{subj_key}_{sel_grade}"
     done_topics  = studied_topics.get(key,[])
@@ -1964,100 +1821,64 @@ def page_syllabus():
 
     st.markdown(f"""
     <div style='margin-bottom:16px'>
-        <div style='display:flex;justify-content:space-between;font-size:13px;
-            font-weight:700;color:#666;margin-bottom:6px'>
-            <span>📊 Syllabus Progress</span>
-            <span style='color:{sub_color}'>{done_count}/{total_topics} topics ({pct}%)</span>
+        <div style='display:flex;justify-content:space-between;font-size:12px;font-weight:700;
+            color:#4A6A80;margin-bottom:6px;font-family:"Rajdhani",sans-serif;letter-spacing:.8px'>
+            <span>📊 SYLLABUS PROGRESS</span>
+            <span style='color:{sub_color}'>{done_count}/{total_topics} TOPICS ({pct}%)</span>
         </div>
-        <div class='prog-bar'><div class='prog-fill' style='width:{pct}%;background:{sub_color}'></div></div>
+        <div class='prog-bar'><div class='prog-fill' style='width:{pct}%'></div></div>
     </div>""", unsafe_allow_html=True)
 
-    # ── Unit cards ─────────────────────────────────────────────
     for ui, unit in enumerate(units):
         unit_done = [t for t in unit["topics"] if f"{unit['unit']}::{t}" in done_topics]
         unit_pct  = int((len(unit_done)/max(len(unit["topics"]),1))*100)
-
         with st.expander(
-            f"{'✅' if unit_pct==100 else '🔵' if unit_pct>0 else '⚪'}  "
-            f"Unit {ui+1}: {unit['unit']}  ({unit_pct}% done)",
-            expanded=(ui==0)
+            f"{'✅' if unit_pct==100 else '🔵' if unit_pct>0 else '⬜'}  "
+            f"Unit {ui+1}: {unit['unit']}  ({unit_pct}% done)", expanded=(ui==0)
         ):
             st.markdown(f"""<div class='prog-bar' style='margin-bottom:12px'>
-                <div class='prog-fill' style='width:{unit_pct}%;background:{sub_color}'></div>
-            </div>""", unsafe_allow_html=True)
-
-            # Topic chips overview
+                <div class='prog-fill' style='width:{unit_pct}%'></div></div>""", unsafe_allow_html=True)
             chip_parts = []
             for t in unit["topics"]:
-                tk   = f"{unit['unit']}::{t}"
-                tick = "✅ " if tk in done_topics else ""
-                chip_parts.append(
-                    f"<span class='topic-chip' style='background:{sub_color}18;"
-                    f"border:1px solid {sub_color}44;color:{sub_color}'>"
-                    f"{tick}{t}</span>"
-                )
-            chips = "".join(chip_parts)
-            st.markdown(f"<div style='margin-bottom:12px'>{chips}</div>", unsafe_allow_html=True)
+                tk = f"{unit['unit']}::{t}"; tick = "✅ " if tk in done_topics else ""
+                chip_parts.append(f"<span class='topic-chip' style='background:{sub_color}11;border:1px solid {sub_color}33;color:{sub_color}'>{tick}{t}</span>")
+            st.markdown(f"<div style='margin-bottom:12px'>{''.join(chip_parts)}</div>", unsafe_allow_html=True)
 
-            # Per-topic actions
             for topic in unit["topics"]:
                 topic_key = f"{unit['unit']}::{topic}"
                 is_done   = topic_key in done_topics
                 tc1, tc2, tc3 = st.columns([3,1,1])
                 with tc1:
-                    st.markdown(
-                        f"<div style='padding:6px 0;font-size:14px;"
-                        f"color:{'#059669' if is_done else '#1A1A2E'};"
-                        f"font-weight:{'700' if is_done else '400'}'>"
-                        f"{'✅' if is_done else '📖'} {topic}</div>",
-                        unsafe_allow_html=True
-                    )
+                    st.markdown(f"<div style='padding:6px 0;font-size:14px;color:{'#00FFD1' if is_done else '#E0F4FF'};font-weight:{'700' if is_done else '400'}'>{'✅' if is_done else '📖'} {topic}</div>", unsafe_allow_html=True)
                 with tc2:
                     if st.button("💬 Ask", key=f"ask_{ui}_{topic[:18]}", use_container_width=True):
-                        st.session_state.subject = subj_key
-                        st.session_state.level   = sel_grade
-                        st.session_state.chat_messages = [{
-                            "role":"user",
-                            "content":f"Explain this topic from my {sel_grade} {sel_sub} syllabus: {topic}"
-                        }]
-                        st.session_state.session_id = None
-                        st.session_state.page = "chat"; st.rerun()
+                        st.session_state.subject = subj_key; st.session_state.level = sel_grade
+                        st.session_state.chat_messages = [{"role":"user","content":f"Explain this topic: {topic}"}]
+                        st.session_state.session_id = None; st.session_state.page = "chat"; st.rerun()
                 with tc3:
-                    btn_lbl = "✅ Done" if is_done else "Mark ✓"
-                    if st.button(btn_lbl, key=f"done_{ui}_{topic[:18]}", use_container_width=True):
-                        users = load_json(USERS_FILE)
-                        eu    = users.get(u["email"],u)
-                        st_map = eu.get("studied_topics",{})
-                        tlist  = st_map.get(key,[])
+                    if st.button("✅ Done" if is_done else "Mark ✓", key=f"done_{ui}_{topic[:18]}", use_container_width=True):
+                        users = load_json(USERS_FILE); eu = users.get(u["email"],u)
+                        st_map = eu.get("studied_topics",{}); tlist = st_map.get(key,[])
                         if topic_key in tlist: tlist.remove(topic_key)
                         else: tlist.append(topic_key)
-                        st_map[key] = tlist
-                        eu["studied_topics"] = st_map
-                        users[u["email"]] = eu
-                        save_json(USERS_FILE, users)
+                        st_map[key] = tlist; eu["studied_topics"] = st_map
+                        users[u["email"]] = eu; save_json(USERS_FILE, users)
                         st.session_state.user = eu; st.rerun()
 
-            # Quick action buttons
             ba, bb, bc = st.columns(3)
             with ba:
-                if st.button(f"📝 Quiz on Unit {ui+1}", key=f"qunit_{ui}", use_container_width=True):
+                if st.button(f"📝 Quiz Unit {ui+1}", key=f"qunit_{ui}", use_container_width=True):
                     topics_str = ", ".join(unit["topics"])
-                    with st.spinner("Generating unit quiz..."):
-                        raw = call_ai(
-                            [{"role":"user","content":
-                              f"Create 5 MCQ questions for unit '{unit['unit']}' covering: {topics_str}. "
-                              f"For {sel_grade} {sel_sub} students. "
-                              f'Return ONLY raw JSON: {{"questions":[{{"q":"...","options":["A.","B.","C.","D."],"answer":"A.","explanation":"..."}}]}}'}],
-                            "Quiz generator. Return ONLY valid raw JSON.", 1200
-                        )
+                    with st.spinner("Generating..."):
+                        raw = call_ai([{"role":"user","content":
+                            f"Create 5 MCQ for unit '{unit['unit']}' covering: {topics_str}. {sel_grade} {sel_sub}. "
+                            f'Return ONLY raw JSON: {{"questions":[{{"q":"...","options":["A.","B.","C.","D."],"answer":"A.","explanation":"..."}}]}}'}],
+                            "Quiz generator. Return ONLY valid raw JSON.", 1200)
                         try:
-                            clean = raw.replace("```json","").replace("```","").strip()
-                            data  = json.loads(clean)
-                            st.session_state.quiz = {
-                                "questions":data["questions"],"current":0,"score":0,
+                            data = json.loads(raw.replace("```json","").replace("```","").strip())
+                            st.session_state.quiz = {"questions":data["questions"],"current":0,"score":0,
                                 "answers":[],"done":False,"sub":subj_key,"lvl":sel_grade,
-                                "topic":unit["unit"],"difficulty":"Medium"
-                            }
+                                "topic":unit["unit"],"difficulty":"Medium"}
                             st.session_state.page = "quiz"; st.rerun()
                         except: st.error("Could not generate quiz.")
             with bb:
@@ -2067,20 +1888,14 @@ def page_syllabus():
                 if st.button(f"📖 Summary", key=f"sumunit_{ui}", use_container_width=True):
                     topics_str = ", ".join(unit["topics"])
                     with st.spinner("Generating summary..."):
-                        summary = call_ai(
-                            [{"role":"user","content":
-                              f"Give a clear revision summary of '{unit['unit']}' for {sel_grade} {sel_sub} ({board}). "
-                              f"Cover: {topics_str}. Use bullet points, include key formulas, max 300 words."}],
-                            f"You are a {sel_sub} teacher. Clear revision summaries.", 800
-                        )
-                    st.markdown(f"""
-                    <div style='background:#F8F9FA;border-left:4px solid {sub_color};
+                        summary = call_ai([{"role":"user","content":
+                            f"Revision summary of '{unit['unit']}' for {sel_grade} {sel_sub}. "
+                            f"Topics: {topics_str}. Bullet points, key formulas, max 300 words."}],
+                            f"You are a {sel_sub} teacher.", 800)
+                    st.markdown(f"""<div style='background:rgba(0,0,0,0.3);border-left:3px solid {sub_color};
                         border-radius:0 12px 12px 0;padding:14px 16px;margin-top:10px;
-                        font-size:13px;line-height:1.7;white-space:pre-wrap;color:#1A1A2E'>
-                        {summary}
-                    </div>""", unsafe_allow_html=True)
+                        font-size:13px;line-height:1.7;color:#E0F4FF'>{summary}</div>""", unsafe_allow_html=True)
 
-    # ── Download ──────────────────────────────────────────────
     st.markdown("---")
     syllabus_text = f"{sel_sub} — {sel_grade}\nBoard: {board}\n\n"
     for ui, unit in enumerate(units):
@@ -2090,69 +1905,58 @@ def page_syllabus():
     b64 = base64.b64encode(syllabus_text.encode()).decode()
     st.markdown(
         f'<a href="data:text/plain;base64,{b64}" download="{sel_sub}_{sel_grade}_syllabus.txt" '
-        f'style="display:inline-block;padding:10px 20px;background:{sub_color};color:#fff;'
-        f'border-radius:12px;font-weight:700;font-size:14px;text-decoration:none;margin-top:8px">'
-        f'⬇️ Download Syllabus</a>',
+        f'style="display:inline-block;padding:10px 20px;background:rgba(0,255,209,0.1);'
+        f'color:#00FFD1;border-radius:12px;font-weight:700;font-size:14px;text-decoration:none;'
+        f'border:1px solid rgba(0,255,209,0.25);margin-top:8px">⬇️ DOWNLOAD SYLLABUS</a>',
         unsafe_allow_html=True
     )
 
 
-# ─────────────────────────────────────────────────────────────────
-# PROGRESS PAGE
-# ─────────────────────────────────────────────────────────────────
+# ═══════════════ PROGRESS ════════════════════════════════════════
 def page_progress():
     u     = st.session_state.user
     stats = u.get("stats",{})
     total = stats.get("total",0)
-
-    st.markdown("<div class='section-header green'>📊 My Progress</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-header'>📊 MY PROGRESS</div>", unsafe_allow_html=True)
     c1,c2,c3,c4 = st.columns(4)
     with c1: st.metric("❓ Questions",  total)
     with c2: st.metric("🏆 Badges",     len(u.get("badges",[])))
     with c3: st.metric("🔥 Streak",     f"{stats.get('streak',0)} days")
     with c4: st.metric("🎯 Quizzes",    stats.get("quizzes_done",0))
 
-    st.markdown("### 📚 Questions Per Subject")
+    st.markdown("### 📚 QUESTIONS PER SUBJECT")
     for name, info in SUBJECTS.items():
-        cnt = stats.get(name,0)
-        pct = int((cnt/max(total,1))*100)
+        cnt = stats.get(name,0); pct = int((cnt/max(total,1))*100)
         st.markdown(f"""
         <div style='margin-bottom:14px'>
-            <div style='display:flex;justify-content:space-between;font-size:13px;
-                font-weight:700;margin-bottom:5px;color:#1A1A2E'>
+            <div style='display:flex;justify-content:space-between;font-size:13px;font-weight:700;
+                margin-bottom:5px;color:#E0F4FF'>
                 <span>{info['emoji']} {name}</span>
                 <span style='color:{info["color"]}'>{cnt} questions ({pct}%)</span>
             </div>
             <div class='prog-bar'><div class='prog-fill' style='width:{pct}%;background:{info["color"]}'></div></div>
         </div>""", unsafe_allow_html=True)
 
-    st.markdown("### 🛠️ Activity")
+    st.markdown("### 🛠️ ACTIVITY")
     c1,c2,c3 = st.columns(3)
     with c1: st.metric("🎨 Images Generated", stats.get("images",0))
     with c2: st.metric("📅 Member Since",      u.get("joined",""))
     with c3: st.metric("📖 Subjects Studied",  sum(1 for s in SUBJECTS if stats.get(s,0)>0))
 
-
-# ─────────────────────────────────────────────────────────────────
-# HISTORY PAGE
-# ─────────────────────────────────────────────────────────────────
+# ═══════════════ HISTORY ═════════════════════════════════════════
 def page_history():
     u = st.session_state.user
-    st.markdown("<div class='section-header'>🕐 Chat History</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-header'>🕐 CHAT HISTORY</div>", unsafe_allow_html=True)
     hist     = load_json(HISTORY_FILE)
     sessions = sorted(hist.get(u["email"],[]), key=lambda x:x.get("updated",""), reverse=True)
-
     if not sessions:
         st.info("📭 No chat history yet. Start a conversation with Ustad!")
         return
-
-    if st.button("🗑️ Clear All History", type="secondary"):
-        hist[u["email"]] = []
-        save_json(HISTORY_FILE, hist)
+    if st.button("🗑️ CLEAR ALL HISTORY", type="secondary"):
+        hist[u["email"]] = []; save_json(HISTORY_FILE, hist)
         st.success("History cleared."); st.rerun()
-
     for sess in sessions:
-        info  = SUBJECTS.get(sess.get("subject",""), {"emoji":"📚","color":"#666"})
+        info  = SUBJECTS.get(sess.get("subject",""), {"emoji":"📚","color":"#00FFD1"})
         msgs  = sess.get("messages",[])
         label = (f"{info['emoji']} {sess.get('subject','')} — {sess.get('level','')} | "
                  f"{sess.get('updated','')} ({len(msgs)} msgs)")
@@ -2163,81 +1967,72 @@ def page_history():
                 else:
                     st.markdown(f"<div class='msg-bot' style='margin-right:40px'>{m['content']}</div>", unsafe_allow_html=True)
             if st.button("🔄 Continue chat", key=f"cont_{sess['id']}"):
-                st.session_state.chat_messages = msgs
-                st.session_state.session_id    = sess["id"]
-                st.session_state.subject       = sess.get("subject","Maths")
-                st.session_state.page          = "chat"; st.rerun()
+                st.session_state.chat_messages = msgs; st.session_state.session_id = sess["id"]
+                st.session_state.subject = sess.get("subject","Maths")
+                st.session_state.page = "chat"; st.rerun()
 
-
-# ─────────────────────────────────────────────────────────────────
-# BADGES PAGE
-# ─────────────────────────────────────────────────────────────────
+# ═══════════════ BADGES ══════════════════════════════════════════
 def page_badges():
     u      = st.session_state.user
     earned = u.get("badges",[])
-    st.markdown("<div class='section-header orange'>🏆 Badges & Achievements</div>", unsafe_allow_html=True)
-    st.markdown(f"<p style='color:#666;font-size:13px'>Earned "
-                f"<b style='color:#1A1A2E'>{len(earned)}</b> of "
-                f"<b style='color:#1A1A2E'>{len(BADGES)}</b> badges</p>", unsafe_allow_html=True)
+    st.markdown("<div class='section-header orange'>🏆 BADGES & ACHIEVEMENTS</div>", unsafe_allow_html=True)
+    st.markdown(f"<p style='color:#94B4CC;font-size:13px'>Earned <b style='color:#00FFD1'>{len(earned)}</b> of <b style='color:#00FFD1'>{len(BADGES)}</b> badges</p>", unsafe_allow_html=True)
     cols = st.columns(3)
     for i,b in enumerate(BADGES):
         is_earned = b["id"] in earned
         with cols[i%3]:
             locked = "" if is_earned else "badge-locked"
-            status_color = "#059669" if is_earned else "#ccc"
-            status_text  = "✅ Earned!" if is_earned else "🔒 Locked"
+            status_color = "#00FFD1" if is_earned else "#4A6A80"
+            status_text  = "✅ EARNED" if is_earned else "🔒 LOCKED"
             st.markdown(f"""
             <div class='badge-card {locked}' style='margin-bottom:12px'>
                 <span class='badge-icon'>{b['icon']}</span>
                 <div class='badge-name'>{b['name']}</div>
                 <div class='badge-desc'>{b['desc']}</div>
-                <div style='font-size:11px;margin-top:5px;color:{status_color};font-weight:700'>{status_text}</div>
+                <div style='font-size:10px;margin-top:5px;color:{status_color};font-weight:700;
+                    font-family:"Rajdhani",sans-serif;letter-spacing:1px'>{status_text}</div>
             </div>""", unsafe_allow_html=True)
 
-
-# ─────────────────────────────────────────────────────────────────
-# PROFILE PAGE
-# ─────────────────────────────────────────────────────────────────
+# ═══════════════ PROFILE ═════════════════════════════════════════
 def page_profile():
     u = st.session_state.user
-    st.markdown("<div class='section-header'>👤 My Profile</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-header'>👤 MY PROFILE</div>", unsafe_allow_html=True)
     c1,c2 = st.columns([1,2])
     with c1:
-        st.markdown(f"<div style='font-size:80px;text-align:center;background:#F3F4F6;"
-                    f"border-radius:20px;padding:20px'>{u.get('avatar','👦')}</div>", unsafe_allow_html=True)
+        st.markdown(f"""<div style='font-size:80px;text-align:center;
+            background:rgba(10,22,40,0.96);border-radius:20px;padding:20px;
+            border:1px solid rgba(0,255,209,0.15);
+            box-shadow:0 0 20px rgba(0,255,209,0.08)'>{u.get('avatar','🤖')}</div>""",
+            unsafe_allow_html=True)
     with c2:
         st.markdown(f"""
-        <div style='padding:10px 0;color:#1A1A2E'>
-            <div style='font-family:"Baloo 2",cursive;font-size:22px;font-weight:800'>{u['name']}</div>
-            <div style='font-size:13px;color:#999;margin-top:4px'>
-                {'🎒 Student'  if u.get('role')=='student'
-                 else '👨‍👩‍👦 Parent'  if u.get('role')=='parent'
-                 else '👨‍🏫 Teacher' if u.get('role')=='teacher'
-                 else '🛡️ Admin'    if u.get('role')=='admin'
-                 else '👤 User'} • {u.get('grade','')}
+        <div style='padding:10px 0;color:#E0F4FF'>
+            <div style='font-family:"Orbitron",monospace;font-size:20px;font-weight:800;
+                color:#00FFD1;text-shadow:0 0 12px rgba(0,255,209,0.4)'>{u['name']}</div>
+            <div style='font-size:13px;color:#94B4CC;margin-top:6px'>
+                {'🎒 Student' if u.get('role')=='student' else '👨‍👩‍👦 Parent' if u.get('role')=='parent'
+                 else '👨‍🏫 Teacher' if u.get('role')=='teacher' else '🛡️ Admin'} · {u.get('grade','')}
             </div>
-            <div style='font-size:12px;color:#bbb;margin-top:2px'>📧 {u['email']}</div>
-            <div style='font-size:12px;color:#bbb;margin-top:2px'>📅 Joined {u.get('joined','')}</div>
+            <div style='font-size:12px;color:#4A6A80;margin-top:2px'>📧 {u['email']}</div>
+            <div style='font-size:12px;color:#4A6A80;margin-top:2px'>📅 Joined {u.get('joined','')}</div>
         </div>""", unsafe_allow_html=True)
-
     st.markdown("---")
-    st.markdown("#### ✏️ Update Profile")
+    st.markdown("#### ✏️ UPDATE PROFILE")
     with st.form("profile_form"):
         new_name  = st.text_input("Full Name", value=u.get("name",""))
         new_grade = st.selectbox("Default Grade", ["-- Select --"]+LEVELS,
                                  index=get_level_index(u.get("grade","Grade 6"))+1)
-        cur_av_key = next((k for k,v in AVATARS.items() if v==u.get("avatar","👦")), list(AVATARS.keys())[0])
+        cur_av_key = next((k for k,v in AVATARS.items() if v==u.get("avatar","🤖")), list(AVATARS.keys())[0])
         new_avatar = st.selectbox("Avatar", list(AVATARS.keys()),
                                   index=list(AVATARS.keys()).index(cur_av_key))
-        st.markdown("#### 🔒 Change Password")
+        st.markdown("#### 🔒 CHANGE PASSWORD")
         old_pw = st.text_input("Current Password", type="password")
         new_pw = st.text_input("New Password", type="password", placeholder="Leave blank to keep current")
         cnf_pw = st.text_input("Confirm New Password", type="password")
-        if st.form_submit_button("💾 Save Changes", type="primary"):
-            users = load_json(USERS_FILE)
-            eu    = users[u["email"]]
+        if st.form_submit_button("💾 SAVE CHANGES", type="primary"):
+            users = load_json(USERS_FILE); eu = users[u["email"]]
             if old_pw and eu["password"] != hash_pw(old_pw):
-                st.error("Current password is incorrect.")
+                st.error("Current password incorrect.")
             elif new_pw and new_pw != cnf_pw:
                 st.error("New passwords don't match.")
             elif new_pw and len(new_pw) < 6:
@@ -2247,652 +2042,247 @@ def page_profile():
                 if new_grade != "-- Select --": eu["grade"]  = new_grade
                 eu["avatar"] = AVATARS[new_avatar]
                 if new_pw:                     eu["password"] = hash_pw(new_pw)
-                users[u["email"]] = eu
-                save_json(USERS_FILE, users)
+                users[u["email"]] = eu; save_json(USERS_FILE, users)
                 st.session_state.user = eu
                 st.success("✅ Profile updated!"); time.sleep(0.5); st.rerun()
 
 
-# ═════════════════════════════════════════════════════════════════
-# HOMEWORK PAGE
-# ═════════════════════════════════════════════════════════════════
+# ═══════════════ HOMEWORK ════════════════════════════════════════
 def page_homework():
     u = st.session_state.user
-    st.markdown("<div class='section-header'>📋 Create Homework</div>", unsafe_allow_html=True)
-
+    st.markdown("<div class='section-header'>📋 CREATE HOMEWORK</div>", unsafe_allow_html=True)
     st.markdown("""
-    <div style='background:#EFF4FF;border-radius:14px;padding:14px 18px;
-        margin-bottom:20px;font-size:13px;color:#1B4FD8;border-left:4px solid #2563EB'>
-        📝 <b>AI Homework Generator</b> — Fill in the details below and let AI create
-        a complete assignment with questions, answers, hints, marking guide, and learning objectives.
+    <div style='background:rgba(0,255,209,0.04);border-radius:14px;padding:14px 18px;
+        margin-bottom:20px;font-size:13px;color:#00FFD1;border:1px solid rgba(0,255,209,0.15)'>
+        📝 <b>AI Homework Generator</b> — Fill details and let AI create a complete assignment
+        with questions, answers, hints, marking guide, and learning objectives.
     </div>""", unsafe_allow_html=True)
 
-    # ── Step 1: Subject & Grade ───────────────────────────────
-    st.markdown("#### 📚 Step 1 — Subject & Grade")
+    st.markdown("#### 📚 STEP 1 — SUBJECT & GRADE")
     c1, c2 = st.columns(2)
-    with c1:
-        hw_subject = st.selectbox("Subject", list(SUBJECTS.keys()), key="hw_subject")
+    with c1: hw_subject = st.selectbox("Subject", list(SUBJECTS.keys()), key="hw_subject")
     with c2:
         lvl_idx = get_level_index(u.get("grade", "Grade 6"))
         hw_grade = st.selectbox("Grade Level", LEVELS, index=lvl_idx, key="hw_grade")
 
-    # ── Step 2: Topic & Description ───────────────────────────
-    st.markdown("#### ✏️ Step 2 — Topic & Description")
-    hw_topic = st.text_input(
-        "Topic / Chapter",
-        placeholder="e.g. Quadratic Equations, Photosynthesis, World War II, Newton's Laws...",
-        key="hw_topic"
-    )
-    hw_desc = st.text_area(
-        "Assignment Description & Instructions",
-        placeholder="Describe what students should do — any special instructions, learning objectives, or context for this homework...",
-        height=110,
-        key="hw_desc"
-    )
+    st.markdown("#### ✏️ STEP 2 — TOPIC & DESCRIPTION")
+    hw_topic = st.text_input("Topic / Chapter", placeholder="e.g. Quadratic Equations, Photosynthesis...", key="hw_topic")
+    hw_desc  = st.text_area("Description & Instructions", placeholder="Describe the assignment...", height=100, key="hw_desc")
 
-    # ── Step 3: Homework Settings ─────────────────────────────
-    st.markdown("#### ⚙️ Step 3 — Homework Settings")
+    st.markdown("#### ⚙️ STEP 3 — SETTINGS")
     c3, c4, c5 = st.columns(3)
-    with c3:
-        hw_type = st.selectbox("Homework Type", [
-            "Mixed (MCQ + Short + Long)",
-            "MCQ Only",
-            "Short Answer",
-            "Long Answer / Essay",
-            "Problem Solving",
-            "Research & Summary",
-        ], key="hw_type")
-    with c4:
-        hw_difficulty = st.selectbox("Difficulty", ["Easy", "Medium", "Hard", "Mixed"], index=1, key="hw_diff")
-    with c5:
-        hw_num_q = st.selectbox("Number of Questions", [5, 8, 10, 12, 15], index=1, key="hw_num_q")
+    with c3: hw_type = st.selectbox("Type", ["Mixed (MCQ + Short + Long)","MCQ Only","Short Answer","Long Answer / Essay","Problem Solving"], key="hw_type")
+    with c4: hw_difficulty = st.selectbox("Difficulty", ["Easy","Medium","Hard","Mixed"], index=1, key="hw_diff")
+    with c5: hw_num_q = st.selectbox("Questions", [5,8,10,12,15], index=1, key="hw_num_q")
 
-    # ── Step 4: Due Date ──────────────────────────────────────
-    st.markdown("#### 📅 Step 4 — Due Date")
-    hw_due_days = st.slider("Due in how many days from today?", 1, 14, 3, key="hw_due_days")
+    st.markdown("#### 📅 STEP 4 — DUE DATE")
+    hw_due_days = st.slider("Due in how many days?", 1, 14, 3, key="hw_due_days")
     due_date = (datetime.date.today() + datetime.timedelta(days=hw_due_days)).isoformat()
-    st.markdown(f"""
-    <div style='background:#F0FDF4;border-radius:10px;padding:10px 16px;
-        font-size:13px;color:#065F46;font-weight:700;display:inline-block'>
-        📅 Due Date: {due_date}
-    </div>""", unsafe_allow_html=True)
+    st.markdown(f"""<div style='background:rgba(0,255,209,0.06);border-radius:10px;padding:10px 16px;
+        font-size:13px;color:#00FFD1;font-weight:700;display:inline-block;
+        border:1px solid rgba(0,255,209,0.2);font-family:"Rajdhani",sans-serif;letter-spacing:.8px'>
+        📅 DUE DATE: {due_date}</div>""", unsafe_allow_html=True)
 
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
-    # ── Generate Button ───────────────────────────────────────
-    if st.button("🚀 Generate Homework with AI", use_container_width=True, type="primary", key="gen_hw_btn"):
+    if st.button("🚀 GENERATE HOMEWORK WITH AI", use_container_width=True, type="primary", key="gen_hw_btn"):
         if not hw_topic.strip():
-            st.error("⚠️ Please enter a topic in Step 2 before generating.")
+            st.error("⚠️ Please enter a topic in Step 2.")
         else:
-            topic_str = hw_topic.strip()
-            desc_str  = hw_desc.strip() if hw_desc.strip() else "Standard homework assignment."
-            with st.spinner(f"✨ Generating {hw_num_q} {hw_difficulty} questions on '{topic_str}'... (20–30 sec)"):
+            topic_str = hw_topic.strip(); desc_str = hw_desc.strip() if hw_desc.strip() else "Standard homework."
+            with st.spinner(f"✨ Generating {hw_num_q} questions on '{topic_str}'..."):
                 raw = call_ai(
-                    [{"role": "user", "content":
-                      f"Create a complete homework assignment for {hw_grade} {hw_subject} students in Pakistan. "
-                      f"Topic: {topic_str}. Teacher instructions: {desc_str}. "
-                      f"Homework type: {hw_type}. Difficulty: {hw_difficulty}. "
-                      f"Generate exactly {hw_num_q} questions. "
-                      f"Return ONLY raw JSON with no backticks and no markdown, in this exact structure: "
-                      f'{{"title":"homework title","instructions":"detailed student-facing instructions",'
-                      f'"learning_objectives":"what students will learn",'
-                      f'"questions":[{{"number":1,"type":"MCQ|short_answer|long_answer|problem",'
-                      f'"question":"question text","marks":2,'
-                      f'"options":["A. ...","B. ...","C. ...","D. ..."],'
-                      f'"answer":"correct answer or full model answer",'
-                      f'"hint":"a helpful hint without giving away the answer"}}],'
-                      f'"total_marks":20,"marking_guide":"concise marking guide for each question type"}}'}],
-                    "You are an expert Pakistani curriculum homework generator. Return ONLY valid JSON, no extra text.",
-                    3000
+                    [{"role":"user","content":
+                      f"Create a complete homework for {hw_grade} {hw_subject} students in Pakistan. "
+                      f"Topic: {topic_str}. Instructions: {desc_str}. Type: {hw_type}. "
+                      f"Difficulty: {hw_difficulty}. Exactly {hw_num_q} questions. "
+                      f'Return ONLY raw JSON: {{"title":"...","instructions":"...","learning_objectives":"...",'
+                      f'"questions":[{{"number":1,"type":"MCQ","question":"...","marks":2,'
+                      f'"options":["A.","B.","C.","D."],"answer":"...","hint":"..."}}],'
+                      f'"total_marks":20,"marking_guide":"..."}}'}],
+                    "Homework generator. Return ONLY valid JSON.", 3000
                 )
             try:
-                clean   = raw.replace("```json", "").replace("```", "").strip()
-                hw_data = json.loads(clean)
-
-                # Save to file
+                hw_data = json.loads(raw.replace("```json","").replace("```","").strip())
                 homework = load_json(HOMEWORK_FILE)
-                hw_id = (f"hw_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_"
-                         f"{u['email'].split('@')[0]}")
-                homework[hw_id] = {
-                    "id":            hw_id,
-                    "created_by":    u["email"],
-                    "creator_name":  u["name"],
-                    "subject":       hw_subject,
-                    "grade":         hw_grade,
-                    "topic":         topic_str,
-                    "description":   desc_str,
-                    "type":          hw_type,
-                    "difficulty":    hw_difficulty,
-                    "due_date":      due_date,
-                    "created":       datetime.date.today().isoformat(),
-                    "data":          hw_data,
-                }
+                hw_id = f"hw_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_{u['email'].split('@')[0]}"
+                homework[hw_id] = {"id":hw_id,"created_by":u["email"],"creator_name":u["name"],
+                    "subject":hw_subject,"grade":hw_grade,"topic":topic_str,"description":desc_str,
+                    "type":hw_type,"difficulty":hw_difficulty,"due_date":due_date,
+                    "created":datetime.date.today().isoformat(),"data":hw_data}
                 save_json(HOMEWORK_FILE, homework)
                 st.session_state["hw_preview"] = homework[hw_id]
-                st.success("✅ Homework generated and saved successfully!")
-                st.rerun()
+                st.success("✅ Homework generated and saved!"); st.rerun()
             except Exception as e:
-                st.error(f"⚠️ Could not parse AI response. Please try again. ({e})")
-                with st.expander("🔍 Debug info"):
-                    st.code(raw[:800])
+                st.error(f"⚠️ Could not parse AI response. ({e})")
 
-    # ── Preview Section ───────────────────────────────────────
     hw_prev = st.session_state.get("hw_preview")
     if hw_prev:
         data = hw_prev["data"]
-        info = SUBJECTS.get(hw_prev["subject"], {"emoji": "📚", "color": "#2563EB"})
+        info = SUBJECTS.get(hw_prev["subject"], {"emoji":"📚","color":"#00FFD1"})
         col  = info["color"]
-
         st.markdown("---")
         st.markdown(f"""
-        <div style='background:linear-gradient(135deg,{col}18,{col}08);
-            border:2px solid {col}44;border-radius:18px;padding:20px 22px;margin-bottom:18px'>
-            <div style='font-size:20px;font-weight:900;color:#1A1A2E;margin-bottom:10px'>
-                {info["emoji"]} {data.get("title", hw_prev["topic"])}
+        <div style='background:rgba(10,22,40,0.96);border:1px solid {col}33;
+            border-radius:18px;padding:20px 22px;margin-bottom:18px'>
+            <div style='font-size:20px;font-weight:900;color:{col};margin-bottom:10px;
+                font-family:"Orbitron",monospace'>{info["emoji"]} {data.get("title",hw_prev["topic"])}</div>
+            <div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px'>
+                <span style='background:{col}15;color:{col};padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;font-family:"Rajdhani",sans-serif'>{hw_prev["subject"]}</span>
+                <span style='background:{col}15;color:{col};padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;font-family:"Rajdhani",sans-serif'>{hw_prev["grade"]}</span>
+                <span style='background:{col}15;color:{col};padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;font-family:"Rajdhani",sans-serif'>{hw_prev["difficulty"]}</span>
+                <span style='background:rgba(0,255,209,0.1);color:#00FFD1;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;font-family:"Rajdhani",sans-serif'>📅 DUE: {hw_prev["due_date"]}</span>
             </div>
-            <div style='display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px'>
-                <span style='background:{col}22;color:{col};padding:3px 12px;
-                    border-radius:99px;font-size:12px;font-weight:700'>📚 {hw_prev["subject"]}</span>
-                <span style='background:{col}22;color:{col};padding:3px 12px;
-                    border-radius:99px;font-size:12px;font-weight:700'>🏫 {hw_prev["grade"]}</span>
-                <span style='background:{col}22;color:{col};padding:3px 12px;
-                    border-radius:99px;font-size:12px;font-weight:700'>🎯 {hw_prev["difficulty"]}</span>
-                <span style='background:{col}22;color:{col};padding:3px 12px;
-                    border-radius:99px;font-size:12px;font-weight:700'>
-                    📝 {len(data.get("questions", []))} questions · {data.get("total_marks", 0)} marks</span>
-                <span style='background:#D1FAE5;color:#065F46;padding:3px 12px;
-                    border-radius:99px;font-size:12px;font-weight:700'>📅 Due: {hw_prev["due_date"]}</span>
-            </div>
-            <div style='font-size:13px;color:#374151;margin-bottom:8px'>
-                <b>📋 Instructions:</b> {data.get("instructions", "")[:250]}
-            </div>
-            <div style='font-size:12px;color:#6B7280'>
-                <b>🎯 Learning Objectives:</b> {data.get("learning_objectives", "")}
-            </div>
+            <div style='font-size:13px;color:#94B4CC;margin-bottom:6px'><b style='color:#E0F4FF'>📋 Instructions:</b> {data.get("instructions","")[:250]}</div>
+            <div style='font-size:12px;color:#4A6A80'><b style='color:#E0F4FF'>🎯 Objectives:</b> {data.get("learning_objectives","")}</div>
         </div>""", unsafe_allow_html=True)
 
-        # Preview first 5 questions
-        questions = data.get("questions", [])
-        st.markdown(f"#### 📝 Question Preview (showing {min(5, len(questions))} of {len(questions)})")
-
-        type_icons = {
-            "MCQ":          ("🔵", "#2563EB"),
-            "short_answer": ("📝", "#059669"),
-            "long_answer":  ("📄", "#7C3AED"),
-            "problem":      ("🔢", "#E8472A"),
-        }
-
+        questions = data.get("questions",[])
+        st.markdown(f"#### 📝 QUESTION PREVIEW ({min(5,len(questions))} of {len(questions)})")
         for i, q in enumerate(questions[:5]):
-            t_icon, t_color = type_icons.get(q.get("type", ""), ("❓", "#666"))
-            type_label = q.get("type", "").replace("_", " ").title()
-
-            with st.expander(
-                f"Q{i+1}. {q['question'][:75]}{'...' if len(q['question'])>75 else ''}  "
-                f"[{q.get('marks', 0)} mark{'s' if q.get('marks',0)!=1 else ''}]"
-            ):
-                st.markdown(f"""
-                <div style='display:flex;align-items:center;gap:8px;margin-bottom:10px'>
-                    <span style='background:{t_color}18;color:{t_color};padding:2px 10px;
-                        border-radius:99px;font-size:12px;font-weight:700'>
-                        {t_icon} {type_label}</span>
-                    <span style='font-size:12px;color:#888'>{q.get("marks",0)} marks</span>
-                </div>
-                <div style='font-size:14px;font-weight:700;color:#1A1A2E;margin-bottom:10px;line-height:1.5'>
-                    {q["question"]}
-                </div>""", unsafe_allow_html=True)
-
+            with st.expander(f"Q{i+1}. {q['question'][:75]}... [{q.get('marks',0)} marks]"):
                 if q.get("options"):
                     for opt in q["options"]:
-                        st.markdown(f"""
-                        <div style='background:#F8F9FA;border-radius:8px;padding:7px 12px;
-                            margin-bottom:4px;font-size:13px;color:#374151'>
-                            {opt}
-                        </div>""", unsafe_allow_html=True)
-
+                        st.markdown(f"""<div style='background:rgba(0,0,0,0.3);border-radius:8px;
+                            padding:7px 12px;margin-bottom:4px;font-size:13px;color:#E0F4FF'>{opt}</div>""",
+                            unsafe_allow_html=True)
                 col1, col2 = st.columns(2)
-                with col1:
-                    st.markdown(f"""
-                    <div style='background:#D1FAE5;border-radius:8px;padding:8px 12px;
-                        font-size:12px;color:#065F46;margin-top:6px'>
-                        ✅ <b>Answer:</b> {q.get("answer", "")}
-                    </div>""", unsafe_allow_html=True)
+                with col1: st.markdown(f"""<div style='background:rgba(0,255,209,0.06);border-radius:8px;
+                    padding:8px 12px;font-size:12px;color:#00FFD1;margin-top:6px'>
+                    ✅ <b>Answer:</b> {q.get("answer","")}</div>""", unsafe_allow_html=True)
                 with col2:
-                    if q.get("hint"):
-                        st.markdown(f"""
-                        <div style='background:#FFF8E7;border-radius:8px;padding:8px 12px;
-                            font-size:12px;color:#92400E;margin-top:6px'>
-                            💡 <b>Hint:</b> {q.get("hint", "")}
-                        </div>""", unsafe_allow_html=True)
+                    if q.get("hint"): st.markdown(f"""<div style='background:rgba(255,215,0,0.06);
+                        border-radius:8px;padding:8px 12px;font-size:12px;color:#FFD700;margin-top:6px'>
+                        💡 <b>Hint:</b> {q.get("hint","")}</div>""", unsafe_allow_html=True)
 
-        if len(questions) > 5:
-            st.markdown(f"""
-            <div style='text-align:center;font-size:13px;color:#888;
-                background:#F8F9FA;border-radius:10px;padding:12px;margin-top:8px'>
-                📄 + {len(questions)-5} more questions saved in the assignment
-            </div>""", unsafe_allow_html=True)
-
-        # Marking Guide
-        if data.get("marking_guide"):
-            st.markdown(f"""
-            <div style='background:#FFF8E7;border:1.5px solid #F5CC4A;border-radius:12px;
-                padding:14px 16px;margin-top:14px'>
-                <div style='font-size:13px;font-weight:800;color:#92400E;margin-bottom:6px'>
-                    📖 Marking Guide
-                </div>
-                <div style='font-size:13px;color:#78350F;line-height:1.6'>
-                    {data.get("marking_guide", "")}
-                </div>
-            </div>""", unsafe_allow_html=True)
-
-        # Action buttons
-        st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
         ba, bb = st.columns(2)
         with ba:
-            if st.button("➕ Create Another Homework", use_container_width=True, type="primary"):
-                st.session_state["hw_preview"] = None
-                st.rerun()
+            if st.button("➕ CREATE ANOTHER", use_container_width=True, type="primary"):
+                st.session_state["hw_preview"] = None; st.rerun()
         with bb:
-            if st.button("📂 Clear Preview", use_container_width=True):
-                st.session_state["hw_preview"] = None
-                st.rerun()
+            if st.button("📂 CLEAR PREVIEW", use_container_width=True):
+                st.session_state["hw_preview"] = None; st.rerun()
 
 
-# ═════════════════════════════════════════════════════════════════
-# ADMIN DASHBOARD
-# ═════════════════════════════════════════════════════════════════
+# ═══════════════ ADMIN ═══════════════════════════════════════════
 def page_admin():
-    st.markdown("<div class='section-header orange'>🛡️ Admin Dashboard</div>", unsafe_allow_html=True)
-
+    st.markdown("<div class='section-header orange'>🛡️ ADMIN DASHBOARD</div>", unsafe_allow_html=True)
     users    = load_json(USERS_FILE)
     homework = load_json(HOMEWORK_FILE)
+    students = {e: d for e, d in users.items() if d.get("role") not in ("admin",)}
+    all_hw   = list(homework.values())
 
-    students  = {e: d for e, d in users.items() if d.get("role") not in ("admin",)}
-    all_hw    = list(homework.values())
+    tab_perf, tab_hw = st.tabs(["📊 STUDENT ANALYTICS", "📋 HOMEWORK TRACKER"])
 
-    tab_perf, tab_hw = st.tabs([
-        "📊 Student Performance Analytics",
-        "📋 Homework Tracking",
-    ])
-
-    # ═══════════════════════════════════════════════
-    # TAB 1 — STUDENT PERFORMANCE ANALYTICS
-    # ═══════════════════════════════════════════════
     with tab_perf:
-
-        # ── Platform Overview Cards ────────────────
-        st.markdown("### 📊 Platform Overview")
+        st.markdown("### 📊 PLATFORM OVERVIEW")
         total_students  = len(students)
-        total_questions = sum(d.get("stats",{}).get("total",0)     for d in students.values())
+        total_questions = sum(d.get("stats",{}).get("total",0) for d in students.values())
         total_quizzes   = sum(d.get("stats",{}).get("quizzes_done",0) for d in students.values())
-        avg_streak      = (sum(d.get("stats",{}).get("streak",0) for d in students.values())
-                           / max(total_students, 1))
-
-        c1, c2, c3, c4 = st.columns(4)
-        for col_w, icon, val, lbl, color in [
-            (c1, "🎒", total_students,       "Total Users",      "#2563EB"),
-            (c2, "❓", total_questions,      "Questions Asked",  "#E8472A"),
-            (c3, "📝", total_quizzes,        "Quizzes Done",     "#7C3AED"),
-            (c4, "🔥", f"{avg_streak:.1f}d", "Avg Streak",       "#F59E0B"),
-        ]:
+        avg_streak      = sum(d.get("stats",{}).get("streak",0) for d in students.values()) / max(total_students,1)
+        c1,c2,c3,c4 = st.columns(4)
+        for col_w,icon,val,lbl,color in [
+            (c1,"🎒",total_students,"Total Users","#60A5FA"),
+            (c2,"❓",total_questions,"Questions","#FF2D78"),
+            (c3,"📝",total_quizzes,"Quizzes","#A78BFA"),
+            (c4,"🔥",f"{avg_streak:.1f}d","Avg Streak","#FFD700")]:
             with col_w:
                 st.markdown(f"""
-                <div style='background:#fff;border-radius:14px;padding:18px 14px;text-align:center;
-                    box-shadow:0 2px 12px rgba(0,0,0,0.07);border-top:4px solid {color}'>
-                    <div style='font-size:26px'>{icon}</div>
-                    <div style='font-size:26px;font-weight:900;color:{color};margin:4px 0'>{val}</div>
-                    <div style='font-size:11px;color:#999;font-weight:700'>{lbl}</div>
+                <div style='background:rgba(10,22,40,0.96);border-radius:14px;padding:18px 14px;
+                    text-align:center;box-shadow:var(--shadow-card);
+                    border-top:3px solid {color};border:1px solid {color}22;'>
+                    <div style='font-size:24px'>{icon}</div>
+                    <div style='font-family:"Orbitron",monospace;font-size:24px;font-weight:900;
+                        color:{color};text-shadow:0 0 12px {color}88'>{val}</div>
+                    <div style='font-size:10px;color:#4A6A80;font-weight:700;font-family:"Rajdhani",sans-serif;letter-spacing:1px'>{lbl}</div>
                 </div>""", unsafe_allow_html=True)
 
-        st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+        st.markdown("### 🏆 TOP 10 LEADERBOARD")
+        sorted_users = sorted(students.items(),
+            key=lambda x:(x[1].get("stats",{}).get("total",0)+x[1].get("stats",{}).get("quizzes_done",0)*3+x[1].get("stats",{}).get("streak",0)*2+len(x[1].get("badges",[]))*5),
+            reverse=True)
+        rank_icons = ["🥇","🥈","🥉"]+[f"{i+1}️⃣" for i in range(3,10)]
+        max_score  = max((s.get("stats",{}).get("total",0)+s.get("stats",{}).get("quizzes_done",0)*3+s.get("stats",{}).get("streak",0)*2+len(s.get("badges",[]))*5 for _,s in sorted_users[:1]),default=1)
 
-        # ── Top 10 Leaderboard ─────────────────────
-        st.markdown("### 🏆 Top 10 Students — Engagement Leaderboard")
-
-        sorted_users = sorted(
-            students.items(),
-            key=lambda x: (
-                x[1].get("stats",{}).get("total",0)
-                + x[1].get("stats",{}).get("quizzes_done",0) * 3
-                + x[1].get("stats",{}).get("streak",0) * 2
-                + len(x[1].get("badges",[])) * 5
-            ),
-            reverse=True
-        )
-
-        rank_icons  = ["🥇","🥈","🥉"] + [f"{i+1}️⃣" for i in range(3,10)]
-        max_score   = max(
-            (s.get("stats",{}).get("total",0)
-             + s.get("stats",{}).get("quizzes_done",0)*3
-             + s.get("stats",{}).get("streak",0)*2
-             + len(s.get("badges",[]))*5
-             for _,s in sorted_users[:1]),
-            default=1
-        )
-
-        for i, (email, ud) in enumerate(sorted_users[:10]):
-            stats   = ud.get("stats", {})
-            qs      = stats.get("total", 0)
-            quizzes = stats.get("quizzes_done", 0)
-            streak  = stats.get("streak", 0)
-            badges  = len(ud.get("badges", []))
-            score   = qs + quizzes*3 + streak*2 + badges*5
-            bar_pct = min(int((score / max(max_score, 1)) * 100), 100)
-            bar_col = "#FFD700" if i < 3 else "#6366F1"
-            top_subj = max(
-                [(s, stats.get(s,0)) for s in SUBJECTS],
-                key=lambda x: x[1], default=("—", 0)
-            )
-            grade = ud.get("grade","")
-
+        for i,(email,ud) in enumerate(sorted_users[:10]):
+            stats  = ud.get("stats",{}); qs=stats.get("total",0); quizzes=stats.get("quizzes_done",0)
+            streak = stats.get("streak",0); badges = len(ud.get("badges",[]))
+            score  = qs+quizzes*3+streak*2+badges*5
+            bar_pct= min(int((score/max(max_score,1))*100),100)
+            bar_col= "#FFD700" if i<3 else "#A78BFA"
+            top_subj = max([(s,stats.get(s,0)) for s in SUBJECTS],key=lambda x:x[1],default=("—",0))
             st.markdown(f"""
-            <div style='background:#fff;border-radius:14px;padding:14px 18px;
-                margin-bottom:10px;box-shadow:0 2px 10px rgba(0,0,0,0.06);
-                border-left:5px solid {"#FFD700" if i<3 else "#E0E7FF"};color:#1A1A2E'>
+            <div style='background:rgba(10,22,40,0.96);border-radius:14px;padding:14px 18px;
+                margin-bottom:8px;box-shadow:var(--shadow-card);
+                border-left:4px solid {"#FFD700" if i<3 else "rgba(0,255,209,0.12)"};color:#E0F4FF'>
                 <div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px'>
                     <div style='display:flex;align-items:center;gap:12px'>
-                        <span style='font-size:24px'>{rank_icons[i]}</span>
+                        <span style='font-size:22px'>{rank_icons[i]}</span>
                         <div>
-                            <div style='font-weight:800;font-size:15px'>
-                                {ud.get("avatar","👤")} {ud.get("name","?")}
-                            </div>
-                            <div style='font-size:11px;color:#aaa'>{grade} &nbsp;·&nbsp; {email}</div>
+                            <div style='font-weight:800;font-size:14px'>{ud.get("avatar","🤖")} {ud.get("name","?")}</div>
+                            <div style='font-size:11px;color:#4A6A80'>{ud.get("grade","")} · {email}</div>
                         </div>
                     </div>
-                    <div style='display:flex;gap:18px;font-size:12px;flex-wrap:wrap'>
-                        <div style='text-align:center'>
-                            <div style='font-weight:900;font-size:17px;color:#E8472A'>{qs}</div>
-                            <div style='color:#bbb'>Qs</div>
-                        </div>
-                        <div style='text-align:center'>
-                            <div style='font-weight:900;font-size:17px;color:#2563EB'>{quizzes}</div>
-                            <div style='color:#bbb'>Quizzes</div>
-                        </div>
-                        <div style='text-align:center'>
-                            <div style='font-weight:900;font-size:17px;color:#F59E0B'>{streak}d</div>
-                            <div style='color:#bbb'>Streak</div>
-                        </div>
-                        <div style='text-align:center'>
-                            <div style='font-weight:900;font-size:17px;color:#7C3AED'>{badges}</div>
-                            <div style='color:#bbb'>Badges</div>
-                        </div>
+                    <div style='display:flex;gap:16px;font-size:12px;flex-wrap:wrap'>
+                        <div style='text-align:center'><div style='font-family:"Orbitron",monospace;font-size:15px;font-weight:900;color:#FF2D78'>{qs}</div><div style='color:#4A6A80'>Qs</div></div>
+                        <div style='text-align:center'><div style='font-family:"Orbitron",monospace;font-size:15px;font-weight:900;color:#60A5FA'>{quizzes}</div><div style='color:#4A6A80'>Quiz</div></div>
+                        <div style='text-align:center'><div style='font-family:"Orbitron",monospace;font-size:15px;font-weight:900;color:#FFD700'>{streak}d</div><div style='color:#4A6A80'>Strk</div></div>
+                        <div style='text-align:center'><div style='font-family:"Orbitron",monospace;font-size:15px;font-weight:900;color:#A78BFA'>{badges}</div><div style='color:#4A6A80'>Bdg</div></div>
                     </div>
                 </div>
                 <div style='margin-top:10px'>
-                    <div style='display:flex;justify-content:space-between;
-                        font-size:11px;color:#bbb;margin-bottom:4px'>
-                        <span>🏅 Top subject: {SUBJECTS.get(top_subj[0],{}).get("emoji","")}&nbsp;{top_subj[0]} ({top_subj[1]} Qs)</span>
-                        <span style='font-weight:700;color:{bar_col}'>Score: {score}</span>
+                    <div style='display:flex;justify-content:space-between;font-size:10px;color:#4A6A80;margin-bottom:4px;font-family:"Rajdhani",sans-serif;letter-spacing:.5px'>
+                        <span>TOP: {SUBJECTS.get(top_subj[0],{}).get("emoji","")}&nbsp;{top_subj[0]} ({top_subj[1]})</span>
+                        <span style='font-weight:800;color:{bar_col}'>SCORE: {score}</span>
                     </div>
-                    <div style='background:#F0F0F8;border-radius:99px;height:10px;overflow:hidden'>
-                        <div style='width:{bar_pct}%;height:10px;border-radius:99px;
+                    <div style='background:rgba(0,0,0,0.4);border-radius:99px;height:8px;overflow:hidden'>
+                        <div style='width:{bar_pct}%;height:8px;border-radius:99px;
                             background:linear-gradient(90deg,{bar_col},{bar_col}88);
-                            transition:width 1s ease'></div>
+                            box-shadow:0 0 8px {bar_col}88'></div>
                     </div>
                 </div>
             </div>""", unsafe_allow_html=True)
 
-        if not sorted_users:
-            st.info("No user data available yet.")
-
-        # ── Subject Breakdown ──────────────────────
-        st.markdown("### 📚 Platform-Wide Subject Engagement")
-        subject_totals = {
-            s: sum(d.get("stats",{}).get(s,0) for d in students.values())
-            for s in SUBJECTS
-        }
-        grand_total = max(sum(subject_totals.values()), 1)
-
-        for subj, count in sorted(subject_totals.items(), key=lambda x: x[1], reverse=True):
-            info    = SUBJECTS[subj]
-            pct     = int((count / grand_total) * 100)
-            bar_w   = max(pct, 2)
+        st.markdown("### 📚 SUBJECT ENGAGEMENT")
+        subject_totals = {s:sum(d.get("stats",{}).get(s,0) for d in students.values()) for s in SUBJECTS}
+        grand_total = max(sum(subject_totals.values()),1)
+        for subj,count in sorted(subject_totals.items(),key=lambda x:x[1],reverse=True):
+            info=SUBJECTS[subj]; pct=int((count/grand_total)*100)
             st.markdown(f"""
-            <div style='margin-bottom:14px'>
-                <div style='display:flex;justify-content:space-between;
-                    font-size:13px;font-weight:700;margin-bottom:5px;color:#1A1A2E'>
+            <div style='margin-bottom:12px'>
+                <div style='display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:5px;color:#E0F4FF'>
                     <span>{info["emoji"]} {subj}</span>
-                    <span style='color:{info["color"]}'>{count} questions &nbsp;·&nbsp; {pct}%</span>
+                    <span style='color:{info["color"]}'>{count} · {pct}%</span>
                 </div>
-                <div style='background:#F0F0F8;border-radius:99px;height:12px;overflow:hidden'>
-                    <div style='width:{bar_w}%;height:12px;border-radius:99px;
-                        background:linear-gradient(90deg,{info["color"]},{info["color"]}88);
-                        transition:width 1s ease'></div>
+                <div style='background:rgba(0,0,0,0.4);border-radius:99px;height:10px;overflow:hidden'>
+                    <div style='width:{max(pct,2)}%;height:10px;border-radius:99px;background:{info["color"]};box-shadow:0 0 8px {info["color"]}88'></div>
                 </div>
             </div>""", unsafe_allow_html=True)
 
-        # ── 7-Day Activity Heatmap ─────────────────
-        st.markdown("### 🗓️ 7-Day Activity Heatmap")
-        today = datetime.date.today()
-        days  = [(today - datetime.timedelta(days=i)) for i in range(6, -1, -1)]
-        activity = {d.isoformat(): 0 for d in days}
-        for ud in students.values():
-            last = ud.get("stats",{}).get("lastDate","")
-            if last in activity:
-                activity[last] += 1
-
-        max_act = max(max(activity.values(), default=0), 1)
-        st.markdown("<div style='display:flex;flex-direction:column;gap:6px;margin-top:10px'>",
-                    unsafe_allow_html=True)
-        for day_iso, cnt in activity.items():
-            day_obj  = datetime.date.fromisoformat(day_iso)
-            weekday  = day_obj.strftime("%a %d %b")
-            bar_w    = max(int((cnt / max_act) * 100), 2) if cnt else 0
-            is_today = day_iso == today.isoformat()
-            bar_col  = "#E8472A" if is_today else "#2563EB"
-            dot_col  = "#FFD700" if is_today else "#E5E7EB"
-            st.markdown(f"""
-            <div style='display:flex;align-items:center;gap:10px'>
-                <div style='font-size:12px;color:{"#E8472A" if is_today else "#888"};
-                    font-weight:{"800" if is_today else "400"};width:90px;flex-shrink:0'>
-                    {"📍 " if is_today else ""}{weekday}
-                </div>
-                <div style='flex:1;background:#F0F0F8;border-radius:99px;height:20px;overflow:hidden'>
-                    <div style='width:{bar_w}%;height:20px;border-radius:99px;
-                        background:linear-gradient(90deg,{bar_col},{bar_col}88)'></div>
-                </div>
-                <div style='font-size:13px;font-weight:800;color:#1A1A2E;width:28px;text-align:right'>
-                    {cnt}
-                </div>
-            </div>""", unsafe_allow_html=True)
-        st.markdown("</div><div style='font-size:11px;color:#bbb;margin-top:8px'>"
-                    "Counts unique active users per day based on last activity date.</div>",
-                    unsafe_allow_html=True)
-
-    # ═══════════════════════════════════════════════
-    # TAB 2 — HOMEWORK TRACKING
-    # ═══════════════════════════════════════════════
     with tab_hw:
-        st.markdown("### 📋 Homework Tracking")
-
+        st.markdown("### 📋 HOMEWORK TRACKING")
         if not all_hw:
-            st.info("📭 No homework assignments have been created yet.")
+            st.info("📭 No homework assignments yet.")
         else:
-            # ── Summary row ────────────────────────
-            total_hw   = len(all_hw)
-            total_subs = sum(len(h.get("submissions", {})) for h in all_hw)
-            est_poss   = total_hw * max(len(students), 1)
-            comp_pct   = min(int((total_subs / max(est_poss, 1)) * 100), 100)
-            comp_color = "#059669" if comp_pct >= 70 else "#F59E0B" if comp_pct >= 40 else "#E8472A"
-
-            c1, c2, c3 = st.columns(3)
-            for col_w, icon, val, lbl, color in [
-                (c1, "📋", total_hw,   "Assignments",     "#2563EB"),
-                (c2, "📬", total_subs, "Total Submissions","#7C3AED"),
-                (c3, "📈", f"{comp_pct}%", "Est. Completion", comp_color),
-            ]:
-                with col_w:
-                    st.markdown(f"""
-                    <div style='background:#fff;border-radius:14px;padding:16px;text-align:center;
-                        box-shadow:0 2px 10px rgba(0,0,0,0.06);border-top:4px solid {color}'>
-                        <div style='font-size:22px'>{icon}</div>
-                        <div style='font-size:24px;font-weight:900;color:{color}'>{val}</div>
-                        <div style='font-size:11px;color:#999;font-weight:700'>{lbl}</div>
-                    </div>""", unsafe_allow_html=True)
-
-            # Platform completion bar
-            st.markdown(f"""
-            <div style='margin:18px 0 8px'>
-                <div style='display:flex;justify-content:space-between;
-                    font-size:13px;font-weight:700;color:#1A1A2E;margin-bottom:6px'>
-                    <span>🎯 Platform-wide Homework Completion</span>
-                    <span style='color:{comp_color}'>{comp_pct}%</span>
-                </div>
-                <div style='background:#F0F0F8;border-radius:99px;height:16px;overflow:hidden'>
-                    <div style='width:{comp_pct}%;height:16px;border-radius:99px;
-                        background:linear-gradient(90deg,{comp_color},{comp_color}88);
-                        transition:width 1s ease'></div>
-                </div>
-                <div style='font-size:11px;color:#bbb;margin-top:5px'>
-                    🟢 ≥70% complete &nbsp;·&nbsp; 🟡 40–69% &nbsp;·&nbsp; 🔴 &lt;40%
-                </div>
-            </div>""", unsafe_allow_html=True)
-
+            total_hw=len(all_hw); total_subs=sum(len(h.get("submissions",{})) for h in all_hw)
+            c1,c2 = st.columns(2)
+            with c1: st.metric("📋 Assignments", total_hw)
+            with c2: st.metric("📬 Submissions", total_subs)
             st.markdown("---")
-
-            # ── Filters ────────────────────────────
-            st.markdown("#### 🔍 Filter Assignments")
-            f1, f2 = st.columns(2)
-            with f1:
-                f_subj   = st.selectbox("Subject", ["All"] + list(SUBJECTS.keys()), key="adm_f_subj")
-            with f2:
-                f_status = st.selectbox("Status",  ["All", "Active", "Inactive"],   key="adm_f_status")
-
-            st.markdown("---")
-
-            for hw in sorted(all_hw, key=lambda x: x.get("created",""), reverse=True):
-
-                # Apply filters
-                if f_subj != "All" and hw.get("subject") != f_subj:
-                    continue
-                hw_active = hw.get("status","active") == "active"
-                if f_status == "Active"   and not hw_active: continue
-                if f_status == "Inactive" and hw_active:     continue
-
-                info      = SUBJECTS.get(hw["subject"], {"emoji":"📚","color":"#2563EB"})
-                col       = info["color"]
-                subs      = hw.get("submissions", {})
-                sub_cnt   = len(subs)
-                data      = hw.get("data", {})
-                hw_title  = data.get("title", hw.get("topic",""))
-                due       = hw.get("due_date","")
-                today_str = datetime.date.today().isoformat()
-                overdue   = due < today_str if due else False
-
-                # Compute quality stats
-                if subs:
-                    scores    = [s.get("score_pct",0) for s in subs.values()]
-                    avg_score = int(sum(scores) / len(scores))
-                    high_q    = sum(1 for s in scores if s >= 80)
-                    mid_q     = sum(1 for s in scores if 60 <= s < 80)
-                    low_q     = sum(1 for s in scores if s < 60)
-                    q_label   = "🟢 High" if avg_score>=80 else "🟡 Medium" if avg_score>=60 else "🔴 Low"
-                else:
-                    avg_score = high_q = mid_q = low_q = 0
-                    q_label   = "⚪ No data"
-
-                status_badge = "🟢 Active" if hw_active else "🔴 Inactive"
-                due_label    = (f"⚠️ Overdue ({due})" if overdue else f"📅 Due: {due}")
-
-                with st.expander(
-                    f"{info['emoji']} {hw_title[:45]}{'…' if len(hw_title)>45 else ''} "
-                    f"| {hw.get('subject','')} {hw.get('grade','')} "
-                    f"| {status_badge} | {sub_cnt} sub(s) | Avg: {avg_score}%"
-                ):
-                    # Tag row
+            for hw in sorted(all_hw,key=lambda x:x.get("created",""),reverse=True):
+                info=SUBJECTS.get(hw["subject"],{"emoji":"📚","color":"#00FFD1"})
+                col=info["color"]; subs=hw.get("submissions",{}); data=hw.get("data",{})
+                hw_title=data.get("title",hw.get("topic",""))
+                with st.expander(f"{info['emoji']} {hw_title[:45]} | {hw['subject']} {hw.get('grade','')} | {len(subs)} sub(s)"):
                     st.markdown(f"""
-                    <div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px'>
-                        <span style='background:{col}18;color:{col};padding:3px 10px;
-                            border-radius:99px;font-size:12px;font-weight:700'>{info["emoji"]} {hw["subject"]}</span>
-                        <span style='background:{col}18;color:{col};padding:3px 10px;
-                            border-radius:99px;font-size:12px;font-weight:700'>🏫 {hw.get("grade","")}</span>
-                        <span style='background:{col}18;color:{col};padding:3px 10px;
-                            border-radius:99px;font-size:12px;font-weight:700'>🎯 {hw.get("difficulty","")}</span>
-                        <span style='background:{"#FEE2E2" if overdue else "#D1FAE5"};
-                            color:{"#991B1B" if overdue else "#065F46"};padding:3px 10px;
-                            border-radius:99px;font-size:12px;font-weight:700'>{due_label}</span>
+                    <div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px'>
+                        <span style='background:{col}15;color:{col};padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700'>{hw["subject"]}</span>
+                        <span style='background:{col}15;color:{col};padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700'>{hw.get("grade","")}</span>
+                        <span style='background:{col}15;color:{col};padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700'>📅 {hw.get("due_date","")}</span>
                     </div>
-                    <div style='font-size:12px;color:#888;margin-bottom:10px'>
-                        ✏️ Topic: <b style='color:#1A1A2E'>{hw.get("topic","")}</b>
-                        &nbsp;·&nbsp; Created: {hw.get("created","")}
-                        &nbsp;·&nbsp; By: {hw.get("creator_name", hw.get("teacher_name","?"))}
-                    </div>""", unsafe_allow_html=True)
-
-                    if sub_cnt > 0:
-                        # Metric row
-                        m1, m2, m3 = st.columns(3)
-                        with m1: st.metric("📬 Submissions", sub_cnt)
-                        with m2: st.metric("📈 Avg Score",  f"{avg_score}%")
-                        with m3: st.metric("🏅 Quality",    q_label)
-
-                        # Quality distribution bar
-                        total_parts = max(high_q + mid_q + low_q, 1)
-                        hw_pct  = int((high_q / total_parts) * 100)
-                        mw_pct  = int((mid_q  / total_parts) * 100)
-                        lw_pct  = 100 - hw_pct - mw_pct
-                        st.markdown(f"""
-                        <div style='margin:12px 0 16px'>
-                            <div style='font-size:12px;font-weight:700;color:#1A1A2E;margin-bottom:6px'>
-                                Quality Distribution
-                            </div>
-                            <div style='display:flex;height:22px;border-radius:10px;overflow:hidden;gap:2px'>
-                                <div style='flex:{max(hw_pct,1)};background:#059669;
-                                    display:flex;align-items:center;justify-content:center;
-                                    font-size:10px;color:#fff;font-weight:700'>
-                                    {"🟢 "+str(high_q) if hw_pct>12 else ""}
-                                </div>
-                                <div style='flex:{max(mw_pct,1)};background:#F59E0B;
-                                    display:flex;align-items:center;justify-content:center;
-                                    font-size:10px;color:#fff;font-weight:700'>
-                                    {"🟡 "+str(mid_q) if mw_pct>12 else ""}
-                                </div>
-                                <div style='flex:{max(lw_pct,1)};background:#E8472A;
-                                    display:flex;align-items:center;justify-content:center;
-                                    font-size:10px;color:#fff;font-weight:700'>
-                                    {"🔴 "+str(low_q) if lw_pct>12 else ""}
-                                </div>
-                            </div>
-                            <div style='display:flex;gap:16px;font-size:11px;color:#666;margin-top:5px'>
-                                <span>🟢 Excellent (≥80%): {high_q}</span>
-                                <span>🟡 Good (60–79%): {mid_q}</span>
-                                <span>🔴 Needs Work (&lt;60%): {low_q}</span>
-                            </div>
-                        </div>""", unsafe_allow_html=True)
-
-                        # Individual submissions table
-                        st.markdown("**📬 Individual Submissions**")
-                        for email, sub in sorted(
-                            subs.items(),
-                            key=lambda x: x[1].get("score_pct",0),
-                            reverse=True
-                        ):
-                            sp       = sub.get("score_pct", 0)
-                            q_dot    = "🟢" if sp>=80 else "🟡" if sp>=60 else "🔴"
-                            sub_time = sub.get("submitted_at","")
-                            sub_day  = sub_time[:10] if sub_time else ""
-                            on_time  = (sub_day <= due) if (sub_day and due) else True
-                            time_tag = (
-                                f"<span style='color:#059669;font-weight:700'>⏰ On time</span>"
-                                if on_time else
-                                f"<span style='color:#E8472A;font-weight:700'>⚠️ Late</span>"
-                            )
-                            st.markdown(f"""
-                            <div style='background:#F8F9FA;border-radius:10px;padding:9px 14px;
-                                margin-bottom:5px;border-left:3px solid {col};color:#1A1A2E;
-                                display:flex;justify-content:space-between;
-                                align-items:center;flex-wrap:wrap;gap:6px'>
-                                <div>
-                                    <b>{sub.get("student_name","?")}</b>
-                                    <span style='font-size:11px;color:#aaa;margin-left:6px'>{email}</span>
-                                </div>
-                                <div style='display:flex;gap:14px;align-items:center;font-size:12px'>
-                                    <span>{q_dot} <b>{sp}%</b></span>
-                                    {time_tag}
-                                    <span style='color:#bbb'>🕐 {sub_time}</span>
-                                </div>
-                            </div>""", unsafe_allow_html=True)
-                    else:
-                        st.info("⏳ No submissions yet for this assignment.")
-
+                    <div style='font-size:12px;color:#94B4CC;margin-bottom:8px'>Topic: <b style='color:#E0F4FF'>{hw.get("topic","")}</b> · Created: {hw.get("created","")} · By: {hw.get("creator_name","?")}</div>""",
+                    unsafe_allow_html=True)
+                    if not subs: st.info("⏳ No submissions yet.")
 
 # ═════════════════════════════════════════════════════════════════
 # ROUTER
@@ -2904,7 +2294,6 @@ else:
     if not st.session_state.get("mobile_hint_shown", False):
         st.info("📱 **On mobile?** Tap the **☰ arrow** at top-left to open the menu!", icon="📱")
         st.session_state.mobile_hint_shown = True
-
     p = st.session_state.page
     if   p == "home":     page_home()
     elif p == "chat":     page_chat()

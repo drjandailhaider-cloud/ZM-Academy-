@@ -584,39 +584,38 @@ def render_sidebar():
                          use_container_width=True, type=btn_type):
                 st.session_state.page = key; st.rerun()
 
-        def section_label(text):
+        def section_label(text, color="#ffffff"):
             st.markdown(
-                f"<div style='font-size:10px;font-weight:800;color:rgba(255,255,255,0.35);"
-                f"text-transform:uppercase;letter-spacing:1.2px;"
-                f"padding:10px 4px 4px'>  {text}</div>",
+                f"<div style='font-size:10px;font-weight:800;"
+                f"color:rgba(255,255,255,0.38);text-transform:uppercase;"
+                f"letter-spacing:1.2px;padding:12px 4px 3px'>  {text}</div>",
                 unsafe_allow_html=True
             )
 
-        # ── DASHBOARD (all roles) ──────────────────
+        # ── DASHBOARD (all roles) ─────────────────────────────
         section_label("📊 Dashboard")
-        nav_btn("🏠", "Home",        "home")
-        nav_btn("📚", "Syllabus",    "syllabus")
+        nav_btn("🏠", "Home",           "home")
+        nav_btn("📚", "Syllabus",       "syllabus")
+        nav_btn("🎨", "Image Generator","image")
+        nav_btn("📈", "My Progress",    "progress")
 
-        # ── STUDENT SECTION ────────────────────────
+        # ── STUDENT (student / parent) ────────────────────────
         if role in ("student", "parent"):
             section_label("🎒 Student")
             nav_btn("💬", "Chat Tutor",    "chat")
             nav_btn("📝", "Practice Quiz", "quiz")
             nav_btn("👥", "Friendz Quiz",  "friends")
-            nav_btn("🎨", "Image Gen",     "image")
-            nav_btn("📊", "My Progress",   "progress")
             nav_btn("🕐", "Chat History",  "history")
             nav_btn("🏆", "Badges",        "badges")
 
-        # ── TEACHER SECTION ────────────────────────
+        # ── TEACHER ───────────────────────────────────────────
         if role == "teacher":
             section_label("👨‍🏫 Teacher")
-            nav_btn("📋", "Create Homework",      "homework")
-            nav_btn("📊", "Student Performance",  "admin")
-            nav_btn("💬", "Chat Tutor",           "chat")
-            nav_btn("🎨", "Image Gen",            "image")
+            nav_btn("📋", "Create Homework",     "homework")
+            nav_btn("📊", "Student Performance", "admin")
+            nav_btn("💬", "Chat Tutor",          "chat")
 
-        # ── ADMIN SECTION ──────────────────────────
+        # ── ADMIN ─────────────────────────────────────────────
         if role == "admin":
             section_label("🛡️ Admin")
             nav_btn("📊", "Student Performance", "admin")
@@ -624,7 +623,7 @@ def render_sidebar():
             nav_btn("📋", "Homework Tracker",    "homework")
             nav_btn("💬", "Chat Tutor",          "chat")
 
-        # ── ACCOUNT (all roles) ────────────────────
+        # ── ACCOUNT (all roles) ───────────────────────────────
         section_label("👤 Account")
         nav_btn("👤", "Profile", "profile")
 

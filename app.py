@@ -578,13 +578,14 @@ def render_sidebar():
         role = u.get("role", "student")
         cur  = st.session_state.page
 
-        def nav_btn(icon, label, key):
+        def nav_btn(icon, label, key, uid=""):
+            """uid makes widget key unique when same page key appears in multiple role blocks."""
             btn_type = "primary" if cur == key else "secondary"
-            if st.button(f"{icon}  {label}", key=f"nav_{key}",
+            if st.button(f"{icon}  {label}", key=f"nav_{key}{uid}",
                          use_container_width=True, type=btn_type):
                 st.session_state.page = key; st.rerun()
 
-        def section_label(text, color="#ffffff"):
+        def section_label(text):
             st.markdown(
                 f"<div style='font-size:10px;font-weight:800;"
                 f"color:rgba(255,255,255,0.38);text-transform:uppercase;"
@@ -594,34 +595,34 @@ def render_sidebar():
 
         # ── DASHBOARD (all roles) ─────────────────────────────
         section_label("📊 Dashboard")
-        nav_btn("🏠", "Home",           "home")
-        nav_btn("📚", "Syllabus",       "syllabus")
-        nav_btn("🎨", "Image Generator","image")
-        nav_btn("📈", "My Progress",    "progress")
+        nav_btn("🏠", "Home",            "home")
+        nav_btn("📚", "Syllabus",        "syllabus")
+        nav_btn("🎨", "Image Generator", "image")
+        nav_btn("📈", "My Progress",     "progress")
 
         # ── STUDENT (student / parent) ────────────────────────
         if role in ("student", "parent"):
             section_label("🎒 Student")
-            nav_btn("💬", "Chat Tutor",    "chat")
+            nav_btn("💬", "Chat Tutor",    "chat",    "_s")
             nav_btn("📝", "Practice Quiz", "quiz")
             nav_btn("👥", "Friendz Quiz",  "friends")
-            nav_btn("🕐", "Chat History",  "history")
+            nav_btn("🕐", "Chat History",  "history", "_s")
             nav_btn("🏆", "Badges",        "badges")
 
         # ── TEACHER ───────────────────────────────────────────
         if role == "teacher":
             section_label("👨‍🏫 Teacher")
-            nav_btn("📋", "Create Homework",     "homework")
-            nav_btn("📊", "Student Performance", "admin")
-            nav_btn("💬", "Chat Tutor",          "chat")
+            nav_btn("📋", "Create Homework",     "homework", "_t")
+            nav_btn("📊", "Student Performance", "admin",    "_t")
+            nav_btn("💬", "Chat Tutor",          "chat",     "_t")
 
         # ── ADMIN ─────────────────────────────────────────────
         if role == "admin":
             section_label("🛡️ Admin")
-            nav_btn("📊", "Student Performance", "admin")
-            nav_btn("🕐", "Chat History",        "history")
-            nav_btn("📋", "Homework Tracker",    "homework")
-            nav_btn("💬", "Chat Tutor",          "chat")
+            nav_btn("📊", "Student Performance", "admin",    "_a")
+            nav_btn("🕐", "Chat History",        "history",  "_a")
+            nav_btn("📋", "Homework Tracker",    "homework", "_a")
+            nav_btn("💬", "Chat Tutor",          "chat",     "_a")
 
         # ── ACCOUNT (all roles) ───────────────────────────────
         section_label("👤 Account")

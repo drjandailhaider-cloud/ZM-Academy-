@@ -107,10 +107,12 @@ for g in ["Grade 1","Grade 2","Grade 3","Grade 4","Grade 5"]:
 # ─────────────────────────────────────────────────────────────────
 # DATA STORAGE
 # ─────────────────────────────────────────────────────────────────
-USERS_FILE   = "users.json"
-HISTORY_FILE = "history.json"
-IMAGES_FILE  = "images.json"
-GROUPS_FILE  = "groups.json"
+USERS_FILE     = "users.json"
+HISTORY_FILE   = "history.json"
+IMAGES_FILE    = "images.json"
+GROUPS_FILE    = "groups.json"
+HOMEWORK_FILE  = "homework.json"
+SUBMISSIONS_FILE = "submissions.json"
 
 def load_json(filepath):
     cache_key = f"_cache_{filepath}"
@@ -486,7 +488,7 @@ def page_auth():
             with st.form("signup_form"):
                 name   = st.text_input("👤 Full Name", placeholder="Ahmed Khan")
                 email2 = st.text_input("📧 Email", placeholder="you@example.com")
-                role   = st.selectbox("👥 I am a", ["Student 🎒","Parent 👨‍👩‍👦"])
+                role   = st.selectbox("👥 I am a", ["Student 🎒","Parent 👨‍👩‍👦","Teacher 👨‍🏫","Admin 🔑"])
                 avatar = st.selectbox("🧑 Choose Avatar", list(AVATARS.keys()))
                 grade  = st.selectbox("🏫 Grade", ["-- Select --"]+LEVELS)
                 pw     = st.text_input("🔒 Password", type="password", placeholder="Min 6 characters")
@@ -501,7 +503,10 @@ def page_auth():
                         new_user = {
                             "name": name.strip(), "email": email2.strip(),
                             "password": hash_pw(pw),
-                            "role": "student" if "Student" in role else "parent",
+                            "role": ("student" if "Student" in role
+                                     else "parent" if "Parent" in role
+                                     else "teacher" if "Teacher" in role
+                                     else "admin"),
                             "avatar": AVATARS[avatar],
                             "grade": grade if grade != "-- Select --" else "Grade 6",
                             "joined": datetime.date.today().isoformat(),
@@ -548,7 +553,10 @@ def render_sidebar():
             </div>
             <div style='font-weight:800;font-size:16px;color:#fff;text-align:center'>{u["name"]}</div>
             <div style='font-size:12px;color:rgba(255,255,255,0.6);margin-top:3px;text-align:center'>
-                {"🎒 Student" if u.get("role")=="student" else "👨‍👩‍👦 Parent"}
+                {"🎒 Student" if u.get("role")=="student"
+                 else "👨‍👩‍👦 Parent" if u.get("role")=="parent"
+                 else "👨‍🏫 Teacher" if u.get("role")=="teacher"
+                 else "🔑 Admin"}
                 {"&nbsp;•&nbsp;" + u.get("grade","") if u.get("grade","") else ""}
             </div>
             <div style='display:flex;justify-content:center;gap:16px;margin-top:10px'>
@@ -579,6 +587,12 @@ def render_sidebar():
             ("🏆","Badges",          "badges"),
             ("👤","Profile",         "profile"),
         ]
+        # Extra nav for teacher
+        if u.get("role") == "teacher":
+            nav.insert(1, ("📋","Homework",      "homework"))
+        # Extra nav for admin
+        if u.get("role") == "admin":
+            nav.insert(1, ("🛡️","Admin Panel",  "admin"))
         cur = st.session_state.page
         for icon, label, key in nav:
             btn_type = "primary" if cur == key else "secondary"
@@ -1728,7 +1742,10 @@ def page_profile():
         <div style='padding:10px 0;color:#1A1A2E'>
             <div style='font-family:"Baloo 2",cursive;font-size:22px;font-weight:800'>{u['name']}</div>
             <div style='font-size:13px;color:#999;margin-top:4px'>
-                {'🎒 Student' if u.get('role')=='student' else '👨‍👩‍👦 Parent'} • {u.get('grade','')}
+                {'🎒 Student' if u.get('role')=='student'
+                 else '👨‍👩‍👦 Parent' if u.get('role')=='parent'
+                 else '👨‍🏫 Teacher' if u.get('role')=='teacher'
+                 else '🔑 Admin'} • {u.get('grade','')}
             </div>
             <div style='font-size:12px;color:#bbb;margin-top:2px'>📧 {u['email']}</div>
             <div style='font-size:12px;color:#bbb;margin-top:2px'>📅 Joined {u.get('joined','')}</div>
@@ -1768,6 +1785,585 @@ def page_profile():
 
 
 # ═════════════════════════════════════════════════════════════════
+# TEACHER — HOMEWORK GENERATOR
+# ═════════════════════════════════════════════════════════════════
+def page_homework():
+    u = st.session_state.user
+    if u.get("role") != "teacher":
+        st.error("🔒 Access denied. This page is for teachers only.")
+        return
+
+    st.markdown("<div class='section-header'>📋 Homework Manager</div>", unsafe_allow_html=True)
+
+    tab_create, tab_view = st.tabs(["➕ Create Homework", "📂 View Assignments"])
+
+    # ── CREATE HOMEWORK TAB ─────────────────────────────────────
+    with tab_create:
+        st.markdown("""
+        <div style='background:#EFF4FF;border-radius:14px;padding:14px 18px;
+            margin-bottom:18px;font-size:13px;color:#1B4FD8;border-left:4px solid #2563EB'>
+            📝 <b>AI Homework Generator</b> — Fill in the details below and let AI create a complete homework assignment with questions, instructions, and marking guide.
+        </div>""", unsafe_allow_html=True)
+
+        c1, c2 = st.columns(2)
+        with c1:
+            hw_subject = st.selectbox("📚 Subject", list(SUBJECTS.keys()), key="hw_subject")
+        with c2:
+            hw_grade = st.selectbox("🏫 Grade Level", LEVELS, key="hw_grade")
+
+        hw_topic = st.text_input(
+            "✏️ Topic / Chapter",
+            placeholder="e.g. Quadratic Equations, Photosynthesis, World War II...",
+            key="hw_topic"
+        )
+
+        hw_desc = st.text_area(
+            "📄 Assignment Description & Instructions",
+            placeholder="Describe what students should do, any special instructions, learning objectives, or context for this homework...",
+            height=120,
+            key="hw_desc"
+        )
+
+        c3, c4, c5 = st.columns(3)
+        with c3:
+            hw_type = st.selectbox("📋 Homework Type", [
+                "Mixed (MCQ + Short Answer + Long)",
+                "MCQ Only",
+                "Short Answer",
+                "Long Answer / Essay",
+                "Problem Solving",
+                "Research & Summary"
+            ], key="hw_type")
+        with c4:
+            hw_difficulty = st.selectbox("🎯 Difficulty", ["Easy","Medium","Hard","Mixed"], key="hw_diff")
+        with c5:
+            hw_num_q = st.selectbox("🔢 Number of Questions", [5, 8, 10, 12, 15], index=1, key="hw_num_q")
+
+        hw_due_days = st.slider("📅 Due in (days from today)", 1, 14, 3, key="hw_due")
+        due_date = (datetime.date.today() + datetime.timedelta(days=hw_due_days)).isoformat()
+
+        st.markdown(f"**📅 Due Date:** `{due_date}`")
+
+        if st.button("🚀 Generate Homework with AI", use_container_width=True, type="primary", key="gen_hw_btn"):
+            if not hw_topic.strip():
+                st.error("⚠️ Please enter a topic for the homework.")
+            else:
+                topic_str = hw_topic.strip()
+                desc_str  = hw_desc.strip() if hw_desc.strip() else "Standard homework assignment."
+                with st.spinner(f"✨ Generating {hw_num_q} questions on '{topic_str}'..."):
+                    raw = call_ai(
+                        [{"role":"user","content":
+                          f"Create a complete homework assignment for {hw_grade} {hw_subject} students in Pakistan. "
+                          f"Topic: {topic_str}. "
+                          f"Teacher's instructions: {desc_str}. "
+                          f"Homework type: {hw_type}. Difficulty: {hw_difficulty}. "
+                          f"Generate exactly {hw_num_q} questions. "
+                          f"Return ONLY raw JSON (no backticks, no markdown) in this exact format: "
+                          f'{{"title":"homework title","instructions":"detailed instructions for students",'
+                          f'"questions":[{{"number":1,"type":"MCQ|short_answer|long_answer|problem","question":"...","marks":2,'
+                          f'"options":["A. ...","B. ...","C. ...","D. ..."],"answer":"correct answer or model answer","hint":"helpful hint"}}],'
+                          f'"total_marks":20,"marking_guide":"brief marking guide for teacher","learning_objectives":"what students will learn"}}'}],
+                        "You are an expert Pakistani curriculum homework generator. Return ONLY valid JSON.", 3000
+                    )
+                try:
+                    clean = raw.replace("```json","").replace("```","").strip()
+                    hw_data = json.loads(clean)
+
+                    # Save to homework file
+                    homework = load_json(HOMEWORK_FILE)
+                    hw_id = f"hw_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_{u['email'].split('@')[0]}"
+                    new_hw = {
+                        "id": hw_id,
+                        "teacher_email": u["email"],
+                        "teacher_name":  u["name"],
+                        "subject":       hw_subject,
+                        "grade":         hw_grade,
+                        "topic":         topic_str,
+                        "description":   desc_str,
+                        "difficulty":    hw_difficulty,
+                        "due_date":      due_date,
+                        "created":       datetime.date.today().isoformat(),
+                        "data":          hw_data,
+                        "submissions":   {},
+                        "status":        "active"
+                    }
+                    homework[hw_id] = new_hw
+                    save_json(HOMEWORK_FILE, homework)
+                    st.session_state["last_hw"] = new_hw
+                    st.success(f"✅ Homework '{hw_data.get('title', topic_str)}' created successfully!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"⚠️ Could not generate homework. Please try again. ({e})")
+                    with st.expander("Debug info"): st.code(raw[:800])
+
+        # Show last created homework preview
+        if st.session_state.get("last_hw"):
+            hw = st.session_state["last_hw"]
+            data = hw["data"]
+            info = SUBJECTS.get(hw["subject"], {"emoji":"📚","color":"#2563EB"})
+            st.markdown(f"""
+            <div style='background:#F0FDF4;border:2px solid #059669;border-radius:16px;
+                padding:20px;margin-top:20px'>
+                <div style='font-size:18px;font-weight:800;color:#065F46;margin-bottom:8px'>
+                    {info['emoji']} {data.get('title', hw['topic'])}
+                </div>
+                <div style='display:flex;gap:12px;flex-wrap:wrap;font-size:12px;margin-bottom:12px'>
+                    <span style='background:#D1FAE5;color:#065F46;padding:3px 10px;border-radius:99px;font-weight:700'>
+                        📚 {hw['subject']}</span>
+                    <span style='background:#D1FAE5;color:#065F46;padding:3px 10px;border-radius:99px;font-weight:700'>
+                        🏫 {hw['grade']}</span>
+                    <span style='background:#D1FAE5;color:#065F46;padding:3px 10px;border-radius:99px;font-weight:700'>
+                        📅 Due: {hw['due_date']}</span>
+                    <span style='background:#D1FAE5;color:#065F46;padding:3px 10px;border-radius:99px;font-weight:700'>
+                        📝 {len(data.get('questions',[]))} questions · {data.get('total_marks',0)} marks</span>
+                </div>
+                <div style='font-size:13px;color:#047857;margin-bottom:10px'>
+                    <b>📋 Instructions:</b> {data.get('instructions','')[:200]}...
+                </div>
+                <div style='font-size:12px;color:#059669'>
+                    <b>🎯 Learning Objectives:</b> {data.get('learning_objectives','')}
+                </div>
+            </div>""", unsafe_allow_html=True)
+
+            st.markdown("#### 📝 Preview Questions")
+            for i, q in enumerate(data.get("questions", [])[:5]):
+                q_type_icon = {"MCQ":"🔵","short_answer":"📝","long_answer":"📄","problem":"🔢"}.get(q.get("type",""),"❓")
+                with st.expander(f"Q{i+1}. {q['question'][:80]}... [{q.get('marks',0)} marks]"):
+                    st.markdown(f"**Type:** {q_type_icon} {q.get('type','').replace('_',' ').title()}")
+                    if q.get("options"):
+                        for opt in q["options"]:
+                            st.markdown(f"- {opt}")
+                    st.markdown(f"**✅ Answer/Model:** {q.get('answer','')}")
+                    if q.get("hint"):
+                        st.markdown(f"**💡 Hint:** {q.get('hint','')}")
+
+            if len(data.get("questions",[])) > 5:
+                st.info(f"*...and {len(data['questions'])-5} more questions*")
+
+            st.markdown(f"""
+            <div style='background:#FFF8E7;border-radius:10px;padding:12px 16px;margin-top:10px;
+                border-left:3px solid #F5CC4A;font-size:13px;color:#92400E'>
+                <b>📖 Marking Guide:</b> {data.get('marking_guide','')}
+            </div>""", unsafe_allow_html=True)
+
+    # ── VIEW ALL HOMEWORK TAB ───────────────────────────────────
+    with tab_view:
+        homework = load_json(HOMEWORK_FILE)
+        teacher_hw = {k:v for k,v in homework.items() if v.get("teacher_email") == u["email"]}
+
+        if not teacher_hw:
+            st.info("📭 No homework assignments yet. Create your first one!")
+            return
+
+        st.markdown(f"**📚 Total Assignments Created:** {len(teacher_hw)}")
+
+        # Summary stats
+        c1, c2, c3 = st.columns(3)
+        total_submissions = sum(len(v.get("submissions",{})) for v in teacher_hw.values())
+        active = sum(1 for v in teacher_hw.values() if v.get("status")=="active")
+        with c1: st.metric("📋 Total Assignments", len(teacher_hw))
+        with c2: st.metric("✅ Active", active)
+        with c3: st.metric("📬 Total Submissions", total_submissions)
+
+        st.markdown("---")
+        for hw_id, hw in sorted(teacher_hw.items(), key=lambda x: x[1].get("created",""), reverse=True):
+            info     = SUBJECTS.get(hw["subject"], {"emoji":"📚","color":"#2563EB"})
+            subs     = hw.get("submissions", {})
+            sub_count = len(subs)
+            data     = hw.get("data", {})
+
+            col = info["color"]
+            with st.expander(f"{info['emoji']} {hw['subject']} — {data.get('title', hw['topic'])} | {hw['grade']} | Due: {hw['due_date']} | {sub_count} submission(s)"):
+                st.markdown(f"""
+                <div style='display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px'>
+                    <span style='background:{col}18;color:{col};padding:3px 10px;
+                        border-radius:99px;font-size:12px;font-weight:700'>📚 {hw['subject']}</span>
+                    <span style='background:{col}18;color:{col};padding:3px 10px;
+                        border-radius:99px;font-size:12px;font-weight:700'>🏫 {hw['grade']}</span>
+                    <span style='background:{col}18;color:{col};padding:3px 10px;
+                        border-radius:99px;font-size:12px;font-weight:700'>🎯 {hw['difficulty']}</span>
+                    <span style='background:{col}18;color:{col};padding:3px 10px;
+                        border-radius:99px;font-size:12px;font-weight:700'>📝 {len(data.get("questions",[]))} questions</span>
+                </div>""", unsafe_allow_html=True)
+
+                st.markdown(f"**📋 Topic:** {hw['topic']}")
+                st.markdown(f"**📄 Description:** {hw['description']}")
+                st.markdown(f"**📅 Created:** {hw['created']} | **Due:** {hw['due_date']}")
+
+                if sub_count > 0:
+                    st.markdown(f"#### 📬 Submissions ({sub_count})")
+                    for email, sub in subs.items():
+                        score_pct = sub.get("score_pct", 0)
+                        quality   = "🟢 Excellent" if score_pct>=80 else "🟡 Good" if score_pct>=60 else "🔴 Needs Work"
+                        st.markdown(f"""
+                        <div style='background:#F8F9FA;border-radius:10px;padding:10px 14px;
+                            margin-bottom:6px;border-left:3px solid {info["color"]};color:#1A1A2E'>
+                            <b>{sub.get("student_name","Unknown")}</b>
+                            &nbsp;|&nbsp; Score: <b>{score_pct}%</b>
+                            &nbsp;|&nbsp; {quality}
+                            &nbsp;|&nbsp; Submitted: {sub.get("submitted_at","")}
+                        </div>""", unsafe_allow_html=True)
+                else:
+                    st.info("No submissions yet for this assignment.")
+
+                c_del, c_tog = st.columns(2)
+                with c_tog:
+                    new_status = "inactive" if hw.get("status")=="active" else "active"
+                    if st.button(f"{'🔴 Deactivate' if hw.get('status')=='active' else '🟢 Activate'}", key=f"tog_{hw_id}"):
+                        homework[hw_id]["status"] = new_status
+                        save_json(HOMEWORK_FILE, homework)
+                        st.success(f"Assignment {new_status}!"); st.rerun()
+                with c_del:
+                    if st.button("🗑️ Delete", key=f"del_{hw_id}"):
+                        del homework[hw_id]
+                        save_json(HOMEWORK_FILE, homework)
+                        st.success("Deleted!"); st.rerun()
+
+
+# ═════════════════════════════════════════════════════════════════
+# ADMIN — ANALYTICS & HOMEWORK TRACKING
+# ═════════════════════════════════════════════════════════════════
+def page_admin():
+    u = st.session_state.user
+    if u.get("role") != "admin":
+        st.error("🔒 Access denied. This page is for admins only.")
+        return
+
+    st.markdown("<div class='section-header orange'>🛡️ Admin Dashboard</div>", unsafe_allow_html=True)
+
+    tab_perf, tab_hw, tab_users = st.tabs([
+        "📊 Student Performance Analytics",
+        "📋 Homework Tracking",
+        "👥 User Management"
+    ])
+
+    users    = load_json(USERS_FILE)
+    homework = load_json(HOMEWORK_FILE)
+
+    students = {e: d for e, d in users.items() if d.get("role") in ("student","parent")}
+    teachers = {e: d for e, d in users.items() if d.get("role") == "teacher"}
+    all_hw   = list(homework.values())
+
+    # ── TAB 1: Student Performance Analytics ───────────────────
+    with tab_perf:
+        st.markdown("### 📊 Platform Overview")
+
+        c1, c2, c3, c4 = st.columns(4)
+        total_students   = len(students)
+        total_questions  = sum(d.get("stats",{}).get("total",0) for d in students.values())
+        total_quizzes    = sum(d.get("stats",{}).get("quizzes_done",0) for d in students.values())
+        avg_streak       = (sum(d.get("stats",{}).get("streak",0) for d in students.values()) / max(total_students,1))
+        with c1: st.metric("🎒 Total Students", total_students)
+        with c2: st.metric("❓ Questions Asked", total_questions)
+        with c3: st.metric("📝 Quizzes Done", total_quizzes)
+        with c4: st.metric("🔥 Avg Streak", f"{avg_streak:.1f}d")
+
+        st.markdown("---")
+        st.markdown("### 🏆 Top Performing Students")
+
+        sorted_students = sorted(
+            students.items(),
+            key=lambda x: x[1].get("stats",{}).get("total",0),
+            reverse=True
+        )
+
+        if sorted_students:
+            rank_icons = ["🥇","🥈","🥉"] + ["🔢"]*50
+            for i, (email, std) in enumerate(sorted_students[:10]):
+                stats    = std.get("stats",{})
+                total_q  = stats.get("total", 0)
+                streak   = stats.get("streak", 0)
+                quizzes  = stats.get("quizzes_done",0)
+                badges   = len(std.get("badges",[]))
+                grade    = std.get("grade","")
+                # Compute an overall score
+                score = total_q + quizzes*3 + streak*2 + badges*5
+                bar_pct = min(int((score / max(score+1, 200)) * 100), 100)
+                subj_top = max(
+                    [(s, stats.get(s,0)) for s in SUBJECTS],
+                    key=lambda x: x[1], default=("—",0)
+                )
+                st.markdown(f"""
+                <div style='background:#fff;border-radius:14px;padding:14px 18px;
+                    margin-bottom:10px;box-shadow:0 2px 10px rgba(0,0,0,0.06);
+                    border-left:4px solid {"#FFD700" if i<3 else "#E0E7FF"};color:#1A1A2E'>
+                    <div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px'>
+                        <div style='display:flex;align-items:center;gap:12px'>
+                            <span style='font-size:22px'>{rank_icons[i]}</span>
+                            <div>
+                                <div style='font-weight:800;font-size:15px'>{std.get("name","?")} {std.get("avatar","")}</div>
+                                <div style='font-size:11px;color:#888'>📧 {email} · 🏫 {grade}</div>
+                            </div>
+                        </div>
+                        <div style='display:flex;gap:16px;flex-wrap:wrap;font-size:12px'>
+                            <div style='text-align:center'><div style='font-weight:800;color:#E8472A;font-size:16px'>{total_q}</div><div style='color:#aaa'>Questions</div></div>
+                            <div style='text-align:center'><div style='font-weight:800;color:#2563EB;font-size:16px'>{quizzes}</div><div style='color:#aaa'>Quizzes</div></div>
+                            <div style='text-align:center'><div style='font-weight:800;color:#F59E0B;font-size:16px'>{streak}d</div><div style='color:#aaa'>Streak</div></div>
+                            <div style='text-align:center'><div style='font-weight:800;color:#7C3AED;font-size:16px'>{badges}</div><div style='color:#aaa'>Badges</div></div>
+                        </div>
+                    </div>
+                    <div style='margin-top:10px'>
+                        <div style='display:flex;justify-content:space-between;font-size:11px;color:#aaa;margin-bottom:3px'>
+                            <span>🏆 Top subject: {subj_top[0]} ({subj_top[1]}Qs)</span>
+                            <span>Engagement score: {score}</span>
+                        </div>
+                        <div class='prog-bar'>
+                            <div class='prog-fill' style='width:{bar_pct}%;background:{"#FFD700" if i<3 else "#6366F1"}'></div>
+                        </div>
+                    </div>
+                </div>""", unsafe_allow_html=True)
+        else:
+            st.info("No student data available yet.")
+
+        st.markdown("---")
+        st.markdown("### 📚 Subject Engagement (Platform-wide)")
+        total_per_subject = {s: sum(d.get("stats",{}).get(s,0) for d in students.values()) for s in SUBJECTS}
+        grand_total = max(sum(total_per_subject.values()), 1)
+        for subj, count in sorted(total_per_subject.items(), key=lambda x: x[1], reverse=True):
+            info = SUBJECTS[subj]
+            pct  = int((count/grand_total)*100)
+            st.markdown(f"""
+            <div style='margin-bottom:12px'>
+                <div style='display:flex;justify-content:space-between;font-size:13px;
+                    font-weight:700;margin-bottom:4px;color:#1A1A2E'>
+                    <span>{info['emoji']} {subj}</span>
+                    <span style='color:{info["color"]}'>{count} questions ({pct}%)</span>
+                </div>
+                <div class='prog-bar'><div class='prog-fill' style='width:{pct}%;background:{info["color"]}'></div></div>
+            </div>""", unsafe_allow_html=True)
+
+        st.markdown("---")
+        st.markdown("### 🗓️ Recent Activity (Last 7 Days)")
+        today = datetime.date.today()
+        activity = {}
+        for i in range(6, -1, -1):
+            day = (today - datetime.timedelta(days=i)).isoformat()
+            activity[day] = 0
+        # Count last-active dates
+        for std in students.values():
+            last = std.get("stats",{}).get("lastDate","")
+            if last in activity:
+                activity[last] += 1
+        max_act = max(max(activity.values(),default=1),1)
+        for day, cnt in activity.items():
+            bar_w = int((cnt/max_act)*100)
+            weekday = datetime.date.fromisoformat(day).strftime("%a %d %b")
+            st.markdown(f"""
+            <div style='display:flex;align-items:center;gap:10px;margin-bottom:6px'>
+                <div style='font-size:12px;color:#888;width:80px;flex-shrink:0'>{weekday}</div>
+                <div style='flex:1;background:#F0F0F5;border-radius:99px;height:18px'>
+                    <div style='width:{bar_w}%;background:{"#E8472A" if day==today.isoformat() else "#2563EB"};
+                        height:18px;border-radius:99px;transition:width 0.3s'></div>
+                </div>
+                <div style='font-size:12px;font-weight:700;color:#1A1A2E;width:30px'>{cnt}</div>
+            </div>""", unsafe_allow_html=True)
+
+    # ── TAB 2: Homework Tracking ────────────────────────────────
+    with tab_hw:
+        st.markdown("### 📋 Homework Tracking")
+
+        if not all_hw:
+            st.info("📭 No homework assignments created yet.")
+        else:
+            # Summary cards
+            total_hw    = len(all_hw)
+            active_hw   = sum(1 for h in all_hw if h.get("status")=="active")
+            total_subs  = sum(len(h.get("submissions",{})) for h in all_hw)
+            # Avg completion as % of possible subs (estimate vs student count)
+            est_possible = total_hw * max(len(students), 1)
+            completion_pct = min(int((total_subs / max(est_possible,1)) * 100), 100)
+
+            c1, c2, c3, c4 = st.columns(4)
+            with c1: st.metric("📋 Total Assignments", total_hw)
+            with c2: st.metric("✅ Active", active_hw)
+            with c3: st.metric("📬 Total Submissions", total_subs)
+            with c4: st.metric("📈 Est. Completion", f"{completion_pct}%")
+
+            # Overall completion bar
+            st.markdown(f"""
+            <div style='margin:16px 0 24px'>
+                <div style='display:flex;justify-content:space-between;font-size:13px;
+                    font-weight:700;color:#1A1A2E;margin-bottom:6px'>
+                    <span>🎯 Platform-wide Homework Completion</span>
+                    <span style='color:{"#059669" if completion_pct>=70 else "#F59E0B" if completion_pct>=40 else "#E8472A"}'>{completion_pct}%</span>
+                </div>
+                <div class='prog-bar' style='height:14px;border-radius:99px'>
+                    <div class='prog-fill' style='width:{completion_pct}%;
+                        background:{"#059669" if completion_pct>=70 else "#F59E0B" if completion_pct>=40 else "#E8472A"};
+                        height:14px;border-radius:99px'></div>
+                </div>
+            </div>""", unsafe_allow_html=True)
+
+            st.markdown("---")
+            st.markdown("### 📝 Assignment Details")
+
+            # Filter controls
+            f1, f2 = st.columns(2)
+            with f1:
+                filter_subj = st.selectbox("Filter by Subject", ["All"] + list(SUBJECTS.keys()), key="admin_hw_subj")
+            with f2:
+                filter_status = st.selectbox("Filter by Status", ["All","Active","Inactive"], key="admin_hw_status")
+
+            for hw in sorted(all_hw, key=lambda x: x.get("created",""), reverse=True):
+                if filter_subj != "All" and hw.get("subject") != filter_subj:
+                    continue
+                if filter_status == "Active" and hw.get("status") != "active":
+                    continue
+                if filter_status == "Inactive" and hw.get("status") == "active":
+                    continue
+
+                info     = SUBJECTS.get(hw["subject"], {"emoji":"📚","color":"#2563EB"})
+                subs     = hw.get("submissions", {})
+                sub_cnt  = len(subs)
+                data     = hw.get("data", {})
+                hw_title = data.get("title", hw.get("topic",""))
+
+                # Compute quality stats from submissions
+                if subs:
+                    scores    = [s.get("score_pct",0) for s in subs.values()]
+                    avg_score = int(sum(scores)/len(scores))
+                    high_q    = sum(1 for s in scores if s>=80)
+                    mid_q     = sum(1 for s in scores if 60<=s<80)
+                    low_q     = sum(1 for s in scores if s<60)
+                    quality_label = "🟢 High" if avg_score>=80 else "🟡 Medium" if avg_score>=60 else "🔴 Low"
+                else:
+                    avg_score = 0; high_q = mid_q = low_q = 0
+                    quality_label = "⚪ No data"
+
+                status_badge = "🟢 Active" if hw.get("status")=="active" else "🔴 Inactive"
+                col = info["color"]
+
+                # Due date check
+                due = hw.get("due_date","")
+                today_str = datetime.date.today().isoformat()
+                overdue = due < today_str if due else False
+                due_label = f"⚠️ Overdue ({due})" if overdue else f"📅 Due: {due}"
+
+                with st.expander(
+                    f"{info['emoji']} {hw_title[:50]} | {hw['subject']} {hw['grade']} | "
+                    f"{status_badge} | {sub_cnt} submission(s) | Avg: {avg_score}%"
+                ):
+                    # Header row
+                    st.markdown(f"""
+                    <div style='display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px'>
+                        <span style='background:{col}18;color:{col};padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700'>{info['emoji']} {hw['subject']}</span>
+                        <span style='background:{col}18;color:{col};padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700'>🏫 {hw['grade']}</span>
+                        <span style='background:{col}18;color:{col};padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700'>🎯 {hw['difficulty']}</span>
+                        <span style='background:{"#D1FAE5" if not overdue else "#FEE2E2"};
+                            color:{"#065F46" if not overdue else "#991B1B"};
+                            padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700'>{due_label}</span>
+                    </div>
+                    <div style='font-size:13px;color:#555;margin-bottom:6px'>
+                        👨‍🏫 Teacher: <b>{hw.get('teacher_name','?')}</b> | Created: {hw.get('created','')}
+                    </div>""", unsafe_allow_html=True)
+
+                    # Submission / Quality bar
+                    if sub_cnt > 0:
+                        st.markdown("#### 📊 Submission Analytics")
+                        cc1, cc2, cc3 = st.columns(3)
+                        with cc1:
+                            st.metric("📬 Submissions", sub_cnt)
+                        with cc2:
+                            st.metric("📈 Avg Score", f"{avg_score}%")
+                        with cc3:
+                            st.metric("🏅 Quality", quality_label)
+
+                        # Quality breakdown
+                        st.markdown(f"""
+                        <div style='margin:12px 0'>
+                            <div style='font-size:12px;font-weight:700;color:#1A1A2E;margin-bottom:6px'>Quality Distribution</div>
+                            <div style='display:flex;gap:4px;height:24px;border-radius:8px;overflow:hidden'>
+                                <div style='flex:{high_q};background:#059669' title='{high_q} Excellent (≥80%)'></div>
+                                <div style='flex:{mid_q};background:#F59E0B' title='{mid_q} Good (60-79%)'></div>
+                                <div style='flex:{low_q};background:#E8472A' title='{low_q} Needs Work (<60%)'></div>
+                                {"<div style='flex:1;background:#E5E7EB'></div>" if sub_cnt==0 else ""}
+                            </div>
+                            <div style='display:flex;gap:16px;font-size:11px;margin-top:5px'>
+                                <span>🟢 Excellent: {high_q}</span>
+                                <span>🟡 Good: {mid_q}</span>
+                                <span>🔴 Needs Work: {low_q}</span>
+                            </div>
+                        </div>""", unsafe_allow_html=True)
+
+                        st.markdown("#### 📬 Individual Submissions")
+                        for email, sub in sorted(subs.items(), key=lambda x: x[1].get("score_pct",0), reverse=True):
+                            sp   = sub.get("score_pct", 0)
+                            q_c  = "🟢" if sp>=80 else "🟡" if sp>=60 else "🔴"
+                            sub_time = sub.get("submitted_at","")
+                            # Timeliness check
+                            sub_day = sub_time[:10] if sub_time else ""
+                            on_time = sub_day <= due if sub_day and due else True
+                            time_label = "⏰ On time" if on_time else "⚠️ Late"
+                            st.markdown(f"""
+                            <div style='background:#F8F9FA;border-radius:10px;padding:10px 14px;
+                                margin-bottom:6px;border-left:3px solid {info["color"]};
+                                display:flex;justify-content:space-between;align-items:center;
+                                flex-wrap:wrap;gap:8px;color:#1A1A2E'>
+                                <div>
+                                    <b>{sub.get("student_name","?")}</b>
+                                    <span style='font-size:11px;color:#888;margin-left:8px'>{email}</span>
+                                </div>
+                                <div style='display:flex;gap:12px;font-size:12px;align-items:center'>
+                                    <span>{q_c} <b>{sp}%</b></span>
+                                    <span style='color:{"#059669" if on_time else "#E8472A"}'>{time_label}</span>
+                                    <span style='color:#aaa'>🕐 {sub_time}</span>
+                                </div>
+                            </div>""", unsafe_allow_html=True)
+                    else:
+                        st.info("⏳ No submissions yet for this assignment.")
+
+    # ── TAB 3: User Management ──────────────────────────────────
+    with tab_users:
+        st.markdown("### 👥 User Management")
+
+        total_u  = len(users)
+        stu_cnt  = len(students)
+        tea_cnt  = len(teachers)
+        adm_cnt  = sum(1 for d in users.values() if d.get("role")=="admin")
+
+        c1, c2, c3, c4 = st.columns(4)
+        with c1: st.metric("👥 Total Users", total_u)
+        with c2: st.metric("🎒 Students", stu_cnt)
+        with c3: st.metric("👨‍🏫 Teachers", tea_cnt)
+        with c4: st.metric("🔑 Admins", adm_cnt)
+
+        st.markdown("---")
+        role_filter = st.selectbox("Filter by Role", ["All","student","parent","teacher","admin"], key="admin_role_filter")
+        search_q    = st.text_input("🔍 Search by name or email", placeholder="Type to search...", key="admin_search")
+
+        for email, ud in sorted(users.items(), key=lambda x: x[1].get("joined",""), reverse=True):
+            if role_filter != "All" and ud.get("role") != role_filter:
+                continue
+            if search_q and search_q.lower() not in ud.get("name","").lower() and search_q.lower() not in email.lower():
+                continue
+
+            role_icon = {"student":"🎒","parent":"👨‍👩‍👦","teacher":"👨‍🏫","admin":"🔑"}.get(ud.get("role",""),"👤")
+            stats     = ud.get("stats",{})
+            last_login = ud.get("last_login","Never")
+            plan_icon = {"free":"⚪","basic":"🔵","premium":"🌟"}.get(ud.get("plan","free"),"⚪")
+
+            st.markdown(f"""
+            <div style='background:#fff;border-radius:12px;padding:12px 16px;
+                margin-bottom:8px;box-shadow:0 1px 6px rgba(0,0,0,0.05);
+                border-left:3px solid #E5E7EB;color:#1A1A2E;
+                display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px'>
+                <div style='display:flex;align-items:center;gap:12px'>
+                    <span style='font-size:24px'>{ud.get("avatar","👤")}</span>
+                    <div>
+                        <div style='font-weight:800;font-size:14px'>{ud.get("name","?")} {role_icon}</div>
+                        <div style='font-size:11px;color:#888'>{email} · {ud.get("grade","")} · Joined {ud.get("joined","")}</div>
+                    </div>
+                </div>
+                <div style='display:flex;gap:14px;font-size:12px;flex-wrap:wrap'>
+                    <div style='text-align:center'><div style='font-weight:800;color:#E8472A'>{stats.get("total",0)}</div><div style='color:#aaa'>Qs</div></div>
+                    <div style='text-align:center'><div style='font-weight:800;color:#2563EB'>{stats.get("quizzes_done",0)}</div><div style='color:#aaa'>Quizzes</div></div>
+                    <div style='text-align:center'><div style='font-weight:800;color:#F59E0B'>{stats.get("streak",0)}</div><div style='color:#aaa'>Streak</div></div>
+                    <div style='text-align:center;min-width:40px'>{plan_icon} <div style='color:#aaa'>{ud.get("plan","free")}</div></div>
+                </div>
+            </div>""", unsafe_allow_html=True)
+
+
+# ═════════════════════════════════════════════════════════════════
 # ROUTER
 # ═════════════════════════════════════════════════════════════════
 if not st.session_state.logged_in:
@@ -1789,3 +2385,5 @@ else:
     elif p == "history":  page_history()
     elif p == "badges":   page_badges()
     elif p == "profile":  page_profile()
+    elif p == "homework": page_homework()
+    elif p == "admin":    page_admin()

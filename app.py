@@ -188,6 +188,13 @@ def bump_stats(subject_field=None, extra_field=None):
     elif s.get("lastDate","") == yest:  s["streak"] = s.get("streak",0)+1
     else:                               s["streak"] = 1
     s["lastDate"] = today
+    # track study_dates for streak calendar
+    study_dates = s.get("study_dates", [])
+    if today not in study_dates:
+        study_dates.append(today)
+        # keep only last 60 days
+        study_dates = study_dates[-60:]
+    s["study_dates"] = study_dates
     # daily counter
     if s.get("dailyDate","") != today:
         s["dailyQs"]  = 0
@@ -771,56 +778,72 @@ def page_auth():
 def render_sidebar():
     u = st.session_state.user
     role_info = {
-        "student": ("🎒","Student",     "#27A862"),
-        "parent":  ("👨‍👩‍👦","Parent",    "#1A8C50"),
-        "teacher": ("👨‍🏫","Teacher",    "#C9A84C"),
-        "admin":   ("🛡️","Admin",       "#C0392B"),
+        "student": ("🎒", "Student",  "#27A862"),
+        "parent":  ("👨‍👩‍👦","Parent",  "#1A8C50"),
+        "teacher": ("👨‍🏫","Teacher", "#C9A84C"),
+        "admin":   ("🛡️", "Admin",    "#C0392B"),
     }
-    r_icon, r_label, r_color = role_info.get(u.get("role","student"),("👤","User","#27A862"))
+    r_icon, r_label, r_color = role_info.get(u.get("role","student"), ("👤","User","#27A862"))
+    role = u.get("role", "student")
 
     with st.sidebar:
+
+        # ── App logo lockup ────────────────────────────
+        st.markdown("""
+        <div style='display:flex;align-items:center;gap:10px;
+            padding:14px 14px 12px;border-bottom:1px solid rgba(201,168,76,0.18)'>
+            <div style='width:36px;height:36px;border-radius:10px;flex-shrink:0;
+                background:linear-gradient(135deg,#0D6E3F,#1A8C50);
+                display:flex;align-items:center;justify-content:center;font-size:20px;
+                box-shadow:0 3px 10px rgba(13,110,63,0.5)'>📚</div>
+            <div>
+                <div style='font-family:"Sora",sans-serif;font-weight:900;font-size:15px;
+                    color:#fff;letter-spacing:-.3px;line-height:1.1'>ZM Academy</div>
+                <div style='font-size:9px;color:rgba(201,168,76,0.7);font-weight:700;
+                    letter-spacing:.8px;text-transform:uppercase'>🇵🇰 Pakistan's #1 AI Tutor</div>
+            </div>
+        </div>""", unsafe_allow_html=True)
+
         # ── Profile card ──────────────────────────────
         st.markdown(f"""
-        <div style='padding:20px 12px 16px;margin-bottom:4px;
-            border-bottom:1px solid rgba(201,168,76,0.15)'>
-            <div style='position:relative;display:flex;flex-direction:column;align-items:center'>
-                <div style='width:68px;height:68px;border-radius:20px;
+        <div style='padding:14px 12px 14px;border-bottom:1px solid rgba(201,168,76,0.15)'>
+            <div style='display:flex;flex-direction:column;align-items:center'>
+                <div style='width:62px;height:62px;border-radius:18px;
                     background:linear-gradient(135deg,rgba(201,168,76,0.2),rgba(13,110,63,0.3));
                     display:flex;align-items:center;justify-content:center;
-                    font-size:38px;line-height:1;margin-bottom:10px;
-                    border:2px solid rgba(201,168,76,0.3);
-                    box-shadow:0 4px 20px rgba(0,0,0,0.3)'>
+                    font-size:34px;line-height:1;margin-bottom:8px;
+                    border:2px solid rgba(201,168,76,0.3);box-shadow:0 4px 20px rgba(0,0,0,0.3)'>
                     {u.get("avatar","👦")}
                 </div>
-                <div style='font-family:"Sora",sans-serif;font-weight:800;font-size:15px;
+                <div style='font-family:"Sora",sans-serif;font-weight:800;font-size:14px;
                     color:#fff;text-align:center;letter-spacing:-.3px'>{u["name"]}</div>
                 <div style='display:inline-flex;align-items:center;gap:5px;margin-top:5px;
                     background:rgba(255,255,255,0.07);border-radius:99px;
                     padding:3px 10px;border:1px solid rgba(201,168,76,0.2)'>
-                    <span style='font-size:12px'>{r_icon}</span>
+                    <span style='font-size:11px'>{r_icon}</span>
                     <span style='font-size:11px;font-weight:700;color:{r_color}'>{r_label}</span>
-                    {"<span style='font-size:10px;color:rgba(255,255,255,0.4)'>·</span><span style='font-size:11px;color:rgba(255,255,255,0.55);font-weight:600'>" + u.get("grade","") + "</span>" if u.get("grade") else ""}
+                    {"<span style='font-size:10px;color:rgba(255,255,255,0.35)'>·</span><span style='font-size:10px;color:rgba(255,255,255,0.5);font-weight:600'>" + u.get("grade","") + "</span>" if u.get("grade") else ""}
                 </div>
             </div>
-            <div style='display:flex;justify-content:center;gap:0;margin-top:14px;
-                background:rgba(0,0,0,0.25);border-radius:12px;
+            <div style='display:flex;justify-content:center;gap:0;margin-top:12px;
+                background:rgba(0,0,0,0.25);border-radius:10px;
                 border:1px solid rgba(201,168,76,0.12);overflow:hidden'>
-                <div style='flex:1;text-align:center;padding:9px 6px;
+                <div style='flex:1;text-align:center;padding:8px 4px;
                     border-right:1px solid rgba(201,168,76,0.1)'>
-                    <div style='font-family:"Sora",sans-serif;font-size:17px;font-weight:900;
+                    <div style='font-family:"Sora",sans-serif;font-size:16px;font-weight:900;
                         color:#E8C96A'>{u.get("stats",{}).get("total",0)}</div>
                     <div style='font-size:9px;color:rgba(255,255,255,0.4);
                         text-transform:uppercase;letter-spacing:.8px;font-weight:700'>Qs</div>
                 </div>
-                <div style='flex:1;text-align:center;padding:9px 6px;
+                <div style='flex:1;text-align:center;padding:8px 4px;
                     border-right:1px solid rgba(201,168,76,0.1)'>
-                    <div style='font-family:"Sora",sans-serif;font-size:17px;font-weight:900;
+                    <div style='font-family:"Sora",sans-serif;font-size:16px;font-weight:900;
                         color:#E8C96A'>{len(u.get("badges",[]))}</div>
                     <div style='font-size:9px;color:rgba(255,255,255,0.4);
                         text-transform:uppercase;letter-spacing:.8px;font-weight:700'>Badges</div>
                 </div>
-                <div style='flex:1;text-align:center;padding:9px 6px'>
-                    <div style='font-family:"Sora",sans-serif;font-size:17px;font-weight:900;
+                <div style='flex:1;text-align:center;padding:8px 4px'>
+                    <div style='font-family:"Sora",sans-serif;font-size:16px;font-weight:900;
                         color:#E8C96A'>{u.get("stats",{}).get("streak",0)}</div>
                     <div style='font-size:9px;color:rgba(255,255,255,0.4);
                         text-transform:uppercase;letter-spacing:.8px;font-weight:700'>Streak</div>
@@ -828,57 +851,65 @@ def render_sidebar():
             </div>
         </div>""", unsafe_allow_html=True)
 
-        role = u.get("role", "student")
-        cur  = st.session_state.page
+        cur = st.session_state.page
 
         def nav_btn(icon, label, key, uid=""):
-            """uid makes widget key unique when same page key appears in multiple role blocks."""
             btn_type = "primary" if cur == key else "secondary"
             if st.button(f"{icon}  {label}", key=f"nav_{key}{uid}",
                          use_container_width=True, type=btn_type):
                 st.session_state.page = key; st.rerun()
 
-        def section_label(text):
+        def section_label(text, color="rgba(201,168,76,0.65)"):
             st.markdown(
-                f"<div style='font-size:10px;font-weight:800;"
-                f"color:rgba(255,255,255,0.38);text-transform:uppercase;"
-                f"letter-spacing:1.2px;padding:12px 4px 3px'>  {text}</div>",
+                f"<div style='font-size:9.5px;font-weight:800;color:{color};"
+                f"text-transform:uppercase;letter-spacing:1.4px;"
+                f"padding:14px 4px 4px;margin-top:2px;"
+                f"border-top:1px solid rgba(255,255,255,0.06)'>{text}</div>",
                 unsafe_allow_html=True
             )
 
-        # ── DASHBOARD ────────────────────────────────────────────
-        section_label("📊 Dashboard")
+        # ══ ROLE-BASED NAV ════════════════════════════
+        # Every role sees Dashboard + their own section + Account
+        # ── DASHBOARD (all) ──────────────────────────
+        section_label("📊  Dashboard")
         nav_btn("🏠", "Home",            "home")
         nav_btn("📚", "Syllabus",        "syllabus")
         nav_btn("🎨", "Image Generator", "image")
         nav_btn("📈", "My Progress",     "progress")
 
-        # ── STUDENT ───────────────────────────────────────────
-        section_label("🎒 Student")
-        nav_btn("💬", "Chat Tutor",    "chat",    "_s")
-        nav_btn("📝", "Practice Quiz", "quiz")
-        nav_btn("👥", "Friendz Quiz",  "friends")
-        nav_btn("🕐", "Chat History",  "history", "_s")
-        nav_btn("🏆", "Badges",        "badges")
+        # ── STUDENT / PARENT ─────────────────────────
+        if role in ("student", "parent"):
+            section_label("🎒  Student")
+            nav_btn("💬", "Chat Tutor",    "chat",    "_s")
+            nav_btn("📝", "Practice Quiz", "quiz")
+            nav_btn("👥", "Friendz Quiz",  "friends")
+            nav_btn("🕐", "Chat History",  "history", "_s")
+            nav_btn("🏆", "Badges",        "badges")
 
-        # ── TEACHER ───────────────────────────────────────────
-        section_label("👨‍🏫 Teacher")
-        nav_btn("📋", "Create Homework",     "homework", "_t")
-        nav_btn("📊", "Student Performance", "admin",    "_t")
-        nav_btn("💬", "Chat Tutor",          "chat",     "_t")
+        # ── TEACHER ──────────────────────────────────
+        if role == "teacher":
+            section_label("👨‍🏫  Teacher", "#C9A84C")
+            nav_btn("📋", "Create Homework",     "homework", "_t")
+            nav_btn("💬", "Chat Tutor",          "chat",     "_t")
+            nav_btn("📊", "Student Performance", "admin",    "_t")
+            nav_btn("🏆", "Badges",              "badges",   "_t")
 
-        # ── ADMIN ─────────────────────────────────────────────
-        section_label("🛡️ Admin")
-        nav_btn("📊", "Student Performance", "admin",    "_a")
-        nav_btn("🕐", "Chat History",        "history",  "_a")
-        nav_btn("📋", "Homework Tracker",    "homework", "_a")
-        nav_btn("💬", "Chat Tutor",          "chat",     "_a")
+        # ── ADMIN ────────────────────────────────────
+        if role == "admin":
+            section_label("🛡️  Admin", "#E87070")
+            nav_btn("📊", "Student Performance", "admin",    "_a")
+            nav_btn("🕐", "Chat History",        "history",  "_a")
+            nav_btn("📋", "Homework Tracker",    "homework", "_a")
+            nav_btn("💬", "Chat Tutor",          "chat",     "_a")
 
-        # ── ACCOUNT ───────────────────────────────────────────
-        section_label("👤 Account")
+        # ── ACCOUNT ──────────────────────────────────
+        section_label("👤  Account")
         nav_btn("👤", "Profile", "profile")
 
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+        # ── LOGOUT (visually separated) ───────────────
+        st.markdown("""
+        <div style='margin:16px 0 4px;border-top:1px solid rgba(255,255,255,0.08);
+            padding-top:12px'></div>""", unsafe_allow_html=True)
         if st.button("🚪  Logout", key="logout_btn", use_container_width=True):
             for k in list(st.session_state.keys()): del st.session_state[k]
             st.rerun()
@@ -888,11 +919,13 @@ def render_sidebar():
 # HOME PAGE
 # ─────────────────────────────────────────────────────────────────
 def page_home():
-    u   = st.session_state.user
-    sub = st.session_state.subject
-    col = SUBJECTS.get(sub, SUBJECTS["Maths"])["color"]
-    h   = datetime.datetime.now().hour
+    u     = st.session_state.user
+    sub   = st.session_state.subject
+    col   = SUBJECTS.get(sub, SUBJECTS["Maths"])["color"]
+    h     = datetime.datetime.now().hour
     greet = "Good morning" if h < 12 else "Good afternoon" if h < 17 else "Good evening"
+    role  = u.get("role", "student")
+    stats = u.get("stats", {})
 
     # ── Onboarding for new users ──────────────────────────────
     if u.get("is_new") and not st.session_state.get("onboarding_done"):
@@ -946,78 +979,78 @@ def page_home():
                 st.session_state.onboarding_done = True; st.rerun()
         return
 
-    # ── Hero banner ───────────────────────────────────────────
+    # ── Hero banner with dynamic quote ───────────────────────
+    streak = stats.get("streak", 0)
+    streak_fire = "🔥" * min(streak, 5) if streak > 0 else ""
+    quotes = [
+        ("علم حاصل کرنا ہر مسلمان پر فرض ہے", "Seeking knowledge is an obligation upon every Muslim"),
+        ("محنت کا پھل میٹھا ہوتا ہے", "The fruit of hard work is always sweet"),
+        ("آج کی محنت کل کی کامیابی ہے", "Today's effort is tomorrow's success"),
+        ("ہر مشکل کے بعد آسانی ہے", "After every difficulty comes ease"),
+        ("علم روشنی ہے", "Knowledge is light"),
+    ]
+    q_urdu, q_eng = quotes[datetime.date.today().toordinal() % len(quotes)]
+
     st.markdown(f"""
-    <div style='background:linear-gradient(135deg,#061A0E 0%,#0D6E3F 50%,#0A5A32 100%);
-        border-radius:20px;padding:24px 26px;margin-bottom:20px;color:#fff;
-        border:1px solid rgba(201,168,76,0.2);
-        box-shadow:0 8px 32px rgba(6,26,14,0.25);position:relative;overflow:hidden'>
-        <div style='position:absolute;top:-30px;right:-30px;width:160px;height:160px;
-            border-radius:50%;background:radial-gradient(circle,rgba(201,168,76,0.15),transparent 70%)'></div>
-        <div style='position:absolute;bottom:-20px;left:20px;width:100px;height:100px;
-            border-radius:50%;background:radial-gradient(circle,rgba(39,168,98,0.15),transparent 70%)'></div>
-        <div style='display:flex;align-items:center;gap:18px;position:relative'>
-            <div style='width:64px;height:64px;border-radius:18px;
+    <div style='background:linear-gradient(135deg,#061A0E 0%,#0D6E3F 55%,#0A5A32 100%);
+        border-radius:20px;padding:22px 24px;margin-bottom:16px;color:#fff;
+        border:1px solid rgba(201,168,76,0.2);box-shadow:0 8px 32px rgba(6,26,14,0.25);
+        position:relative;overflow:hidden'>
+        <div style='position:absolute;top:-30px;right:-30px;width:150px;height:150px;border-radius:50%;
+            background:radial-gradient(circle,rgba(201,168,76,0.18),transparent 70%)'></div>
+        <div style='position:absolute;bottom:-20px;left:10px;width:90px;height:90px;border-radius:50%;
+            background:radial-gradient(circle,rgba(39,168,98,0.15),transparent 70%)'></div>
+        <div style='display:flex;align-items:center;gap:16px;position:relative;margin-bottom:14px'>
+            <div style='width:58px;height:58px;border-radius:16px;flex-shrink:0;
                 background:rgba(255,255,255,0.1);display:flex;align-items:center;
-                justify-content:center;font-size:36px;flex-shrink:0;
-                border:1.5px solid rgba(201,168,76,0.3)'>
-                {u.get('avatar','👦')}</div>
-            <div>
-                <div style='font-family:"Sora",sans-serif;font-size:22px;font-weight:900;
+                justify-content:center;font-size:32px;border:1.5px solid rgba(201,168,76,0.3)'>
+                {u.get("avatar","👦")}</div>
+            <div style='flex:1'>
+                <div style='font-family:"Sora",sans-serif;font-size:20px;font-weight:900;
                     letter-spacing:-.5px;line-height:1.2'>
-                    {greet}, {u['name'].split()[0]}! 👋</div>
-                <div style='font-size:13px;opacity:.75;margin-top:5px;font-weight:500'>
-                    🇵🇰 Pakistan's #1 AI Study Platform &nbsp;·&nbsp; Ready to learn today?</div>
+                    {greet}, {u["name"].split()[0]}! {streak_fire or "👋"}</div>
+                <div style='font-size:12px;opacity:.7;margin-top:4px;font-weight:500'>
+                    🇵🇰 Pakistan's #1 AI Study Platform
+                    {"&nbsp;·&nbsp;🔥 " + str(streak) + "-day streak!" if streak > 1 else ""}
+                </div>
             </div>
+        </div>
+        <div style='background:rgba(0,0,0,0.2);border-radius:10px;padding:10px 14px;
+            border-left:3px solid rgba(201,168,76,0.5);position:relative'>
+            <div style='font-size:13px;font-weight:700;color:#E8C96A;margin-bottom:2px'>{q_urdu}</div>
+            <div style='font-size:11px;opacity:.65;font-style:italic'>{q_eng}</div>
         </div>
     </div>""", unsafe_allow_html=True)
 
-    stats = u.get("stats", {})
-    if stats.get("lastDate","") != datetime.date.today().isoformat():
+    today_str = datetime.date.today().isoformat()
+    if stats.get("lastDate","") != today_str:
         st.markdown("""<div class='reminder'>🔔 <b>Daily Reminder:</b> You haven't studied today! Even 15 minutes makes a difference 💪</div>""", unsafe_allow_html=True)
 
-    # ── Stats row ─────────────────────────────────────────────
-    c1,c2,c3,c4 = st.columns(4)
-    for col_w, icon, val, lbl, accent in [
-        (c1,"❓", stats.get("total",0),          "Questions", "#0D6E3F"),
-        (c2,"🔥", f"{stats.get('streak',0)}d",   "Streak",    "#C0392B"),
-        (c3,"🏆", len(u.get("badges",[])),        "Badges",    "#C9A84C"),
-        (c4,"📝", stats.get("quizzes_done",0),    "Quizzes",   "#1A56C4"),
-    ]:
-        with col_w:
+    # ── 7-Day Streak Calendar ─────────────────────────────────
+    study_dates = set(stats.get("study_dates", []))
+    today = datetime.date.today()
+    day_labels = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]
+    cols_7 = st.columns(7)
+    for i in range(7):
+        day = today - datetime.timedelta(days=6-i)
+        day_str = day.isoformat()
+        studied = day_str in study_dates
+        is_today = (day == today)
+        bg  = "#0D6E3F" if studied else ("rgba(201,168,76,0.15)" if is_today else "rgba(255,255,255,0.04)")
+        bdr = "#E8C96A" if is_today else ("#0D6E3F" if studied else "rgba(255,255,255,0.08)")
+        icon = "✅" if studied else ("📍" if is_today else "⬜")
+        with cols_7[i]:
             st.markdown(f"""
-            <div class='stat-card'>
-                <div style='font-size:22px;margin-bottom:4px'>{icon}</div>
-                <div style='font-family:"Sora",sans-serif;font-size:26px;font-weight:900;
-                    color:{accent};line-height:1'>{val}</div>
-                <div class='stat-lbl'>{lbl}</div>
+            <div style='background:var(--surface);border:1.5px solid {bdr};
+                border-radius:10px;padding:8px 4px;text-align:center;
+                box-shadow:{"0 3px 12px rgba(13,110,63,0.2)" if studied else "none"}'>
+                <div style='font-size:14px'>{icon}</div>
+                <div style='font-size:9px;font-weight:800;color:{"#0D6E3F" if studied else ("#C9A84C" if is_today else "#7A9A7A")};
+                    text-transform:uppercase;letter-spacing:.5px;margin-top:2px'>{day_labels[day.weekday()]}</div>
+                <div style='font-size:8px;color:#7A9A7A;margin-top:1px'>{day.day}</div>
             </div>""", unsafe_allow_html=True)
 
-    st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
-
-    # ── Quick access features ─────────────────────────────────
-    st.markdown(f"""<div style='font-family:"Sora",sans-serif;font-size:16px;font-weight:800;
-        color:#0D1F0D;margin-bottom:12px;letter-spacing:-.3px'>⚡ Quick Access</div>""",
-        unsafe_allow_html=True)
-    fa, fb, fc, fd = st.columns(4)
-    for col_w, icon, label, page, g, accent in [
-        (fa,"💬","Chat Tutor",    "chat",    "#0D6E3F","#27A862"),
-        (fb,"📝","Practice Quiz", "quiz",    "#0A2F6B","#1A56C4"),
-        (fc,"👥","Friendz Quiz",  "friends", "#4A0D6B","#7C3AED"),
-        (fd,"🎨","Image Gen",     "image",   "#7A5C00","#C9A84C"),
-    ]:
-        with col_w:
-            st.markdown(f"""
-            <div style='background:linear-gradient(135deg,{g}12,{g}06);
-                border:1.5px solid {g}25;border-radius:16px;
-                padding:16px 10px;text-align:center;
-                transition:box-shadow .2s;'>
-                <div style='font-size:26px;margin-bottom:6px'>{icon}</div>
-                <div style='font-size:11px;font-weight:800;color:{accent};
-                    text-transform:uppercase;letter-spacing:.5px'>{label}</div>
-            </div>""", unsafe_allow_html=True)
-            if st.button(f"Open {label}", key=f"home_go_{page}", use_container_width=True):
-                st.session_state.page = page; st.rerun()
+    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
     # ── Word of the Day ───────────────────────────────────────
     if not st.session_state.wod_loaded:
@@ -1044,17 +1077,154 @@ def page_home():
     if st.session_state.word_of_day:
         w = st.session_state.word_of_day
         st.markdown(f"""
-        <div class='word-card'>
-            <div style='font-size:11px;font-weight:800;opacity:.5;text-transform:uppercase;
+        <div class='word-card' style='margin-bottom:16px'>
+            <div style='font-size:10px;font-weight:800;opacity:.5;text-transform:uppercase;
                 letter-spacing:1px;margin-bottom:8px'>📖 Word of the Day</div>
             <div style='display:flex;align-items:baseline;gap:12px;flex-wrap:wrap'>
-                <span style='font-family:"Baloo 2",cursive;font-size:26px;font-weight:800;color:#FFD700'>{w.get('word','')}</span>
-                <span style='font-size:13px;opacity:.65'>— {w.get('urdu','')}</span>
+                <span style='font-family:"Sora",sans-serif;font-size:24px;font-weight:900;color:#E8C96A'>{w.get("word","")}</span>
+                <span style='font-size:13px;opacity:.6'>— {w.get("urdu","")}</span>
             </div>
-            <div style='font-size:13px;opacity:.75;margin-top:6px'>{w.get('meaning','')}</div>
-            <div style='font-size:12px;opacity:.55;margin-top:4px;font-style:italic'>"{w.get('example','')}"</div>
-            <div style='font-size:11px;color:#FFD700;margin-top:6px'>💡 {w.get('tip','')}</div>
+            <div style='font-size:13px;opacity:.75;margin-top:6px'>{w.get("meaning","")}</div>
+            <div style='font-size:12px;opacity:.5;margin-top:4px;font-style:italic'>"{w.get("example","")}"</div>
+            <div style='font-size:11px;color:#E8C96A;margin-top:6px'>💡 {w.get("tip","")}</div>
         </div>""", unsafe_allow_html=True)
+
+    # ── Stats row with goal bars ──────────────────────────────
+    total_q   = stats.get("total", 0)
+    streak_v  = stats.get("streak", 0)
+    badges_v  = len(u.get("badges", []))
+    quizzes_v = stats.get("quizzes_done", 0)
+
+    # Goal thresholds
+    goals = {"q": 50, "streak": 7, "badges": 11, "quiz": 10}
+    c1,c2,c3,c4 = st.columns(4)
+    for col_w, icon, val, lbl, accent, pct in [
+        (c1,"❓", total_q,             "Questions",  "#0D6E3F", min(100, int(total_q/goals["q"]*100))),
+        (c2,"🔥", f"{streak_v}d",      "Streak",     "#C0392B", min(100, int(streak_v/goals["streak"]*100))),
+        (c3,"🏆", badges_v,            "Badges",     "#C9A84C", min(100, int(badges_v/goals["badges"]*100))),
+        (c4,"📝", quizzes_v,           "Quizzes",    "#1A56C4", min(100, int(quizzes_v/goals["quiz"]*100))),
+    ]:
+        with col_w:
+            st.markdown(f"""
+            <div class='stat-card'>
+                <div style='font-size:20px;margin-bottom:3px'>{icon}</div>
+                <div style='font-family:"Sora",sans-serif;font-size:24px;font-weight:900;
+                    color:{accent};line-height:1'>{val}</div>
+                <div class='stat-lbl'>{lbl}</div>
+                <div style='background:rgba(13,110,63,0.08);border-radius:99px;height:5px;
+                    overflow:hidden;margin-top:8px'>
+                    <div style='width:{pct}%;height:100%;border-radius:99px;background:{accent};
+                        transition:width .6s'></div>
+                </div>
+                <div style='font-size:9px;color:#7A9A7A;margin-top:3px;font-weight:700'>{pct}% goal</div>
+            </div>""", unsafe_allow_html=True)
+
+    st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
+
+    # ── Upcoming Homework (student / parent only) ─────────────
+    if role in ("student","parent"):
+        homework = load_json(HOMEWORK_FILE)
+        upcoming = []
+        for hw in homework.values():
+            try:
+                due = datetime.date.fromisoformat(hw.get("due_date",""))
+                days_left = (due - datetime.date.today()).days
+                if 0 <= days_left <= 7:
+                    upcoming.append({**hw, "days_left": days_left})
+            except: pass
+        upcoming.sort(key=lambda x: x["days_left"])
+        if upcoming:
+            st.markdown(f"""<div style='font-family:"Sora",sans-serif;font-size:15px;font-weight:800;
+                color:#0D1F0D;margin-bottom:10px;letter-spacing:-.3px'>📅 Upcoming Homework</div>""",
+                unsafe_allow_html=True)
+            for hw in upcoming[:3]:
+                dl = hw["days_left"]
+                dl_color = "#C0392B" if dl == 0 else "#E8770A" if dl <= 2 else "#0D6E3F"
+                dl_label = "Due Today!" if dl == 0 else f"Due in {dl} day{'s' if dl!=1 else ''}"
+                subj_info = SUBJECTS.get(hw.get("subject","Maths"), {"emoji":"📚","color":"#0D6E3F"})
+                st.markdown(f"""
+                <div style='background:#fff;border:1.5px solid #E2EAE2;border-radius:12px;
+                    padding:11px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;
+                    box-shadow:0 2px 8px rgba(13,110,63,0.05)'>
+                    <div style='font-size:24px;flex-shrink:0'>{subj_info["emoji"]}</div>
+                    <div style='flex:1;min-width:0'>
+                        <div style='font-weight:800;font-size:13px;color:#0D1F0D;
+                            white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>
+                            {hw.get("data",{}).get("title", hw.get("topic","Homework"))}</div>
+                        <div style='font-size:11px;color:#7A9A7A;margin-top:1px'>
+                            {hw.get("subject","")} · {hw.get("grade","")}</div>
+                    </div>
+                    <span style='background:{dl_color}15;color:{dl_color};
+                        border:1px solid {dl_color}30;border-radius:99px;
+                        padding:3px 9px;font-size:10px;font-weight:800;white-space:nowrap'>
+                        {dl_label}</span>
+                </div>""", unsafe_allow_html=True)
+            st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+
+    # ── Continue Last Chat shortcut ───────────────────────────
+    hist = load_json(HISTORY_FILE)
+    user_hist = hist.get(u["email"], [])
+    if user_hist:
+        last = user_hist[-1]
+        last_sub  = last.get("subject", "")
+        last_msgs = last.get("messages", [])
+        if last_msgs:
+            last_q = next((m["content"][:55] for m in reversed(last_msgs) if m["role"]=="user"), "")
+            if last_q:
+                st.markdown(f"""
+                <div style='background:linear-gradient(135deg,rgba(13,110,63,0.06),rgba(13,110,63,0.02));
+                    border:1.5px solid rgba(13,110,63,0.15);border-radius:12px;
+                    padding:11px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px'>
+                    <div style='font-size:20px'>💬</div>
+                    <div style='flex:1;min-width:0'>
+                        <div style='font-size:10px;font-weight:800;color:#0D6E3F;
+                            text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px'>
+                            Continue last chat · {last_sub}</div>
+                        <div style='font-size:12px;color:#3D5C3D;font-weight:600;
+                            white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>
+                            "{last_q}{"..." if len(last_q)==55 else ""}"</div>
+                    </div>
+                </div>""", unsafe_allow_html=True)
+                if st.button("▶  Continue Chat", key="home_continue_chat", use_container_width=False):
+                    st.session_state.page = "chat"; st.rerun()
+                st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+
+    # ── Quick Access (full-card buttons) ──────────────────────
+    st.markdown(f"""<div style='font-family:"Sora",sans-serif;font-size:15px;font-weight:800;
+        color:#0D1F0D;margin-bottom:10px;letter-spacing:-.3px'>⚡ Quick Access</div>""",
+        unsafe_allow_html=True)
+
+    qa_items = [
+        ("💬","Chat Tutor",    "chat",    "#0D6E3F", "#27A862"),
+        ("📝","Practice Quiz", "quiz",    "#0A2F6B", "#1A56C4"),
+        ("👥","Friendz Quiz",  "friends", "#4A0D6B", "#7C3AED"),
+        ("🎨","Image Gen",     "image",   "#7A5C00", "#C9A84C"),
+    ]
+    qa_cols = st.columns(4)
+    for col_w, (icon, label, page, g, accent) in zip(qa_cols, qa_items):
+        with col_w:
+            # Use a styled button that fills the visual card
+            is_active = (st.session_state.page == page)
+            if st.button(
+                f"{icon}\n{label}",
+                key=f"home_go_{page}",
+                use_container_width=True,
+                type="primary" if is_active else "secondary",
+            ):
+                st.session_state.page = page; st.rerun()
+
+    # ── Inject card-style CSS for Quick Access buttons ────────
+    st.markdown("""
+    <style>
+    div[data-testid="stHorizontalBlock"] .stButton > button {
+        min-height: 80px !important;
+        font-size: 13px !important;
+        white-space: pre-line !important;
+        line-height: 1.5 !important;
+        border-radius: 14px !important;
+        font-weight: 800 !important;
+    }
+    </style>""", unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────

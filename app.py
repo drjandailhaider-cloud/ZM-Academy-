@@ -487,7 +487,7 @@ def page_auth():
             with st.form("signup_form"):
                 name   = st.text_input("👤 Full Name", placeholder="Ahmed Khan")
                 email2 = st.text_input("📧 Email", placeholder="you@example.com")
-                role   = st.selectbox("👥 I am a", ["Student 🎒","Parent 👨‍👩‍👦"])
+                role   = st.selectbox("👥 I am a", ["Student 🎒","Parent 👨‍👩‍👦","Teacher 👨‍🏫","Admin 🛡️"])
                 avatar = st.selectbox("🧑 Choose Avatar", list(AVATARS.keys()))
                 grade  = st.selectbox("🏫 Grade", ["-- Select --"]+LEVELS)
                 pw     = st.text_input("🔒 Password", type="password", placeholder="Min 6 characters")
@@ -502,7 +502,10 @@ def page_auth():
                         new_user = {
                             "name": name.strip(), "email": email2.strip(),
                             "password": hash_pw(pw),
-                            "role": "student" if "Student" in role else "parent",
+                            "role": ("student"  if "Student" in role
+                                     else "parent"  if "Parent"  in role
+                                     else "teacher" if "Teacher" in role
+                                     else "admin"),
                             "avatar": AVATARS[avatar],
                             "grade": grade if grade != "-- Select --" else "Grade 6",
                             "joined": datetime.date.today().isoformat(),
@@ -549,7 +552,11 @@ def render_sidebar():
             </div>
             <div style='font-weight:800;font-size:16px;color:#fff;text-align:center'>{u["name"]}</div>
             <div style='font-size:12px;color:rgba(255,255,255,0.6);margin-top:3px;text-align:center'>
-                {"🎒 Student" if u.get("role")=="student" else "👨‍👩‍👦 Parent"}
+                {"🎒 Student"  if u.get("role")=="student"
+                 else "👨‍👩‍👦 Parent"  if u.get("role")=="parent"
+                 else "👨‍🏫 Teacher" if u.get("role")=="teacher"
+                 else "🛡️ Admin"    if u.get("role")=="admin"
+                 else "👤 User"}
                 {"&nbsp;•&nbsp;" + u.get("grade","") if u.get("grade","") else ""}
             </div>
             <div style='display:flex;justify-content:center;gap:16px;margin-top:10px'>
@@ -568,25 +575,58 @@ def render_sidebar():
             </div>
         </div>""", unsafe_allow_html=True)
 
-        nav = [
-            ("🏠","Home",            "home"),
-            ("💬","Chat Tutor",      "chat"),
-            ("📚","My Syllabus",     "syllabus"),
-            ("📝","Practice Quiz",   "quiz"),
-            ("👥","Friends Quiz",    "friends"),
-            ("🎨","Image Generator", "image"),
-            ("📋","Homework",        "homework"),
-            ("📊","My Progress",     "progress"),
-            ("🕐","Chat History",    "history"),
-            ("🏆","Badges",          "badges"),
-            ("👤","Profile",         "profile"),
-        ]
-        cur = st.session_state.page
-        for icon, label, key in nav:
+        role = u.get("role", "student")
+        cur  = st.session_state.page
+
+        def nav_btn(icon, label, key):
             btn_type = "primary" if cur == key else "secondary"
             if st.button(f"{icon}  {label}", key=f"nav_{key}",
                          use_container_width=True, type=btn_type):
                 st.session_state.page = key; st.rerun()
+
+        def section_label(text):
+            st.markdown(
+                f"<div style='font-size:10px;font-weight:800;color:rgba(255,255,255,0.35);"
+                f"text-transform:uppercase;letter-spacing:1.2px;"
+                f"padding:10px 4px 4px'>  {text}</div>",
+                unsafe_allow_html=True
+            )
+
+        # ── DASHBOARD (all roles) ──────────────────
+        section_label("📊 Dashboard")
+        nav_btn("🏠", "Home",        "home")
+        nav_btn("📚", "Syllabus",    "syllabus")
+
+        # ── STUDENT SECTION ────────────────────────
+        if role in ("student", "parent"):
+            section_label("🎒 Student")
+            nav_btn("💬", "Chat Tutor",    "chat")
+            nav_btn("📝", "Practice Quiz", "quiz")
+            nav_btn("👥", "Friendz Quiz",  "friends")
+            nav_btn("🎨", "Image Gen",     "image")
+            nav_btn("📊", "My Progress",   "progress")
+            nav_btn("🕐", "Chat History",  "history")
+            nav_btn("🏆", "Badges",        "badges")
+
+        # ── TEACHER SECTION ────────────────────────
+        if role == "teacher":
+            section_label("👨‍🏫 Teacher")
+            nav_btn("📋", "Create Homework",      "homework")
+            nav_btn("📊", "Student Performance",  "admin")
+            nav_btn("💬", "Chat Tutor",           "chat")
+            nav_btn("🎨", "Image Gen",            "image")
+
+        # ── ADMIN SECTION ──────────────────────────
+        if role == "admin":
+            section_label("🛡️ Admin")
+            nav_btn("📊", "Student Performance", "admin")
+            nav_btn("🕐", "Chat History",        "history")
+            nav_btn("📋", "Homework Tracker",    "homework")
+            nav_btn("💬", "Chat Tutor",          "chat")
+
+        # ── ACCOUNT (all roles) ────────────────────
+        section_label("👤 Account")
+        nav_btn("👤", "Profile", "profile")
 
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
         if st.button("🚪  Logout", key="logout_btn", use_container_width=True):
@@ -1730,7 +1770,11 @@ def page_profile():
         <div style='padding:10px 0;color:#1A1A2E'>
             <div style='font-family:"Baloo 2",cursive;font-size:22px;font-weight:800'>{u['name']}</div>
             <div style='font-size:13px;color:#999;margin-top:4px'>
-                {'🎒 Student' if u.get('role')=='student' else '👨‍👩‍👦 Parent'} • {u.get('grade','')}
+                {'🎒 Student'  if u.get('role')=='student'
+                 else '👨‍👩‍👦 Parent'  if u.get('role')=='parent'
+                 else '👨‍🏫 Teacher' if u.get('role')=='teacher'
+                 else '🛡️ Admin'    if u.get('role')=='admin'
+                 else '👤 User'} • {u.get('grade','')}
             </div>
             <div style='font-size:12px;color:#bbb;margin-top:2px'>📧 {u['email']}</div>
             <div style='font-size:12px;color:#bbb;margin-top:2px'>📅 Joined {u.get('joined','')}</div>
@@ -1774,7 +1818,7 @@ def page_profile():
 # ═════════════════════════════════════════════════════════════════
 def page_homework():
     u = st.session_state.user
-    st.markdown("<div class='section-header'>📋 Homework Generator</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-header'>📋 Create Homework</div>", unsafe_allow_html=True)
 
     st.markdown("""
     <div style='background:#EFF4FF;border-radius:14px;padding:14px 18px;
@@ -2014,6 +2058,403 @@ def page_homework():
 
 
 # ═════════════════════════════════════════════════════════════════
+# ADMIN DASHBOARD
+# ═════════════════════════════════════════════════════════════════
+def page_admin():
+    st.markdown("<div class='section-header orange'>🛡️ Admin Dashboard</div>", unsafe_allow_html=True)
+
+    users    = load_json(USERS_FILE)
+    homework = load_json(HOMEWORK_FILE)
+
+    students  = {e: d for e, d in users.items() if d.get("role") not in ("admin",)}
+    all_hw    = list(homework.values())
+
+    tab_perf, tab_hw = st.tabs([
+        "📊 Student Performance Analytics",
+        "📋 Homework Tracking",
+    ])
+
+    # ═══════════════════════════════════════════════
+    # TAB 1 — STUDENT PERFORMANCE ANALYTICS
+    # ═══════════════════════════════════════════════
+    with tab_perf:
+
+        # ── Platform Overview Cards ────────────────
+        st.markdown("### 📊 Platform Overview")
+        total_students  = len(students)
+        total_questions = sum(d.get("stats",{}).get("total",0)     for d in students.values())
+        total_quizzes   = sum(d.get("stats",{}).get("quizzes_done",0) for d in students.values())
+        avg_streak      = (sum(d.get("stats",{}).get("streak",0) for d in students.values())
+                           / max(total_students, 1))
+
+        c1, c2, c3, c4 = st.columns(4)
+        for col_w, icon, val, lbl, color in [
+            (c1, "🎒", total_students,       "Total Users",      "#2563EB"),
+            (c2, "❓", total_questions,      "Questions Asked",  "#E8472A"),
+            (c3, "📝", total_quizzes,        "Quizzes Done",     "#7C3AED"),
+            (c4, "🔥", f"{avg_streak:.1f}d", "Avg Streak",       "#F59E0B"),
+        ]:
+            with col_w:
+                st.markdown(f"""
+                <div style='background:#fff;border-radius:14px;padding:18px 14px;text-align:center;
+                    box-shadow:0 2px 12px rgba(0,0,0,0.07);border-top:4px solid {color}'>
+                    <div style='font-size:26px'>{icon}</div>
+                    <div style='font-size:26px;font-weight:900;color:{color};margin:4px 0'>{val}</div>
+                    <div style='font-size:11px;color:#999;font-weight:700'>{lbl}</div>
+                </div>""", unsafe_allow_html=True)
+
+        st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+
+        # ── Top 10 Leaderboard ─────────────────────
+        st.markdown("### 🏆 Top 10 Students — Engagement Leaderboard")
+
+        sorted_users = sorted(
+            students.items(),
+            key=lambda x: (
+                x[1].get("stats",{}).get("total",0)
+                + x[1].get("stats",{}).get("quizzes_done",0) * 3
+                + x[1].get("stats",{}).get("streak",0) * 2
+                + len(x[1].get("badges",[])) * 5
+            ),
+            reverse=True
+        )
+
+        rank_icons  = ["🥇","🥈","🥉"] + [f"{i+1}️⃣" for i in range(3,10)]
+        max_score   = max(
+            (s.get("stats",{}).get("total",0)
+             + s.get("stats",{}).get("quizzes_done",0)*3
+             + s.get("stats",{}).get("streak",0)*2
+             + len(s.get("badges",[]))*5
+             for _,s in sorted_users[:1]),
+            default=1
+        )
+
+        for i, (email, ud) in enumerate(sorted_users[:10]):
+            stats   = ud.get("stats", {})
+            qs      = stats.get("total", 0)
+            quizzes = stats.get("quizzes_done", 0)
+            streak  = stats.get("streak", 0)
+            badges  = len(ud.get("badges", []))
+            score   = qs + quizzes*3 + streak*2 + badges*5
+            bar_pct = min(int((score / max(max_score, 1)) * 100), 100)
+            bar_col = "#FFD700" if i < 3 else "#6366F1"
+            top_subj = max(
+                [(s, stats.get(s,0)) for s in SUBJECTS],
+                key=lambda x: x[1], default=("—", 0)
+            )
+            grade = ud.get("grade","")
+
+            st.markdown(f"""
+            <div style='background:#fff;border-radius:14px;padding:14px 18px;
+                margin-bottom:10px;box-shadow:0 2px 10px rgba(0,0,0,0.06);
+                border-left:5px solid {"#FFD700" if i<3 else "#E0E7FF"};color:#1A1A2E'>
+                <div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px'>
+                    <div style='display:flex;align-items:center;gap:12px'>
+                        <span style='font-size:24px'>{rank_icons[i]}</span>
+                        <div>
+                            <div style='font-weight:800;font-size:15px'>
+                                {ud.get("avatar","👤")} {ud.get("name","?")}
+                            </div>
+                            <div style='font-size:11px;color:#aaa'>{grade} &nbsp;·&nbsp; {email}</div>
+                        </div>
+                    </div>
+                    <div style='display:flex;gap:18px;font-size:12px;flex-wrap:wrap'>
+                        <div style='text-align:center'>
+                            <div style='font-weight:900;font-size:17px;color:#E8472A'>{qs}</div>
+                            <div style='color:#bbb'>Qs</div>
+                        </div>
+                        <div style='text-align:center'>
+                            <div style='font-weight:900;font-size:17px;color:#2563EB'>{quizzes}</div>
+                            <div style='color:#bbb'>Quizzes</div>
+                        </div>
+                        <div style='text-align:center'>
+                            <div style='font-weight:900;font-size:17px;color:#F59E0B'>{streak}d</div>
+                            <div style='color:#bbb'>Streak</div>
+                        </div>
+                        <div style='text-align:center'>
+                            <div style='font-weight:900;font-size:17px;color:#7C3AED'>{badges}</div>
+                            <div style='color:#bbb'>Badges</div>
+                        </div>
+                    </div>
+                </div>
+                <div style='margin-top:10px'>
+                    <div style='display:flex;justify-content:space-between;
+                        font-size:11px;color:#bbb;margin-bottom:4px'>
+                        <span>🏅 Top subject: {SUBJECTS.get(top_subj[0],{}).get("emoji","")}&nbsp;{top_subj[0]} ({top_subj[1]} Qs)</span>
+                        <span style='font-weight:700;color:{bar_col}'>Score: {score}</span>
+                    </div>
+                    <div style='background:#F0F0F8;border-radius:99px;height:10px;overflow:hidden'>
+                        <div style='width:{bar_pct}%;height:10px;border-radius:99px;
+                            background:linear-gradient(90deg,{bar_col},{bar_col}88);
+                            transition:width 1s ease'></div>
+                    </div>
+                </div>
+            </div>""", unsafe_allow_html=True)
+
+        if not sorted_users:
+            st.info("No user data available yet.")
+
+        # ── Subject Breakdown ──────────────────────
+        st.markdown("### 📚 Platform-Wide Subject Engagement")
+        subject_totals = {
+            s: sum(d.get("stats",{}).get(s,0) for d in students.values())
+            for s in SUBJECTS
+        }
+        grand_total = max(sum(subject_totals.values()), 1)
+
+        for subj, count in sorted(subject_totals.items(), key=lambda x: x[1], reverse=True):
+            info    = SUBJECTS[subj]
+            pct     = int((count / grand_total) * 100)
+            bar_w   = max(pct, 2)
+            st.markdown(f"""
+            <div style='margin-bottom:14px'>
+                <div style='display:flex;justify-content:space-between;
+                    font-size:13px;font-weight:700;margin-bottom:5px;color:#1A1A2E'>
+                    <span>{info["emoji"]} {subj}</span>
+                    <span style='color:{info["color"]}'>{count} questions &nbsp;·&nbsp; {pct}%</span>
+                </div>
+                <div style='background:#F0F0F8;border-radius:99px;height:12px;overflow:hidden'>
+                    <div style='width:{bar_w}%;height:12px;border-radius:99px;
+                        background:linear-gradient(90deg,{info["color"]},{info["color"]}88);
+                        transition:width 1s ease'></div>
+                </div>
+            </div>""", unsafe_allow_html=True)
+
+        # ── 7-Day Activity Heatmap ─────────────────
+        st.markdown("### 🗓️ 7-Day Activity Heatmap")
+        today = datetime.date.today()
+        days  = [(today - datetime.timedelta(days=i)) for i in range(6, -1, -1)]
+        activity = {d.isoformat(): 0 for d in days}
+        for ud in students.values():
+            last = ud.get("stats",{}).get("lastDate","")
+            if last in activity:
+                activity[last] += 1
+
+        max_act = max(max(activity.values(), default=0), 1)
+        st.markdown("<div style='display:flex;flex-direction:column;gap:6px;margin-top:10px'>",
+                    unsafe_allow_html=True)
+        for day_iso, cnt in activity.items():
+            day_obj  = datetime.date.fromisoformat(day_iso)
+            weekday  = day_obj.strftime("%a %d %b")
+            bar_w    = max(int((cnt / max_act) * 100), 2) if cnt else 0
+            is_today = day_iso == today.isoformat()
+            bar_col  = "#E8472A" if is_today else "#2563EB"
+            dot_col  = "#FFD700" if is_today else "#E5E7EB"
+            st.markdown(f"""
+            <div style='display:flex;align-items:center;gap:10px'>
+                <div style='font-size:12px;color:{"#E8472A" if is_today else "#888"};
+                    font-weight:{"800" if is_today else "400"};width:90px;flex-shrink:0'>
+                    {"📍 " if is_today else ""}{weekday}
+                </div>
+                <div style='flex:1;background:#F0F0F8;border-radius:99px;height:20px;overflow:hidden'>
+                    <div style='width:{bar_w}%;height:20px;border-radius:99px;
+                        background:linear-gradient(90deg,{bar_col},{bar_col}88)'></div>
+                </div>
+                <div style='font-size:13px;font-weight:800;color:#1A1A2E;width:28px;text-align:right'>
+                    {cnt}
+                </div>
+            </div>""", unsafe_allow_html=True)
+        st.markdown("</div><div style='font-size:11px;color:#bbb;margin-top:8px'>"
+                    "Counts unique active users per day based on last activity date.</div>",
+                    unsafe_allow_html=True)
+
+    # ═══════════════════════════════════════════════
+    # TAB 2 — HOMEWORK TRACKING
+    # ═══════════════════════════════════════════════
+    with tab_hw:
+        st.markdown("### 📋 Homework Tracking")
+
+        if not all_hw:
+            st.info("📭 No homework assignments have been created yet.")
+        else:
+            # ── Summary row ────────────────────────
+            total_hw   = len(all_hw)
+            total_subs = sum(len(h.get("submissions", {})) for h in all_hw)
+            est_poss   = total_hw * max(len(students), 1)
+            comp_pct   = min(int((total_subs / max(est_poss, 1)) * 100), 100)
+            comp_color = "#059669" if comp_pct >= 70 else "#F59E0B" if comp_pct >= 40 else "#E8472A"
+
+            c1, c2, c3 = st.columns(3)
+            for col_w, icon, val, lbl, color in [
+                (c1, "📋", total_hw,   "Assignments",     "#2563EB"),
+                (c2, "📬", total_subs, "Total Submissions","#7C3AED"),
+                (c3, "📈", f"{comp_pct}%", "Est. Completion", comp_color),
+            ]:
+                with col_w:
+                    st.markdown(f"""
+                    <div style='background:#fff;border-radius:14px;padding:16px;text-align:center;
+                        box-shadow:0 2px 10px rgba(0,0,0,0.06);border-top:4px solid {color}'>
+                        <div style='font-size:22px'>{icon}</div>
+                        <div style='font-size:24px;font-weight:900;color:{color}'>{val}</div>
+                        <div style='font-size:11px;color:#999;font-weight:700'>{lbl}</div>
+                    </div>""", unsafe_allow_html=True)
+
+            # Platform completion bar
+            st.markdown(f"""
+            <div style='margin:18px 0 8px'>
+                <div style='display:flex;justify-content:space-between;
+                    font-size:13px;font-weight:700;color:#1A1A2E;margin-bottom:6px'>
+                    <span>🎯 Platform-wide Homework Completion</span>
+                    <span style='color:{comp_color}'>{comp_pct}%</span>
+                </div>
+                <div style='background:#F0F0F8;border-radius:99px;height:16px;overflow:hidden'>
+                    <div style='width:{comp_pct}%;height:16px;border-radius:99px;
+                        background:linear-gradient(90deg,{comp_color},{comp_color}88);
+                        transition:width 1s ease'></div>
+                </div>
+                <div style='font-size:11px;color:#bbb;margin-top:5px'>
+                    🟢 ≥70% complete &nbsp;·&nbsp; 🟡 40–69% &nbsp;·&nbsp; 🔴 &lt;40%
+                </div>
+            </div>""", unsafe_allow_html=True)
+
+            st.markdown("---")
+
+            # ── Filters ────────────────────────────
+            st.markdown("#### 🔍 Filter Assignments")
+            f1, f2 = st.columns(2)
+            with f1:
+                f_subj   = st.selectbox("Subject", ["All"] + list(SUBJECTS.keys()), key="adm_f_subj")
+            with f2:
+                f_status = st.selectbox("Status",  ["All", "Active", "Inactive"],   key="adm_f_status")
+
+            st.markdown("---")
+
+            for hw in sorted(all_hw, key=lambda x: x.get("created",""), reverse=True):
+
+                # Apply filters
+                if f_subj != "All" and hw.get("subject") != f_subj:
+                    continue
+                hw_active = hw.get("status","active") == "active"
+                if f_status == "Active"   and not hw_active: continue
+                if f_status == "Inactive" and hw_active:     continue
+
+                info      = SUBJECTS.get(hw["subject"], {"emoji":"📚","color":"#2563EB"})
+                col       = info["color"]
+                subs      = hw.get("submissions", {})
+                sub_cnt   = len(subs)
+                data      = hw.get("data", {})
+                hw_title  = data.get("title", hw.get("topic",""))
+                due       = hw.get("due_date","")
+                today_str = datetime.date.today().isoformat()
+                overdue   = due < today_str if due else False
+
+                # Compute quality stats
+                if subs:
+                    scores    = [s.get("score_pct",0) for s in subs.values()]
+                    avg_score = int(sum(scores) / len(scores))
+                    high_q    = sum(1 for s in scores if s >= 80)
+                    mid_q     = sum(1 for s in scores if 60 <= s < 80)
+                    low_q     = sum(1 for s in scores if s < 60)
+                    q_label   = "🟢 High" if avg_score>=80 else "🟡 Medium" if avg_score>=60 else "🔴 Low"
+                else:
+                    avg_score = high_q = mid_q = low_q = 0
+                    q_label   = "⚪ No data"
+
+                status_badge = "🟢 Active" if hw_active else "🔴 Inactive"
+                due_label    = (f"⚠️ Overdue ({due})" if overdue else f"📅 Due: {due}")
+
+                with st.expander(
+                    f"{info['emoji']} {hw_title[:45]}{'…' if len(hw_title)>45 else ''} "
+                    f"| {hw.get('subject','')} {hw.get('grade','')} "
+                    f"| {status_badge} | {sub_cnt} sub(s) | Avg: {avg_score}%"
+                ):
+                    # Tag row
+                    st.markdown(f"""
+                    <div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px'>
+                        <span style='background:{col}18;color:{col};padding:3px 10px;
+                            border-radius:99px;font-size:12px;font-weight:700'>{info["emoji"]} {hw["subject"]}</span>
+                        <span style='background:{col}18;color:{col};padding:3px 10px;
+                            border-radius:99px;font-size:12px;font-weight:700'>🏫 {hw.get("grade","")}</span>
+                        <span style='background:{col}18;color:{col};padding:3px 10px;
+                            border-radius:99px;font-size:12px;font-weight:700'>🎯 {hw.get("difficulty","")}</span>
+                        <span style='background:{"#FEE2E2" if overdue else "#D1FAE5"};
+                            color:{"#991B1B" if overdue else "#065F46"};padding:3px 10px;
+                            border-radius:99px;font-size:12px;font-weight:700'>{due_label}</span>
+                    </div>
+                    <div style='font-size:12px;color:#888;margin-bottom:10px'>
+                        ✏️ Topic: <b style='color:#1A1A2E'>{hw.get("topic","")}</b>
+                        &nbsp;·&nbsp; Created: {hw.get("created","")}
+                        &nbsp;·&nbsp; By: {hw.get("creator_name", hw.get("teacher_name","?"))}
+                    </div>""", unsafe_allow_html=True)
+
+                    if sub_cnt > 0:
+                        # Metric row
+                        m1, m2, m3 = st.columns(3)
+                        with m1: st.metric("📬 Submissions", sub_cnt)
+                        with m2: st.metric("📈 Avg Score",  f"{avg_score}%")
+                        with m3: st.metric("🏅 Quality",    q_label)
+
+                        # Quality distribution bar
+                        total_parts = max(high_q + mid_q + low_q, 1)
+                        hw_pct  = int((high_q / total_parts) * 100)
+                        mw_pct  = int((mid_q  / total_parts) * 100)
+                        lw_pct  = 100 - hw_pct - mw_pct
+                        st.markdown(f"""
+                        <div style='margin:12px 0 16px'>
+                            <div style='font-size:12px;font-weight:700;color:#1A1A2E;margin-bottom:6px'>
+                                Quality Distribution
+                            </div>
+                            <div style='display:flex;height:22px;border-radius:10px;overflow:hidden;gap:2px'>
+                                <div style='flex:{max(hw_pct,1)};background:#059669;
+                                    display:flex;align-items:center;justify-content:center;
+                                    font-size:10px;color:#fff;font-weight:700'>
+                                    {"🟢 "+str(high_q) if hw_pct>12 else ""}
+                                </div>
+                                <div style='flex:{max(mw_pct,1)};background:#F59E0B;
+                                    display:flex;align-items:center;justify-content:center;
+                                    font-size:10px;color:#fff;font-weight:700'>
+                                    {"🟡 "+str(mid_q) if mw_pct>12 else ""}
+                                </div>
+                                <div style='flex:{max(lw_pct,1)};background:#E8472A;
+                                    display:flex;align-items:center;justify-content:center;
+                                    font-size:10px;color:#fff;font-weight:700'>
+                                    {"🔴 "+str(low_q) if lw_pct>12 else ""}
+                                </div>
+                            </div>
+                            <div style='display:flex;gap:16px;font-size:11px;color:#666;margin-top:5px'>
+                                <span>🟢 Excellent (≥80%): {high_q}</span>
+                                <span>🟡 Good (60–79%): {mid_q}</span>
+                                <span>🔴 Needs Work (&lt;60%): {low_q}</span>
+                            </div>
+                        </div>""", unsafe_allow_html=True)
+
+                        # Individual submissions table
+                        st.markdown("**📬 Individual Submissions**")
+                        for email, sub in sorted(
+                            subs.items(),
+                            key=lambda x: x[1].get("score_pct",0),
+                            reverse=True
+                        ):
+                            sp       = sub.get("score_pct", 0)
+                            q_dot    = "🟢" if sp>=80 else "🟡" if sp>=60 else "🔴"
+                            sub_time = sub.get("submitted_at","")
+                            sub_day  = sub_time[:10] if sub_time else ""
+                            on_time  = (sub_day <= due) if (sub_day and due) else True
+                            time_tag = (
+                                f"<span style='color:#059669;font-weight:700'>⏰ On time</span>"
+                                if on_time else
+                                f"<span style='color:#E8472A;font-weight:700'>⚠️ Late</span>"
+                            )
+                            st.markdown(f"""
+                            <div style='background:#F8F9FA;border-radius:10px;padding:9px 14px;
+                                margin-bottom:5px;border-left:3px solid {col};color:#1A1A2E;
+                                display:flex;justify-content:space-between;
+                                align-items:center;flex-wrap:wrap;gap:6px'>
+                                <div>
+                                    <b>{sub.get("student_name","?")}</b>
+                                    <span style='font-size:11px;color:#aaa;margin-left:6px'>{email}</span>
+                                </div>
+                                <div style='display:flex;gap:14px;align-items:center;font-size:12px'>
+                                    <span>{q_dot} <b>{sp}%</b></span>
+                                    {time_tag}
+                                    <span style='color:#bbb'>🕐 {sub_time}</span>
+                                </div>
+                            </div>""", unsafe_allow_html=True)
+                    else:
+                        st.info("⏳ No submissions yet for this assignment.")
+
+
+# ═════════════════════════════════════════════════════════════════
 # ROUTER
 # ═════════════════════════════════════════════════════════════════
 if not st.session_state.logged_in:
@@ -2032,6 +2473,7 @@ else:
     elif p == "friends":  page_friends()
     elif p == "image":    page_image()
     elif p == "homework": page_homework()
+    elif p == "admin":    page_admin()
     elif p == "progress": page_progress()
     elif p == "history":  page_history()
     elif p == "badges":   page_badges()

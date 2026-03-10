@@ -741,318 +741,346 @@ def call_ai_svg(messages, system):
 # ─────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Sora:wght@700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=DM+Serif+Display:ital@0;1&display=swap');
 
 :root{
-  --bg:        #F0F4F0;
+  --bg:        #F5F7FA;
   --surface:   #FFFFFF;
-  --surface2:  #F7FAF7;
-  --border:    #E2EAE2;
-  --green:     #0D6E3F;
-  --green-mid: #1A8C50;
-  --green-lt:  #27A862;
+  --surface2:  #EEF2F7;
+  --border:    #E4E8EE;
+  --green:     #1C7C54;
+  --green-mid: #25A870;
+  --green-lt:  #34C77B;
+  --green-bg:  #EBF7F1;
   --gold:      #C9A84C;
   --gold-lt:   #E8C96A;
-  --crimson:   #C0392B;
-  --text:      #0D1F0D;
-  --text2:     #3D5C3D;
-  --text3:     #7A9A7A;
+  --crimson:   #DC3545;
+  --blue:      #1B4FD8;
+  --text:      #1A1D23;
+  --text2:     #5A6070;
+  --text3:     #9BA3B0;
   --white:     #FFFFFF;
-  --shadow-sm: 0 2px 8px rgba(13,110,63,0.08);
-  --shadow-md: 0 6px 24px rgba(13,110,63,0.12);
-  --shadow-lg: 0 16px 48px rgba(13,110,63,0.16);
-  --radius:    16px;
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.09);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+  --radius:    14px;
   --radius-sm: 10px;
+  --radius-lg: 20px;
 }
 
 html,body,[class*="css"]{
-  font-family:'Plus Jakarta Sans',sans-serif !important;
+  font-family:'DM Sans',system-ui,sans-serif !important;
   background:var(--bg) !important;
   color:var(--text) !important;
 }
 .main .block-container{
-  padding-top:1.2rem !important; padding-bottom:4rem !important;
-  max-width:960px !important;
-  padding-left:1.4rem !important; padding-right:1.4rem !important;
+  padding-top:1.4rem !important; padding-bottom:4rem !important;
+  max-width:980px !important;
+  padding-left:1.8rem !important; padding-right:1.8rem !important;
   background:var(--bg) !important;
 }
 #MainMenu,footer,header{ visibility:hidden; }
 
 @media(max-width:768px){
-  .main .block-container{ padding-left:.6rem !important; padding-right:.6rem !important; }
-  .stButton>button{ min-height:48px !important; font-size:14px !important; }
-  .msg-user{ margin-left:6px !important; }
-  .msg-bot{  margin-right:6px !important; }
+  .main .block-container{ padding-left:.7rem !important; padding-right:.7rem !important; }
+  .stButton>button{ min-height:46px !important; font-size:13.5px !important; }
+  .msg-user{ margin-left:4px !important; }
+  .msg-bot{  margin-right:4px !important; }
   div[data-testid="column"]{ padding:2px !important; }
-  .stTextInput>div>div>input{ font-size:16px !important; padding:12px !important; }
+  .stTextInput>div>div>input{ font-size:16px !important; }
 }
 
+/* ── BUTTONS ────────────────────────────────────────── */
 .stButton>button{
   background:var(--surface) !important;
   border:1.5px solid var(--border) !important;
   color:var(--text) !important;
-  font-family:'Plus Jakarta Sans',sans-serif !important;
-  font-weight:700 !important; font-size:13.5px !important;
+  font-family:'DM Sans',sans-serif !important;
+  font-weight:600 !important; font-size:13.5px !important;
   border-radius:var(--radius-sm) !important;
   padding:10px 18px !important;
-  transition:all .2s cubic-bezier(.4,0,.2,1) !important;
+  transition:all .18s ease !important;
   box-shadow:var(--shadow-sm) !important;
 }
 .stButton>button:hover{
-  border-color:var(--green-mid) !important;
+  border-color:var(--green) !important;
   color:var(--green) !important;
+  background:#F0FDF4 !important;
   box-shadow:var(--shadow-md) !important;
   transform:translateY(-1px) !important;
 }
 .stButton>button[kind="primary"]{
-  background:linear-gradient(135deg,var(--green) 0%,var(--green-lt) 100%) !important;
+  background:var(--green) !important;
   color:#fff !important; border:none !important;
-  box-shadow:0 6px 20px rgba(13,110,63,0.35) !important;
-  font-weight:800 !important;
+  box-shadow:0 4px 14px rgba(28,124,84,0.35) !important;
+  font-weight:700 !important;
 }
 .stButton>button[kind="primary"]:hover{
-  box-shadow:0 8px 28px rgba(13,110,63,0.5) !important;
+  background:var(--green-mid) !important;
+  box-shadow:0 6px 20px rgba(28,124,84,0.45) !important;
   transform:translateY(-2px) !important;
   color:#fff !important;
 }
 
+/* ── SIDEBAR ────────────────────────────────────────── */
 [data-testid="stSidebar"]{
-  background:linear-gradient(180deg,#061A0E 0%,#0A2414 40%,#071510 100%) !important;
-  border-right:1px solid rgba(201,168,76,0.15) !important;
+  background:#FFFFFF !important;
+  border-right:1.5px solid var(--border) !important;
 }
-[data-testid="stSidebar"] *{ color:#fff !important; }
+[data-testid="stSidebar"] *{ color:var(--text) !important; }
 [data-testid="stSidebar"] p,
 [data-testid="stSidebar"] span,
 [data-testid="stSidebar"] div,
-[data-testid="stSidebar"] label{ color:#fff !important; }
+[data-testid="stSidebar"] label{ color:var(--text2) !important; }
 
 [data-testid="stSidebar"] .stButton>button{
-  background:rgba(255,255,255,0.05) !important;
-  border:1px solid rgba(201,168,76,0.12) !important;
-  color:#E8F5EE !important; font-weight:600 !important;
-  font-size:13.5px !important; text-align:left !important;
-  padding:11px 16px !important; border-radius:10px !important;
-  margin-bottom:3px !important; width:100% !important;
-  transition:all .18s ease !important;
+  background:transparent !important;
+  border:none !important;
+  color:var(--text2) !important;
+  font-weight:600 !important; font-size:13px !important;
+  text-align:left !important;
+  padding:9px 12px !important; border-radius:10px !important;
+  margin-bottom:1px !important; width:100% !important;
+  transition:background .15s,color .15s !important;
   box-shadow:none !important; transform:none !important;
 }
 [data-testid="stSidebar"] .stButton>button:hover{
-  background:rgba(201,168,76,0.12) !important;
-  border-color:rgba(201,168,76,0.35) !important;
-  color:#E8C96A !important;
-  transform:translateX(3px) !important;
+  background:var(--bg) !important;
+  color:var(--text) !important;
+  transform:none !important;
 }
 [data-testid="stSidebar"] .stButton>button[kind="primary"]{
-  background:linear-gradient(135deg,#0D6E3F,#1A8C50) !important;
-  border:1px solid rgba(201,168,76,0.4) !important;
-  color:#FFD700 !important; font-weight:800 !important;
-  box-shadow:0 4px 16px rgba(13,110,63,0.5),0 0 0 1px rgba(201,168,76,0.2) !important;
+  background:var(--green-bg) !important;
+  border:none !important;
+  color:var(--green) !important;
+  font-weight:700 !important;
+  box-shadow:none !important;
+  transform:none !important;
 }
 
+/* ── STAT CARDS ─────────────────────────────────────── */
 .stat-card{
   background:var(--surface); border-radius:var(--radius);
   padding:18px 14px; text-align:center;
   box-shadow:var(--shadow-sm); border:1.5px solid var(--border);
-  transition:box-shadow .2s, transform .2s;
+  transition:box-shadow .18s,transform .18s;
   position:relative; overflow:hidden;
 }
 .stat-card::before{
   content:''; position:absolute; top:0; left:0; right:0; height:3px;
-  background:linear-gradient(90deg,var(--green),var(--gold));
+  background:var(--green); border-radius:var(--radius) var(--radius) 0 0;
 }
 .stat-card:hover{ box-shadow:var(--shadow-md); transform:translateY(-2px); }
-.stat-num{ font-size:30px; font-weight:900; color:var(--green); font-family:'Sora',sans-serif; }
-.stat-lbl{ font-size:11px; color:var(--text3); margin-top:4px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; }
+.stat-num{ font-family:'DM Serif Display',serif; font-size:30px; font-weight:400; color:var(--green); }
+.stat-lbl{ font-size:11px; color:var(--text3); margin-top:4px; font-weight:600; text-transform:uppercase; letter-spacing:.7px; }
 
+/* ── HERO BANNER ────────────────────────────────────── */
+.hero-banner{
+  background:linear-gradient(130deg,#1C7C54 0%,#25A870 55%,#1B7A50 100%);
+  border-radius:var(--radius-lg); padding:26px 28px; margin-bottom:22px;
+  color:#fff; position:relative; overflow:hidden;
+  box-shadow:0 6px 24px rgba(28,124,84,0.22);
+}
+.hero-banner::before{
+  content:''; position:absolute; top:-50px; right:-30px;
+  width:200px; height:200px; border-radius:50%;
+  background:rgba(255,255,255,0.06);
+}
+.hero-banner::after{
+  content:''; position:absolute; bottom:-60px; right:140px;
+  width:130px; height:130px; border-radius:50%;
+  background:rgba(201,168,76,0.10);
+}
+
+/* ── SECTION HEADER ─────────────────────────────────── */
+.section-header{
+  background:var(--surface); color:var(--text);
+  border-radius:var(--radius); padding:14px 20px; margin-bottom:18px;
+  font-family:'DM Serif Display',serif; font-size:21px; font-weight:400;
+  border-left:4px solid var(--green);
+  border-top:1.5px solid var(--border);
+  border-right:1.5px solid var(--border);
+  border-bottom:1.5px solid var(--border);
+  box-shadow:var(--shadow-sm); letter-spacing:-.2px;
+}
+.section-header.orange{ border-left-color:#DC3545; }
+.section-header.gold{   border-left-color:var(--gold); }
+.section-header.blue{   border-left-color:var(--blue); }
+.section-header.purple{ border-left-color:#6D28D9; }
+
+/* ── SUBJECT CARDS ─────────────────────────────────── */
+.subj-card{
+  background:var(--surface); border-radius:var(--radius);
+  padding:16px 12px; text-align:center;
+  border:1.5px solid var(--border); box-shadow:var(--shadow-sm);
+  transition:all .18s ease; cursor:pointer;
+}
+.subj-card:hover{ transform:translateY(-3px); box-shadow:var(--shadow-md); }
+.subj-emoji{ font-size:28px; display:block; margin-bottom:6px; }
+.subj-name{ font-size:12px; font-weight:700; color:var(--text); }
+.subj-count{ font-size:10px; color:var(--text3); font-weight:500; margin-top:2px; }
+.subj-prog{ margin-top:8px; background:#EDF0F5; border-radius:99px; height:4px; overflow:hidden; }
+.subj-prog-fill{ height:4px; border-radius:99px; }
+
+/* ── DAILY CHALLENGE ────────────────────────────────── */
+.daily-challenge{
+  background:linear-gradient(135deg,#1A1D23,#2D3748);
+  border-radius:var(--radius-lg); padding:18px 22px; margin-bottom:20px;
+  color:#fff; border:1px solid rgba(201,168,76,0.2);
+  box-shadow:var(--shadow-md);
+}
+
+/* ── FEATURE / QUICK-START CARD ─────────────────────── */
 .feature-card{
   background:var(--surface); border-radius:var(--radius);
-  padding:18px 20px; border-left:4px solid var(--green);
-  box-shadow:var(--shadow-sm); margin-bottom:10px; color:var(--text);
-  transition:box-shadow .2s, transform .2s;
+  padding:14px 16px; border:1.5px solid var(--border);
+  box-shadow:var(--shadow-sm); margin-bottom:8px; color:var(--text);
+  transition:all .18s ease;
 }
-.feature-card:hover{ box-shadow:var(--shadow-md); transform:translateY(-1px); }
+.feature-card:hover{ border-color:var(--green); box-shadow:var(--shadow-md); transform:translateX(2px); }
 
+/* ── HIST CARD ──────────────────────────────────────── */
 .hist-card{
   background:var(--surface); border-radius:var(--radius);
   padding:14px 16px; box-shadow:var(--shadow-sm);
-  border:1.5px solid var(--border); margin-bottom:10px;
+  border:1.5px solid var(--border); margin-bottom:8px;
 }
 
-.section-header{
-  background:linear-gradient(135deg,#0D6E3F 0%,#1A8C50 60%,#0A5A32 100%);
-  color:#fff; border-radius:var(--radius); padding:16px 22px; margin-bottom:20px;
-  font-family:'Sora',sans-serif; font-size:20px; font-weight:800;
-  border:1px solid rgba(201,168,76,0.25);
-  box-shadow:0 6px 24px rgba(13,110,63,0.25);
-  letter-spacing:-.3px; position:relative; overflow:hidden;
-}
-.section-header::after{
-  content:''; position:absolute; top:-40px; right:-30px;
-  width:120px; height:120px; border-radius:50%;
-  background:rgba(201,168,76,0.15);
-}
-.section-header.orange{
-  background:linear-gradient(135deg,#8B1A0A 0%,#C0392B 60%,#E74C3C 100%);
-  border-color:rgba(255,200,100,0.2);
-  box-shadow:0 6px 24px rgba(192,57,43,0.3);
-}
-.section-header.gold{
-  background:linear-gradient(135deg,#7A5C00 0%,#C9A84C 60%,#E8C96A 100%);
-  border-color:rgba(255,255,255,0.2);
-  box-shadow:0 6px 24px rgba(201,168,76,0.35);
-}
-.section-header.blue{
-  background:linear-gradient(135deg,#0A2F6B 0%,#1A56C4 60%,#2E7DD1 100%);
-  border-color:rgba(100,180,255,0.2);
-}
-.section-header.purple{
-  background:linear-gradient(135deg,#3A0A6B 0%,#6B21A8 60%,#8B5CF6 100%);
-  border-color:rgba(200,150,255,0.2);
-}
-
+/* ── CHAT MESSAGES ──────────────────────────────────── */
 .msg-user{
-  background:linear-gradient(135deg,#0D6E3F,#1A8C50);
-  color:#fff; border-radius:18px 18px 4px 18px;
-  padding:13px 18px; margin:5px 0 5px 50px;
-  font-size:14px; line-height:1.7;
-  box-shadow:0 4px 16px rgba(13,110,63,0.25);
+  background:var(--green); color:#fff;
+  border-radius:18px 18px 4px 18px; padding:12px 16px;
+  margin:5px 0 5px 48px; font-size:14px; line-height:1.7;
+  box-shadow:0 3px 12px rgba(28,124,84,0.2);
 }
 .msg-bot{
   background:var(--surface); color:var(--text);
-  border-radius:18px 18px 18px 4px; padding:13px 18px;
-  margin:5px 50px 5px 0; font-size:14px; line-height:1.75;
+  border-radius:18px 18px 18px 4px; padding:12px 16px;
+  margin:5px 48px 5px 0; font-size:14px; line-height:1.75;
   box-shadow:var(--shadow-sm); border:1.5px solid var(--border);
 }
 .msg-lbl{ font-size:11px; color:var(--text3); margin-bottom:3px; font-weight:600; }
 .msg-lbl-r{ text-align:right; }
 
-.prog-bar{
-  background:rgba(13,110,63,0.08); border-radius:99px;
-  height:10px; overflow:hidden; margin-bottom:4px;
-}
-.prog-fill{ height:100%; border-radius:99px; transition:width .6s cubic-bezier(.4,0,.2,1); }
+/* ── PROGRESS BAR ───────────────────────────────────── */
+.prog-bar{ background:var(--surface2); border-radius:99px; height:9px; overflow:hidden; margin-bottom:4px; }
+.prog-fill{ height:100%; border-radius:99px; transition:width .5s ease; }
 
+/* ── BADGE CARD ─────────────────────────────────────── */
 .badge-card{
-  background:linear-gradient(135deg,#FFFDF0,#FFF8E0);
-  border:1.5px solid rgba(201,168,76,0.45); border-radius:var(--radius);
-  padding:14px 10px; text-align:center;
-  box-shadow:0 2px 12px rgba(201,168,76,0.15);
-  transition:transform .2s, box-shadow .2s;
+  background:var(--surface); border:1.5px solid var(--border);
+  border-radius:var(--radius); padding:14px 10px; text-align:center;
+  box-shadow:var(--shadow-sm); transition:transform .18s,box-shadow .18s;
 }
-.badge-card:hover{ transform:translateY(-3px); box-shadow:0 8px 24px rgba(201,168,76,0.3); }
-.badge-locked{ opacity:0.3; filter:grayscale(1); }
-.badge-icon{ font-size:30px; display:block; }
-.badge-name{ font-size:12px; font-weight:800; color:#7A5C00; margin-top:6px; }
-.badge-desc{ font-size:10px; color:var(--text3); margin-top:3px; }
+.badge-card:hover{ transform:translateY(-3px); box-shadow:var(--shadow-md); }
+.badge-locked{ opacity:.35; filter:grayscale(1); }
+.badge-icon{ font-size:28px; display:block; }
+.badge-name{ font-size:12px; font-weight:700; color:var(--text); margin-top:6px; }
+.badge-desc{ font-size:10px; color:var(--text3); margin-top:2px; }
 
+/* ── WORD CARD ──────────────────────────────────────── */
 .word-card{
-  background:linear-gradient(135deg,#061A0E 0%,#0A2414 50%,#071510 100%);
+  background:linear-gradient(135deg,#1A1D23 0%,#2D3748 100%);
   border-radius:var(--radius); padding:20px 22px; margin-bottom:16px;
-  color:#fff; border:1px solid rgba(201,168,76,0.25);
-  box-shadow:0 8px 32px rgba(6,26,14,0.3);
+  color:#fff; border:1px solid rgba(201,168,76,0.2); box-shadow:var(--shadow-md);
   position:relative; overflow:hidden;
 }
 
+/* ── REMINDER ───────────────────────────────────────── */
 .reminder{
   background:linear-gradient(135deg,#FFFDF0,#FFF8DC);
-  border:1.5px solid rgba(201,168,76,0.4); border-radius:var(--radius);
-  padding:13px 18px; margin-bottom:16px; font-size:13px; color:var(--text);
-  box-shadow:0 2px 10px rgba(201,168,76,0.12);
+  border:1.5px solid rgba(201,168,76,0.35); border-radius:var(--radius);
+  padding:12px 16px; margin-bottom:14px; font-size:13px; color:var(--text);
 }
 
+/* ── LEADERBOARD ────────────────────────────────────── */
 .lb-row{
-  display:flex; align-items:center; gap:12px; padding:13px 18px;
-  background:var(--surface); border-radius:var(--radius); margin-bottom:8px;
+  display:flex; align-items:center; gap:12px; padding:12px 16px;
+  background:var(--surface); border-radius:var(--radius); margin-bottom:6px;
   box-shadow:var(--shadow-sm); border:1.5px solid var(--border); color:var(--text);
-  transition:box-shadow .2s, transform .2s;
+  transition:box-shadow .18s,transform .18s;
 }
 .lb-row:hover{ box-shadow:var(--shadow-md); transform:translateX(3px); }
-.lb-rank{ font-size:22px; font-weight:900; width:32px; text-align:center; }
+.lb-rank{ font-size:20px; font-weight:900; width:30px; text-align:center; }
 .lb-name{ flex:1; font-weight:700; font-size:14px; }
-.lb-score{ font-weight:900; font-size:18px; color:var(--green); font-family:'Sora',sans-serif; }
+.lb-score{ font-weight:800; font-size:16px; color:var(--green); font-family:'DM Serif Display',serif; }
 
+/* ── SYLLABUS ───────────────────────────────────────── */
 .syl-step{
-  background:linear-gradient(135deg,#F0FAF3,#F5FFF7);
-  border-radius:var(--radius); padding:16px 18px; margin-bottom:14px;
-  border:1.5px solid rgba(13,110,63,0.12); color:var(--text);
+  background:var(--surface); border-radius:var(--radius); padding:14px 18px;
+  margin-bottom:10px; border:1.5px solid var(--border); box-shadow:var(--shadow-sm); color:var(--text);
 }
-.syl-step-title{
-  font-size:11px; font-weight:800; color:var(--green);
-  text-transform:uppercase; letter-spacing:1.2px; margin-bottom:8px;
-}
-.topic-chip{
-  display:inline-block; border-radius:20px; padding:4px 12px;
-  font-size:11px; font-weight:700; margin:3px 3px 3px 0;
-}
+.syl-step-title{ font-size:11px; font-weight:700; color:var(--green); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+.topic-chip{ display:inline-block; border-radius:20px; padding:4px 11px; font-size:11px; font-weight:600; margin:3px 3px 3px 0; }
 
+/* ── FORM INPUTS ────────────────────────────────────── */
 [data-testid="stSelectbox"]>div>div{
-  background:var(--surface) !important; border:2px solid var(--border) !important;
+  background:var(--surface) !important; border:1.5px solid var(--border) !important;
   border-radius:var(--radius-sm) !important; color:var(--text) !important;
 }
 [data-testid="stSelectbox"]>div>div>div{ color:var(--text) !important; font-weight:600 !important; }
 [data-baseweb="popover"],[data-baseweb="menu"],[role="listbox"]{
   background:var(--surface) !important; border:1.5px solid var(--border) !important;
-  border-radius:var(--radius) !important;
-  box-shadow:0 12px 40px rgba(13,110,63,0.15) !important;
+  border-radius:var(--radius) !important; box-shadow:var(--shadow-lg) !important;
 }
-[role="option"]{ color:var(--text) !important; background:var(--surface) !important; font-size:14px !important; padding:10px 14px !important; }
+[role="option"]{ color:var(--text) !important; background:var(--surface) !important; font-size:13.5px !important; padding:9px 14px !important; }
 [role="option"]:hover,[role="option"][aria-selected="true"]{
-  background:rgba(13,110,63,0.08) !important; color:var(--green) !important; font-weight:700 !important;
+  background:var(--green-bg) !important; color:var(--green) !important; font-weight:700 !important;
 }
 .stTextInput>div>div>input,
 .stTextArea>div>div>textarea{
-  border-radius:var(--radius-sm) !important; border:2px solid var(--border) !important;
+  border-radius:var(--radius-sm) !important; border:1.5px solid var(--border) !important;
   color:var(--text) !important; background:var(--surface) !important;
-  font-family:'Plus Jakarta Sans',sans-serif !important;
+  font-family:'DM Sans',sans-serif !important;
 }
 .stTextInput>div>div>input:focus,
 .stTextArea>div>div>textarea:focus{
   border-color:var(--green) !important;
-  box-shadow:0 0 0 3px rgba(13,110,63,0.12) !important;
+  box-shadow:0 0 0 3px rgba(28,124,84,0.10) !important;
 }
-label,[data-testid="stLabel"]>label{ color:var(--text) !important; font-weight:700 !important; font-size:13px !important; }
+label,[data-testid="stLabel"]>label{ color:var(--text) !important; font-weight:600 !important; font-size:13px !important; }
 
+/* ── TABS ───────────────────────────────────────────── */
 .stTabs [data-baseweb="tab-list"]{
   background:var(--surface2) !important; border-radius:var(--radius-sm) !important;
-  padding:4px !important; border:1.5px solid var(--border) !important;
-  gap:4px !important;
+  padding:4px !important; border:1.5px solid var(--border) !important; gap:3px !important;
 }
 .stTabs [data-baseweb="tab"]{
   background:transparent !important; color:var(--text2) !important;
-  font-weight:700 !important; font-size:13px !important;
-  border-radius:8px !important; padding:8px 16px !important;
-  border:none !important;
+  font-weight:600 !important; font-size:13px !important;
+  border-radius:8px !important; padding:7px 14px !important; border:none !important;
 }
 .stTabs [aria-selected="true"]{
-  background:linear-gradient(135deg,var(--green),var(--green-lt)) !important;
-  color:#fff !important; box-shadow:0 3px 10px rgba(13,110,63,0.3) !important;
+  background:var(--surface) !important; color:var(--green) !important;
+  box-shadow:var(--shadow-sm) !important; font-weight:700 !important;
 }
 
+/* ── EXPANDER ───────────────────────────────────────── */
 [data-testid="stExpander"]{
   background:var(--surface) !important; border:1.5px solid var(--border) !important;
-  border-radius:var(--radius-sm) !important; margin-bottom:6px !important;
+  border-radius:var(--radius-sm) !important; margin-bottom:5px !important;
 }
-[data-testid="stExpander"] summary{
-  font-weight:700 !important; color:var(--text) !important;
-}
+[data-testid="stExpander"] summary{ font-weight:600 !important; color:var(--text) !important; }
 
-[data-testid="stMetricValue"]{ color:var(--green) !important; font-family:'Sora',sans-serif !important; font-weight:900 !important; }
-[data-testid="stMetricLabel"]{ color:var(--text2) !important; font-weight:700 !important; }
+/* ── METRICS ────────────────────────────────────────── */
+[data-testid="stMetricValue"]{ color:var(--green) !important; font-family:'DM Serif Display',serif !important; }
+[data-testid="stMetricLabel"]{ color:var(--text2) !important; font-weight:600 !important; }
 
-[data-testid="stAlert"]{
-  border-radius:var(--radius-sm) !important;
-  border-left-width:4px !important;
-}
+/* ── ALERTS ─────────────────────────────────────────── */
+[data-testid="stAlert"]{ border-radius:var(--radius-sm) !important; border-left-width:4px !important; }
 
+/* ── RADIO / CHECKBOX ───────────────────────────────── */
 .stRadio label,[data-testid="stRadio"] label{ color:var(--text) !important; font-weight:600 !important; }
 .stCheckbox label{ color:var(--text) !important; font-weight:600 !important; }
 
-::-webkit-scrollbar{ width:6px; height:6px; }
+/* ── SCROLLBAR ──────────────────────────────────────── */
+::-webkit-scrollbar{ width:5px; height:5px; }
 ::-webkit-scrollbar-track{ background:var(--bg); }
-::-webkit-scrollbar-thumb{ background:rgba(13,110,63,0.25); border-radius:99px; }
-::-webkit-scrollbar-thumb:hover{ background:rgba(13,110,63,0.45); }
+::-webkit-scrollbar-thumb{ background:rgba(28,124,84,0.2); border-radius:99px; }
+::-webkit-scrollbar-thumb:hover{ background:rgba(28,124,84,0.4); }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -1172,95 +1200,95 @@ def page_auth():
 # ─────────────────────────────────────────────────────────────────
 # SIDEBAR
 # ─────────────────────────────────────────────────────────────────
+
 def render_sidebar():
-    u = st.session_state.user
-    role_info = {
-        "student": ("🎒", "Student",  "#27A862"),
-        "parent":  ("👨‍👩‍👦","Parent",  "#1A8C50"),
-        "teacher": ("👨‍🏫","Teacher", "#C9A84C"),
-        "admin":   ("🛡️", "Admin",    "#C0392B"),
-    }
-    r_icon, r_label, r_color = role_info.get(u.get("role","student"), ("👤","User","#27A862"))
+    u    = st.session_state.user
     role = u.get("role", "student")
+    stats = u.get("stats", {})
+
+    ROLE_OPTIONS  = ["Student 🎒","Teacher 👨‍🏫","Parent 👨‍👩‍👦","Admin 🛡️"]
+    ROLE_MAP      = {"Student 🎒":"student","Teacher 👨‍🏫":"teacher","Parent 👨‍👩‍👦":"parent","Admin 🛡️":"admin"}
+    ROLE_REVERSE  = {v:k for k,v in ROLE_MAP.items()}
+    cur_role_lbl  = ROLE_REVERSE.get(u.get("role","student"), "Student 🎒")
+    cur_role_idx  = ROLE_OPTIONS.index(cur_role_lbl) if cur_role_lbl in ROLE_OPTIONS else 0
 
     with st.sidebar:
-        # FIX: Use double-quotes inside HTML to avoid single-quote conflicts
-        st.markdown("""
-        <div style="display:flex;align-items:center;gap:10px;
-            padding:14px 14px 12px;border-bottom:1px solid rgba(201,168,76,0.18)">
-            <div style="width:36px;height:36px;border-radius:10px;flex-shrink:0;
-                background:linear-gradient(135deg,#0D6E3F,#1A8C50);
-                display:flex;align-items:center;justify-content:center;font-size:20px;
-                box-shadow:0 3px 10px rgba(13,110,63,0.5)">📚</div>
-            <div>
-                <div style="font-family:'Sora',sans-serif;font-weight:900;font-size:15px;
-                    color:#fff;letter-spacing:-.3px;line-height:1.1">ZM Academy</div>
-                <div style="font-size:9px;color:rgba(201,168,76,0.7);font-weight:700;
-                    letter-spacing:.8px;text-transform:uppercase">🇵🇰 Pakistan's #1 AI Tutor</div>
-            </div>
-        </div>""", unsafe_allow_html=True)
+        # Logo
+        st.markdown(
+            "<div style=\"display:flex;align-items:center;gap:10px;"
+            "padding:16px 14px 14px;"
+            "border-bottom:1.5px solid #E4E8EE;\">"
+            "<div style=\"width:36px;height:36px;border-radius:10px;flex-shrink:0;"
+            "background:#1C7C54;"
+            "display:flex;align-items:center;justify-content:center;font-size:20px;\">📚</div>"
+            "<div>"
+            "<div style=\"font-family:'DM Serif Display',serif;font-size:17px;"
+            "color:#1C7C54;line-height:1.1\">ZM Academy</div>"
+            "<div style=\"font-size:9px;color:#9BA3B0;font-weight:700;"
+            "letter-spacing:.8px;text-transform:uppercase\">🇵🇰 Pakistan's AI Tutor</div>"
+            "</div></div>",
+            unsafe_allow_html=True
+        )
 
-        grade_html = ""
-        if u.get("grade"):
-            grade_html = (
-                "<span style=\"font-size:10px;color:rgba(255,255,255,0.35)\">·</span>"
-                "<span style=\"font-size:10px;color:rgba(255,255,255,0.5);font-weight:600\">"
-                + u.get("grade","") + "</span>"
+        # User card
+        xp_total = stats.get("total", 0) * 10
+        xp_level = (xp_total // 500) + 1
+        xp_pct   = min((xp_total % 500) / 5, 100)
+        streak   = stats.get("streak", 0)
+        st.markdown(
+            f"<div style=\"padding:14px 14px 10px;border-bottom:1.5px solid #E4E8EE;\">"
+            f"<div style=\"display:flex;align-items:center;gap:10px;margin-bottom:10px\">"
+            f"<div style=\"width:42px;height:42px;border-radius:50%;flex-shrink:0;"
+            f"background:#EBF7F1;border:2px solid #1C7C54;"
+            f"display:flex;align-items:center;justify-content:center;font-size:24px;\">"
+            f"{u.get('avatar','👦')}</div>"
+            f"<div style=\"min-width:0\">"
+            f"<div style=\"font-weight:700;font-size:13px;color:#1A1D23;\">{u['name']}</div>"
+            f"<div style=\"font-size:11px;color:#9BA3B0;font-weight:500;margin-top:1px\">"
+            f"{u.get('grade','')} · Lv.{xp_level}</div>"
+            f"</div></div>"
+            f"<div style=\"background:#EDF0F5;border-radius:99px;height:5px;overflow:hidden;margin-bottom:3px\">"
+            f"<div style=\"width:{xp_pct:.0f}%;height:5px;border-radius:99px;background:#1C7C54\"></div></div>"
+            f"<div style=\"display:flex;justify-content:space-between;font-size:10px;"
+            f"color:#9BA3B0;font-weight:600\">"
+            f"<span>{xp_total} XP</span><span>Lv.{xp_level+1} at {xp_level*500} XP</span>"
+            f"</div></div>",
+            unsafe_allow_html=True
+        )
+
+        # Streak
+        if streak > 0:
+            st.markdown(
+                f"<div style=\"margin:10px 8px 0;background:linear-gradient(135deg,#FFF3E0,#FFF8EC);"
+                f"border:1.5px solid #FFD08A;border-radius:10px;padding:8px 12px;"
+                f"display:flex;align-items:center;gap:8px\">"
+                f"<div><div style=\"font-size:8px;font-weight:800;color:#92400E;"
+                f"letter-spacing:.8px;text-transform:uppercase\">🔥 Streak</div>"
+                f"<div style=\"font-family:'DM Serif Display',serif;font-size:22px;"
+                f"color:#E8770A;line-height:1\">{streak}</div></div>"
+                f"<div style=\"font-size:11px;color:#92400E;font-weight:600;line-height:1.4\">"
+                f"day{'s' if streak!=1 else ''} in a row!</div></div>",
+                unsafe_allow_html=True
             )
 
-        stats = u.get("stats", {})
+        # Role selector
+        st.markdown("<div style=\"padding:8px 8px 0\">", unsafe_allow_html=True)
+        new_role_lbl = st.selectbox(
+            "Role", ROLE_OPTIONS, index=cur_role_idx,
+            key="sidebar_role_select", label_visibility="collapsed"
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
 
-        # ── Role switcher ─────────────────────────────────────────
-        ROLE_OPTIONS = ["Student 🎒", "Teacher 👨‍🏫", "Parent 👨‍👩‍👦", "Admin 🛡️"]
-        ROLE_MAP     = {"Student 🎒":"student","Teacher 👨‍🏫":"teacher","Parent 👨‍👩‍👦":"parent","Admin 🛡️":"admin"}
-        ROLE_REVERSE = {v:k for k,v in ROLE_MAP.items()}
-        cur_role_label = ROLE_REVERSE.get(u.get("role","student"), "Student 🎒")
-        cur_role_idx   = ROLE_OPTIONS.index(cur_role_label) if cur_role_label in ROLE_OPTIONS else 0
-        st.markdown(f"""
-        <div style="padding:14px 12px 14px;border-bottom:1px solid rgba(201,168,76,0.15)">
-            <div style="display:flex;flex-direction:column;align-items:center">
-                <div style="width:62px;height:62px;border-radius:18px;
-                    background:linear-gradient(135deg,rgba(201,168,76,0.2),rgba(13,110,63,0.3));
-                    display:flex;align-items:center;justify-content:center;
-                    font-size:34px;line-height:1;margin-bottom:8px;
-                    border:2px solid rgba(201,168,76,0.3);box-shadow:0 4px 20px rgba(0,0,0,0.3)">
-                    {u.get("avatar","👦")}
-                </div>
-                <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:14px;
-                    color:#fff;text-align:center;letter-spacing:-.3px">{u["name"]}</div>
-                <div style="display:inline-flex;align-items:center;gap:5px;margin-top:5px;
-                    background:rgba(255,255,255,0.07);border-radius:99px;
-                    padding:3px 10px;border:1px solid rgba(201,168,76,0.2)">
-                    <span style="font-size:11px">{r_icon}</span>
-                    <span style="font-size:11px;font-weight:700;color:{r_color}">{r_label}</span>
-                    {grade_html}
-                </div>
-            </div>
-            <div style="display:flex;justify-content:center;gap:0;margin-top:12px;
-                background:rgba(0,0,0,0.25);border-radius:10px;
-                border:1px solid rgba(201,168,76,0.12);overflow:hidden">
-                <div style="flex:1;text-align:center;padding:8px 4px;
-                    border-right:1px solid rgba(201,168,76,0.1)">
-                    <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:900;
-                        color:#E8C96A">{stats.get("total",0)}</div>
-                    <div style="font-size:9px;color:rgba(255,255,255,0.4);
-                        text-transform:uppercase;letter-spacing:.8px;font-weight:700">Qs</div>
-                </div>
-                <div style="flex:1;text-align:center;padding:8px 4px;
-                    border-right:1px solid rgba(201,168,76,0.1)">
-                    <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:900;
-                        color:#E8C96A">{len(u.get("badges",[]))}</div>
-                    <div style="font-size:9px;color:rgba(255,255,255,0.4);
-                        text-transform:uppercase;letter-spacing:.8px;font-weight:700">Badges</div>
-                </div>
-                <div style="flex:1;text-align:center;padding:8px 4px">
-                    <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:900;
-                        color:#E8C96A">{stats.get("streak",0)}</div>
-                    <div style="font-size:9px;color:rgba(255,255,255,0.4);
-                        text-transform:uppercase;letter-spacing:.8px;font-weight:700">Streak</div>
-                </div>
-            </div>
-        </div>""", unsafe_allow_html=True)
+        if ROLE_MAP[new_role_lbl] != u.get("role","student"):
+            users_tmp = load_json(USERS_FILE)
+            u["role"] = ROLE_MAP[new_role_lbl]
+            users_tmp[u["email"]]["role"] = ROLE_MAP[new_role_lbl]
+            save_json(USERS_FILE, users_tmp)
+            st.session_state.user = u
+            role = ROLE_MAP[new_role_lbl]
+            st.rerun()
+        else:
+            role = u.get("role","student")
 
         cur = st.session_state.page
 
@@ -1270,30 +1298,13 @@ def render_sidebar():
                          use_container_width=True, type=btn_type):
                 st.session_state.page = key; st.rerun()
 
-        def section_label(text, color="rgba(201,168,76,0.65)"):
+        def section_label(text):
             st.markdown(
-                f"<div style=\"font-size:9.5px;font-weight:800;color:{color};"
-                f"text-transform:uppercase;letter-spacing:1.4px;"
-                f"padding:14px 4px 4px;"
-                f"border-top:1px solid rgba(255,255,255,0.06)\">{text}</div>",
+                f"<div style=\"font-size:9px;font-weight:800;color:#9BA3B0;"
+                f"text-transform:uppercase;letter-spacing:1.3px;"
+                f"padding:14px 12px 4px;\">{text}</div>",
                 unsafe_allow_html=True
             )
-
-        # ── Role selector ──────────────────────────────────────────
-        new_role_label = st.selectbox(
-            "Role", ROLE_OPTIONS, index=cur_role_idx,
-            key="sidebar_role_select", label_visibility="collapsed"
-        )
-        if ROLE_MAP[new_role_label] != u.get("role","student"):
-            users_tmp = load_json(USERS_FILE)
-            u["role"] = ROLE_MAP[new_role_label]
-            users_tmp[u["email"]]["role"] = ROLE_MAP[new_role_label]
-            save_json(USERS_FILE, users_tmp)
-            st.session_state.user = u
-            role = ROLE_MAP[new_role_label]
-            st.rerun()
-        else:
-            role = u.get("role","student")
 
         section_label("📊  Dashboard")
         nav_btn("🏠", "Home",            "home")
@@ -1311,8 +1322,8 @@ def render_sidebar():
         nav_btn("🕐", "Chat History",    "history")
         nav_btn("🏆", "Badges",          "badges")
 
-        if role in ("teacher", "admin"):
-            section_label("🛡️  Admin Panel", "#E87070")
+        if role in ("teacher","admin"):
+            section_label("🛡️  Admin")
             nav_btn("📊", "Student Performance", "admin")
             if role == "teacher":
                 nav_btn("📋", "Create Homework", "homework")
@@ -1320,22 +1331,48 @@ def render_sidebar():
         section_label("👤  Account")
         nav_btn("👤", "Profile", "profile")
 
-        st.markdown("""
-        <div style="margin:16px 0 4px;border-top:1px solid rgba(255,255,255,0.08);
-            padding-top:12px"></div>""", unsafe_allow_html=True)
+        # Mini stats row
+        st.markdown(
+            f"<div style=\"margin:12px 8px 0;background:#F5F7FA;border-radius:10px;"
+            f"border:1.5px solid #E4E8EE;padding:10px;"
+            f"display:flex;justify-content:space-around;text-align:center\">"
+            f"<div><div style=\"font-family:'DM Serif Display',serif;font-size:18px;"
+            f"color:#1C7C54\">{stats.get('total',0)}</div>"
+            f"<div style=\"font-size:9px;color:#9BA3B0;font-weight:700;"
+            f"text-transform:uppercase;letter-spacing:.6px\">Qs</div></div>"
+            f"<div style=\"width:1px;background:#E4E8EE\"></div>"
+            f"<div><div style=\"font-family:'DM Serif Display',serif;font-size:18px;"
+            f"color:#1C7C54\">{len(u.get('badges',[]))}</div>"
+            f"<div style=\"font-size:9px;color:#9BA3B0;font-weight:700;"
+            f"text-transform:uppercase;letter-spacing:.6px\">Badges</div></div>"
+            f"<div style=\"width:1px;background:#E4E8EE\"></div>"
+            f"<div><div style=\"font-family:'DM Serif Display',serif;font-size:18px;"
+            f"color:#1C7C54\">{stats.get('quizzes_done',0)}</div>"
+            f"<div style=\"font-size:9px;color:#9BA3B0;font-weight:700;"
+            f"text-transform:uppercase;letter-spacing:.6px\">Quizzes</div></div>"
+            f"</div>",
+            unsafe_allow_html=True
+        )
+
+        # Upgrade pill
+        st.markdown(
+            "<div style=\"margin:8px 8px 0;background:linear-gradient(135deg,#EBF7F1,#F0FAF5);"
+            "border:1.5px solid #C8EAD8;border-radius:10px;padding:10px 12px\">"
+            "<div style=\"font-size:12px;font-weight:800;color:#1C7C54\">⭐ Upgrade to Pro</div>"
+            "<div style=\"font-size:10px;color:#5A6070;margin-top:2px\">"
+            "Unlimited AI · PDF Export · Rs.500/mo</div></div>",
+            unsafe_allow_html=True
+        )
+
+        st.markdown("<div style=\"height:6px\"></div>", unsafe_allow_html=True)
         if st.button("🚪  Logout", key="logout_btn", use_container_width=True):
-            # Only clear app-defined keys to avoid disturbing Streamlit internals
             for k in list(defaults.keys()):
                 if k in st.session_state:
                     del st.session_state[k]
             st.rerun()
 
 
-# ─────────────────────────────────────────────────────────────────
-# HOME PAGE — FIX #1 (CRITICAL): All HTML strings use double-quotes
-# to prevent single-quote conflicts with style attributes containing
-# rgba() values like rgba(201,168,76,0.5) which broke rendering.
-# ─────────────────────────────────────────────────────────────────
+
 def page_home():
     u     = st.session_state.user
     sub   = st.session_state.subject
@@ -1347,39 +1384,44 @@ def page_home():
     _raw_stats = u.get("stats", {})
     stats = {**_default_stats, **_raw_stats}
 
-    # ── Onboarding for new users ──────────────────────────────
+    # ── Onboarding ────────────────────────────────────────────
     if u.get("is_new") and not st.session_state.get("onboarding_done"):
-        step = st.session_state.get("onboard_step", 1)
+        step  = st.session_state.get("onboard_step", 1)
         steps = [
-            {"emoji":"🎓","title":f"Welcome to ZM Academy, {u['name'].split()[0]}! 🎉",
-             "body":"Pakistan's <b>AI-powered study app</b> for Grades 1-10, O Level and A Level.<br><br>Your personal AI tutor <b>Ustad</b> is here to help!","btn":"Next →"},
-            {"emoji":"💬","title":"Everything you need to study",
-             "body":"<b>💬 Chat Tutor</b> — Ask any question in any subject<br><br><b>📝 Practice Quiz</b> — Custom quizzes with difficulty levels<br><br><b>📚 My Syllabus</b> — Full Cambridge curriculum<br><br><b>🎨 Image Generator</b> — AI draws educational diagrams","btn":"Next →"},
-            {"emoji":"🏆","title":"Earn Badges and Challenge Friends",
-             "body":"Earn <b>11 achievement badges</b> as you study.<br><br>Use <b>👥 Friends Quiz</b> to compete with up to 3 friends on the same quiz — and see who tops the leaderboard!","btn":"🚀 Start Learning!"},
+            {"emoji":"🎓",
+             "title":"Welcome to ZM Academy!",
+             "body":"Pakistan's <b>AI-powered study platform</b> for Grades 1–10, O Level and A Level.<br><br>Your personal AI tutor <b>Ustad</b> is ready to help!",
+             "btn":"Next →"},
+            {"emoji":"💬",
+             "title":"Everything you need to study",
+             "body":"<b>💬 Chat Tutor</b> — Ask any question<br><b>📝 Practice Quiz</b> — Custom difficulty<br><b>📚 Syllabus</b> — Full Cambridge curriculum<br><b>🎨 Image Generator</b> — AI diagrams",
+             "btn":"Next →"},
+            {"emoji":"🏆",
+             "title":"Badges & Friendz Quiz",
+             "body":"Earn <b>achievement badges</b> as you study.<br><br>Use <b>👥 Friendz Quiz</b> to compete with friends in real-time!",
+             "btn":"🚀 Start Learning!"},
         ]
         s = steps[step-1]
-        # FIX #2: Use named columns instead of _ to avoid shadowing built-in
         col_l, col_c, col_r = st.columns([1,2,1])
         with col_c:
-            dots = "".join(
-                "<span style=\"display:inline-block;width:9px;height:9px;border-radius:50%;"
-                "background:" + ("#E8C96A" if i+1==step else "rgba(255,255,255,0.2)") + ";margin:0 3px\"></span>"
+            dots_html = "".join(
+                "<span style=\"display:inline-block;width:8px;height:8px;border-radius:50%;"
+                + "background:" + ("#1C7C54" if i+1==step else "#E4E8EE") + ";margin:0 3px\"></span>"
                 for i in range(3)
             )
-            # FIX: Use double-quotes throughout onboarding HTML
-            st.markdown(f"""
-            <div style="background:linear-gradient(135deg,#061A0E,#0D6E3F);border-radius:24px;
-                padding:32px 28px;color:#fff;text-align:center;margin-top:20px;
-                border:1px solid rgba(201,168,76,0.25);
-                box-shadow:0 16px 48px rgba(6,26,14,0.5)">
-                <div style="margin-bottom:14px">{dots}</div>
-                <div style="font-size:56px;margin-bottom:14px">{s['emoji']}</div>
-                <div style="font-family:'Sora',sans-serif;font-size:22px;font-weight:900;
-                    margin-bottom:14px;letter-spacing:-.5px">{s['title']}</div>
-                <div style="font-size:14px;opacity:.85;line-height:1.8">{s['body']}</div>
-            </div>""", unsafe_allow_html=True)
-            st.markdown("<div style=\"height:14px\"></div>", unsafe_allow_html=True)
+            st.markdown(
+                "<div style=\"background:#fff;border-radius:20px;padding:30px 26px;"
+                "margin-top:20px;text-align:center;border:1.5px solid #E4E8EE;"
+                "box-shadow:0 8px 32px rgba(0,0,0,0.08)\">"
+                f"<div style=\"margin-bottom:14px\">{dots_html}</div>"
+                f"<div style=\"font-size:52px;margin-bottom:14px\">{s['emoji']}</div>"
+                "<div style=\"font-family:'DM Serif Display',serif;font-size:22px;"
+                f"color:#1A1D23;margin-bottom:12px\">{s['title']}</div>"
+                f"<div style=\"font-size:14px;color:#5A6070;line-height:1.8\">{s['body']}</div>"
+                "</div>",
+                unsafe_allow_html=True
+            )
+            st.markdown("<div style=\"height:12px\"></div>", unsafe_allow_html=True)
             if st.button(s["btn"], use_container_width=True, type="primary", key=f"ob_{step}"):
                 if step < 3:
                     st.session_state.onboard_step = step+1; st.rerun()
@@ -1401,293 +1443,339 @@ def page_home():
                 st.session_state.onboarding_done = True; st.rerun()
         return
 
-    # ── Hero banner ───────────────────────────────────────────
-    streak = stats.get("streak", 0)
-    streak_fire = "🔥" * min(streak, 5) if streak > 0 else ""
-    quotes = [
-        ("علم حاصل کرنا ہر مسلمان پر فرض ہے", "Seeking knowledge is an obligation upon every Muslim"),
-        ("محنت کا پھل میٹھا ہوتا ہے", "The fruit of hard work is always sweet"),
-        ("آج کی محنت کل کی کامیابی ہے", "Today's effort is tomorrow's success"),
-        ("ہر مشکل کے بعد آسانی ہے", "After every difficulty comes ease"),
-        ("علم روشنی ہے", "Knowledge is light"),
-    ]
-    q_urdu, q_eng = quotes[(datetime.date.today().month * 31 + datetime.date.today().day) % len(quotes)]
-    streak_extra = f"&nbsp;·&nbsp;🔥 {streak}-day streak!" if streak > 1 else ""
-
-    # FIX #1 (CRITICAL): Use double-quotes for ALL HTML attributes.
-    # The original code used single-quoted style attrs like style='border-left:3px solid rgba(201,168,76,0.5)'
-    # which caused the f-string to terminate early at the 0.5)' portion,
-    # making Streamlit render raw HTML text instead of parsed HTML.
-    st.markdown(f"""
-    <div style="background:linear-gradient(135deg,#061A0E 0%,#0D6E3F 55%,#0A5A32 100%);
-        border-radius:20px;padding:22px 24px;margin-bottom:16px;color:#fff;
-        border:1px solid rgba(201,168,76,0.2);box-shadow:0 8px 32px rgba(6,26,14,0.25);
-        position:relative;overflow:hidden">
-        <div style="position:absolute;top:-30px;right:-30px;width:150px;height:150px;border-radius:50%;
-            background:radial-gradient(circle,rgba(201,168,76,0.18),transparent 70%)"></div>
-        <div style="position:absolute;bottom:-20px;left:10px;width:90px;height:90px;border-radius:50%;
-            background:radial-gradient(circle,rgba(39,168,98,0.15),transparent 70%)"></div>
-        <div style="display:flex;align-items:center;gap:16px;position:relative;margin-bottom:14px">
-            <div style="width:58px;height:58px;border-radius:16px;flex-shrink:0;
-                background:rgba(255,255,255,0.1);display:flex;align-items:center;
-                justify-content:center;font-size:32px;border:1.5px solid rgba(201,168,76,0.3)">
-                {u.get("avatar","👦")}</div>
-            <div style="flex:1">
-                <div style="font-family:'Sora',sans-serif;font-size:20px;font-weight:900;
-                    letter-spacing:-.5px;line-height:1.2">
-                    {greet}, {u["name"].split()[0]}! {streak_fire or "👋"}</div>
-                <div style="font-size:12px;opacity:.7;margin-top:4px;font-weight:500">
-                    🇵🇰 Pakistan's #1 AI Study Platform{streak_extra}
-                </div>
-            </div>
-        </div>
-        <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:10px 14px;
-            border-left:3px solid rgba(201,168,76,0.5);position:relative">
-            <div style="font-size:13px;font-weight:700;color:#E8C96A;margin-bottom:2px">{q_urdu}</div>
-            <div style="font-size:11px;opacity:.65;font-style:italic">{q_eng}</div>
-        </div>
-    </div>""", unsafe_allow_html=True)
-
-    today_str = datetime.date.today().isoformat()
+    # ── HERO BANNER ───────────────────────────────────────────
+    streak  = stats.get("streak", 0)
+    total   = stats.get("total", 0)
+    n_badges= len(u.get("badges", []))
+    quizzes = stats.get("quizzes_done", 0)
     last_date = stats.get("lastDate", "")
+    today_str = datetime.date.today().isoformat()
 
-    # Mobile hint — shown once per session, only on home page
+    st.markdown(
+        "<div class=\"hero-banner\">"
+        "<div style=\"position:relative;z-index:1\">"
+        "<div style=\"font-size:12px;color:rgba(255,255,255,0.7);font-weight:600;margin-bottom:5px\">"
+        f"{greet}, {u['name'].split()[0]} 👋</div>"
+        "<div style=\"font-family:'DM Serif Display',serif;font-size:26px;color:#fff;"
+        "line-height:1.25;margin-bottom:10px;max-width:360px\">Ready to learn something new today?</div>"
+        "<div style=\"font-size:12px;color:rgba(255,255,255,0.65)\">"
+        f"📚 {u.get('grade','')} &nbsp;·&nbsp; 🔥 {streak}-day streak &nbsp;·&nbsp; ⭐ {total} questions answered</div>"
+        "</div>"
+        "<div style=\"position:relative;z-index:1;display:flex;flex-direction:column;"
+        "align-items:flex-end;gap:8px;flex-shrink:0\">"
+        "<div style=\"display:flex;gap:8px\">"
+        "<div style=\"background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.2);"
+        "border-radius:12px;padding:10px 14px;text-align:center;min-width:68px\">"
+        f"<div style=\"font-family:'DM Serif Display',serif;font-size:22px;color:#fff\">{total}</div>"
+        "<div style=\"font-size:9px;color:rgba(255,255,255,0.6);text-transform:uppercase;"
+        "letter-spacing:.8px;font-weight:700\">Questions</div></div>"
+        "<div style=\"background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.2);"
+        "border-radius:12px;padding:10px 14px;text-align:center;min-width:68px\">"
+        f"<div style=\"font-family:'DM Serif Display',serif;font-size:22px;color:#fff\">{n_badges}</div>"
+        "<div style=\"font-size:9px;color:rgba(255,255,255,0.6);text-transform:uppercase;"
+        "letter-spacing:.8px;font-weight:700\">Badges</div></div>"
+        "<div style=\"background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.2);"
+        "border-radius:12px;padding:10px 14px;text-align:center;min-width:68px\">"
+        f"<div style=\"font-family:'DM Serif Display',serif;font-size:22px;color:#fff\">{quizzes}</div>"
+        "<div style=\"font-size:9px;color:rgba(255,255,255,0.6);text-transform:uppercase;"
+        "letter-spacing:.8px;font-weight:700\">Quizzes</div></div>"
+        "</div></div></div>",
+        unsafe_allow_html=True
+    )
+
+    # Mobile hint
     if not st.session_state.get("mobile_hint_shown", False):
         st.info("📱 **On mobile?** Tap the **☰ arrow** at top-left to open the menu!", icon="📱")
         st.session_state.mobile_hint_shown = True
 
+    # Daily reminder
     if last_date and last_date != today_str:
-        st.markdown("""<div class="reminder">🔔 <b>Daily Reminder:</b> You haven't studied today! Even 15 minutes makes a difference 💪</div>""", unsafe_allow_html=True)
-
-    # ── 7-Day Streak Calendar ─────────────────────────────────
-    # Use st.components.v1.html — st.markdown can silently escape
-    # dynamically-built HTML strings in some Streamlit versions.
-    study_dates = set(stats.get("study_dates", []))
-    today = datetime.date.today()
-    day_labels = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]
-    calendar_cells = ""
-    for i in range(7):
-        day = today - datetime.timedelta(days=6-i)
-        day_str = day.isoformat()
-        studied = day_str in study_dates
-        is_today = (day == today)
-        bdr = "#E8C96A" if is_today else ("#0D6E3F" if studied else "rgba(13,110,63,0.1)")
-        icon_html = '<span style="color:#0D6E3F;font-weight:900;">&#10003;</span>' if studied else ('<span style="color:#C9A84C;">&#9679;</span>' if is_today else '<span style="color:#ccc;">&#9675;</span>')
-        day_color = "#0D6E3F" if studied else ("#C9A84C" if is_today else "#7A9A7A")
-        shadow = "0 3px 12px rgba(13,110,63,0.2)" if studied else "none"
-        bg = "#F0FAF3" if studied else ("#FFFDF0" if is_today else "#FFFFFF")
-        calendar_cells += (
-            f'<div style="background:{bg};border:1.5px solid {bdr};border-radius:10px;'
-            f'padding:8px 4px;text-align:center;box-shadow:{shadow};min-width:44px;flex:1;">'
-            f'<div style="font-size:14px;">{icon_html}</div>'
-            f'<div style="font-size:9px;font-weight:800;color:{day_color};'
-            f'text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">{day_labels[day.weekday()]}</div>'
-            f'<div style="font-size:8px;color:#7A9A7A;margin-top:1px;">{day.day}</div>'
-            f'</div>'
+        st.markdown(
+            "<div class=\"reminder\">🔔 <b>Daily Reminder:</b> You haven't studied today — even 15 minutes makes a difference! 💪</div>",
+            unsafe_allow_html=True
         )
-    st.components.v1.html(
-        '<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;font-family:sans-serif;">'
-        + calendar_cells + '</div>',
-        height=72,
-        scrolling=False,
+
+    # ── DAILY CHALLENGE ───────────────────────────────────────
+    import random as _rnd
+    _challenges = {
+        "Maths":   ["What is 15% of 240?","Solve for x: 3x + 7 = 22","Find the area of a circle with radius 5cm (π=3.14)","What is the HCF of 36 and 48?","Simplify: 2/3 + 3/4"],
+        "Physics": ["State Newton's First Law of Motion.","What is the SI unit of electric current?","Define acceleration and give its unit.","What force keeps planets in orbit?","Define Ohm's Law."],
+        "English": ["Define a metaphor and give one example.","What is a subordinate clause?","Give the plural of 'analysis'.","What is the past perfect tense of 'write'?","Define 'alliteration'."],
+        "Biology": ["Explain photosynthesis in one sentence.","Name the powerhouse of the cell.","What does DNA stand for?","Define osmosis.","Name two functions of the liver."],
+    }
+    dc_subj = list(_challenges.keys())[(datetime.date.today().day + datetime.date.today().month) % 4]
+    dc_qs   = _challenges[dc_subj]
+    dc_q    = dc_qs[datetime.date.today().day % len(dc_qs)]
+
+    st.markdown(
+        "<div class=\"daily-challenge\">"
+        "<div style=\"font-size:9px;font-weight:800;color:#C9A84C;letter-spacing:1.2px;"
+        f"text-transform:uppercase;margin-bottom:5px\">⚡ Daily Challenge — {dc_subj}</div>"
+        "<div style=\"font-family:'DM Serif Display',serif;font-size:18px;color:#fff;"
+        f"line-height:1.4;margin-bottom:6px\">{dc_q}</div>"
+        "<div style=\"font-size:11px;color:rgba(255,255,255,0.4);font-weight:500\">"
+        "Answer to keep your streak going!</div>"
+        "</div>",
+        unsafe_allow_html=True
     )
-
-    st.markdown("<div style=\"height:8px\"></div>", unsafe_allow_html=True)
-
-    # ── Word of the Day (collapsed by default — not blocking) ─────
-    if not st.session_state.word_of_day:
-        st.session_state.word_of_day = {
-            "word":"Perseverance","urdu":"ثابت قدمی",
-            "meaning":"Continued effort despite difficulties",
-            "example":"Success comes to those with perseverance.",
-            "tip":"Use this word in your next essay!"
-        }
-
-    with st.expander("📖 Word of the Day", expanded=False):
-        # Load AI word once per session — not every render
-        if not st.session_state.wod_loaded:
-            with st.spinner("Loading today's word..."):
-                grade = u.get("grade", "Grade 6")
-                try:
-                    raw = call_ai(
-                        [{"role":"user","content":
-                          f"Give ONE interesting English word suitable for {grade} students in Pakistan. "
-                          f"Return ONLY this JSON: {{\"word\":\"...\",\"urdu\":\"...\",\"meaning\":\"...\",\"example\":\"...\",\"tip\":\"...\"}}"}],
-                        "Vocabulary teacher. Return ONLY valid JSON. No markdown.",
+    dc_col1, dc_col2 = st.columns([3,1])
+    with dc_col1:
+        dc_ans = st.text_input("Answer", placeholder="Type your answer…",
+                               key="dc_answer_input", label_visibility="collapsed")
+    with dc_col2:
+        if st.button("Submit →", key="dc_submit", type="primary", use_container_width=True):
+            if dc_ans.strip():
+                with st.spinner("Checking…"):
+                    _prompt = (
+                        "Question: " + dc_q + "\n"
+                        "Student answer: " + dc_ans + "\n"
+                        "Is this answer correct? Reply CORRECT or INCORRECT, "
+                        "then one sentence of feedback."
                     )
-                    clean = raw.replace("```json","").replace("```","").strip()
-                    parsed = json.loads(clean)
-                    if parsed.get("word"):
-                        st.session_state.word_of_day = parsed
+                    verdict = call_ai(
+                        [{"role":"user","content":_prompt}],
+                        "You are a helpful exam marker. Be encouraging and brief.", 200
+                    )
+                if "CORRECT" in verdict.upper():
+                    st.success("✅ " + verdict)
+                    bump_stats(dc_subj, u.get("grade",""), True)
+                    check_badges(u["email"])
+                else:
+                    st.info("💡 " + verdict)
+            else:
+                st.warning("Type your answer first.")
+
+    # ── SUBJECT GRID ──────────────────────────────────────────
+    st.markdown(
+        "<div style=\"display:flex;align-items:baseline;gap:10px;margin:8px 0 14px\">"
+        "<div style=\"font-family:'DM Serif Display',serif;font-size:20px;color:#1A1D23\">My Subjects</div>"
+        f"<div style=\"font-size:12px;color:#9BA3B0;font-weight:600\">{u.get('grade','')} · Cambridge</div>"
+        "</div>",
+        unsafe_allow_html=True
+    )
+    SUBJ_META = {
+        "Maths":            ("🔢","#E8472A"),
+        "Physics":          ("⚡","#1B4FD8"),
+        "Chemistry":        ("🧪","#7C3AED"),
+        "Biology":          ("🌿","#059669"),
+        "English":          ("📖","#D97706"),
+        "Computer Science": ("💻","#0891B2"),
+        "Urdu":             ("🖊️","#BE185D"),
+    }
+    subj_cols = st.columns(len(SUBJ_META))
+    for idx, (sname, (semoji, scolor)) in enumerate(SUBJ_META.items()):
+        sq = stats.get(sname, 0)
+        with subj_cols[idx]:
+            st.markdown(
+                f"<div class=\"subj-card\" style=\"border-top:3px solid {scolor}\">"
+                f"<span class=\"subj-emoji\">{semoji}</span>"
+                f"<div class=\"subj-name\">{sname}</div>"
+                f"<div class=\"subj-count\">{sq} Qs</div>"
+                f"<div class=\"subj-prog\"><div class=\"subj-prog-fill\" "
+                f"style=\"width:{min(sq*8,100)}%;background:{scolor}\"></div></div>"
+                "</div>",
+                unsafe_allow_html=True
+            )
+            if st.button("Go →", key=f"subj_go_{sname}", use_container_width=True):
+                st.session_state.subject = sname
+                st.session_state.page    = "chat"
+                st.rerun()
+
+    # ── THREE COLUMNS: Quick-start | Homework | Leaderboard ───
+    st.markdown("<div style=\"height:8px\"></div>", unsafe_allow_html=True)
+    col_a, col_b, col_c = st.columns([1, 1.1, 1])
+
+    with col_a:
+        st.markdown(
+            "<div style=\"font-family:'DM Serif Display',serif;font-size:17px;"
+            "color:#1A1D23;margin-bottom:10px\">⚡ Quick Start</div>",
+            unsafe_allow_html=True
+        )
+        for qs_icon, qs_label, qs_page in [
+            ("💬","Chat Tutor",      "chat"),
+            ("📝","Practice Quiz",   "quiz"),
+            ("👥","Friendz Quiz",    "friends"),
+            ("🎨","Image Generator", "image"),
+            ("📚","Syllabus",        "syllabus"),
+        ]:
+            if st.button(f"{qs_icon}  {qs_label}", key=f"qs_{qs_page}", use_container_width=True):
+                st.session_state.page = qs_page; st.rerun()
+
+    with col_b:
+        st.markdown(
+            "<div style=\"font-family:'DM Serif Display',serif;font-size:17px;"
+            "color:#1A1D23;margin-bottom:10px\">📋 Homework Due</div>",
+            unsafe_allow_html=True
+        )
+        homework   = load_json(HOMEWORK_FILE)
+        grade_val  = u.get("grade","")
+        pending_hw = [
+            hw for hw in homework.values()
+            if hw.get("status","active") == "active"
+            and u["email"] not in hw.get("submissions",{})
+            and (not grade_val or hw.get("grade") == grade_val)
+        ]
+        if not pending_hw:
+            st.markdown(
+                "<div style=\"background:#F0FDF4;border:1.5px solid #D1FAE5;"
+                "border-radius:10px;padding:14px;text-align:center;"
+                "color:#065F46;font-size:13px;font-weight:600\">🎉 All caught up!</div>",
+                unsafe_allow_html=True
+            )
+        else:
+            for hw in sorted(pending_hw, key=lambda x: x.get("due_date",""))[:4]:
+                due_str = hw.get("due_date","")
+                try:
+                    dleft = (datetime.date.fromisoformat(due_str) - datetime.date.today()).days
+                except Exception:
+                    dleft = 99
+                dc  = "#DC3545" if dleft<=0 else "#E8770A" if dleft<=2 else "#059669"
+                dbg = "#FEE2E2" if dleft<=0 else "#FEF9C3" if dleft<=2 else "#D1FAE5"
+                dlbl = "Today!" if dleft==0 else (f"Overdue {abs(dleft)}d" if dleft<0 else f"{dleft}d left")
+                info  = SUBJECTS.get(hw.get("subject","Maths"), {"emoji":"📚"})
+                title = hw.get("data",{}).get("title", hw.get("topic","Homework"))
+                short = (title[:30] + "…") if len(title)>30 else title
+                st.markdown(
+                    "<div style=\"background:#fff;border:1.5px solid #E4E8EE;"
+                    "border-radius:10px;padding:9px 12px;margin-bottom:6px;"
+                    "display:flex;align-items:center;justify-content:space-between\">"
+                    "<div style=\"flex:1;min-width:0\">"
+                    f"<div style=\"font-size:12px;font-weight:700;color:#1A1D23\">{info['emoji']} {short}</div>"
+                    f"<div style=\"font-size:10px;color:#9BA3B0;margin-top:1px\">{hw.get('subject','')} · {hw.get('grade','')}</div>"
+                    "</div>"
+                    f"<span style=\"background:{dbg};color:{dc};font-size:9px;font-weight:800;"
+                    f"padding:3px 7px;border-radius:99px;flex-shrink:0;margin-left:8px\">{dlbl}</span>"
+                    "</div>",
+                    unsafe_allow_html=True
+                )
+        if st.button("📋  View All Homework", key="hw_goto", use_container_width=True):
+            st.session_state.page = "my_homework"; st.rerun()
+
+    with col_c:
+        st.markdown(
+            "<div style=\"font-family:'DM Serif Display',serif;font-size:17px;"
+            "color:#1A1D23;margin-bottom:10px\">🏆 Top Learners</div>",
+            unsafe_allow_html=True
+        )
+        all_users = load_json(USERS_FILE)
+        students  = [
+            (v["name"], v.get("stats",{}).get("total",0), v.get("avatar","👦"))
+            for v in all_users.values() if v.get("role","student")=="student"
+        ]
+        students.sort(key=lambda x: -x[1])
+        rank_emojis = ["🥇","🥈","🥉","4️⃣","5️⃣"]
+        for rank_i, (sname, sq, sav) in enumerate(students[:5]):
+            is_me = (sname == u["name"])
+            st.markdown(
+                f"<div style=\"background:{'#EBF7F1' if is_me else '#fff'};"
+                f"border:1.5px solid {'#C8EAD8' if is_me else '#E4E8EE'};"
+                "border-radius:10px;padding:8px 10px;margin-bottom:5px;"
+                "display:flex;align-items:center;gap:8px\">"
+                f"<span style=\"font-size:14px;width:20px;text-align:center\">{rank_emojis[rank_i]}</span>"
+                f"<span style=\"font-size:16px\">{sav}</span>"
+                f"<span style=\"font-size:12px;font-weight:{'800' if is_me else '600'};"
+                f"color:{'#1C7C54' if is_me else '#1A1D23'};flex:1;\">"
+                f"{sname[:13]}{'…' if len(sname)>13 else ''} {'· you' if is_me else ''}</span>"
+                f"<span style=\"font-size:11px;font-weight:800;color:#1C7C54\">{sq}</span>"
+                "</div>",
+                unsafe_allow_html=True
+            )
+        if not students:
+            st.markdown(
+                "<div style=\"text-align:center;color:#9BA3B0;font-size:13px;padding:16px\">No students yet</div>",
+                unsafe_allow_html=True
+            )
+
+    # ── PROGRESS BARS + ACTIVITY CALENDAR ─────────────────────
+    st.markdown("<div style=\"height:8px\"></div>", unsafe_allow_html=True)
+    col_d, col_e = st.columns(2)
+
+    with col_d:
+        st.markdown(
+            "<div style=\"font-family:'DM Serif Display',serif;font-size:17px;"
+            "color:#1A1D23;margin-bottom:12px\">📈 Subject Progress</div>",
+            unsafe_allow_html=True
+        )
+        for sname, (semoji, scolor) in SUBJ_META.items():
+            sq  = stats.get(sname, 0)
+            pct = min(sq * 5, 100)
+            st.markdown(
+                f"<div style=\"margin-bottom:9px\">"
+                "<div style=\"display:flex;justify-content:space-between;"
+                f"font-size:12px;font-weight:600;margin-bottom:3px;color:#1A1D23\">"
+                f"<span>{semoji} {sname}</span><span style=\"color:{scolor}\">{sq} Qs</span></div>"
+                f"<div class=\"prog-bar\"><div class=\"prog-fill\" style=\"width:{pct}%;background:{scolor}\"></div></div>"
+                "</div>",
+                unsafe_allow_html=True
+            )
+
+    with col_e:
+        st.markdown(
+            "<div style=\"font-family:'DM Serif Display',serif;font-size:17px;"
+            "color:#1A1D23;margin-bottom:12px\">🗓️ 7-Day Activity</div>",
+            unsafe_allow_html=True
+        )
+        study_dates = set(stats.get("study_dates", []))
+        today_dt    = datetime.date.today()
+        for i in range(6, -1, -1):
+            day       = today_dt - datetime.timedelta(days=i)
+            d_iso     = day.isoformat()
+            active    = d_iso in study_dates or d_iso == last_date
+            is_today  = (d_iso == today_str)
+            bar_col   = "#1C7C54" if active else "#E4E8EE"
+            bar_w     = 85 if active else 8
+            lbl       = ("📍 " if is_today else "") + day.strftime("%a %d")
+            tick      = "✓" if active else "·"
+            tick_col  = "#1C7C54" if active else "#CBD5E1"
+            st.markdown(
+                f"<div style=\"display:flex;align-items:center;gap:10px;margin-bottom:6px\">"
+                f"<div style=\"font-size:11px;color:{'#1C7C54' if is_today else '#9BA3B0'};"
+                f"font-weight:{'700' if is_today else '500'};width:52px;flex-shrink:0\">{lbl}</div>"
+                "<div style=\"flex:1;background:#F0F2F5;border-radius:99px;height:9px;overflow:hidden\">"
+                f"<div style=\"width:{bar_w}%;height:9px;border-radius:99px;background:{bar_col}\"></div></div>"
+                f"<div style=\"font-size:11px;font-weight:700;color:{tick_col};width:16px;text-align:right\">{tick}</div>"
+                "</div>",
+                unsafe_allow_html=True
+            )
+
+        # Continue last chat
+        hist      = load_json(HISTORY_FILE)
+        user_hist = hist.get(u["email"], [])
+        if user_hist:
+            last_session = user_hist[-1]
+            last_msgs    = last_session.get("messages", [])
+            last_updated = last_session.get("updated","")
+            is_recent    = True
+            if last_updated:
+                try:
+                    upd_date  = datetime.datetime.strptime(last_updated[:10], "%Y-%m-%d").date()
+                    is_recent = (datetime.date.today() - upd_date).days <= 7
                 except Exception:
                     pass
-            st.session_state.wod_loaded = True
-            st.rerun()
+            if last_msgs and is_recent:
+                last_q = next(
+                    (m["content"][:55] for m in reversed(last_msgs) if m["role"]=="user"), ""
+                )
+                if last_q:
+                    ell = "…" if len(last_q)==55 else ""
+                    st.markdown(
+                        "<div style=\"margin-top:12px;background:#F0FDF4;"
+                        "border:1.5px solid #D1FAE5;border-radius:10px;padding:10px 12px;"
+                        "display:flex;align-items:center;gap:8px\">"
+                        "<div style=\"font-size:18px\">💬</div>"
+                        "<div style=\"flex:1;min-width:0\">"
+                        "<div style=\"font-size:10px;font-weight:800;color:#1C7C54;"
+                        "text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px\">"
+                        f"Continue last chat · {last_session.get('subject','')}</div>"
+                        "<div style=\"font-size:12px;color:#374151;font-weight:600;"
+                        "white-space:nowrap;overflow:hidden;text-overflow:ellipsis;\">"
+                        f"\"{last_q}{ell}\"</div>"
+                        "</div></div>",
+                        unsafe_allow_html=True
+                    )
+                    if st.button("▶  Continue Chat", key="home_continue_chat"):
+                        st.session_state.page = "chat"; st.rerun()
 
-        w = st.session_state.word_of_day
-        st.markdown(f"""
-        <div style="padding:8px 0">
-            <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px">
-                <span style="font-family:'Sora',sans-serif;font-size:22px;font-weight:900;color:#0D6E3F">{w.get("word","")}</span>
-                <span style="font-size:13px;color:#7A9A7A">— {w.get("urdu","")}</span>
-            </div>
-            <div style="font-size:13px;color:#3D5C3D;margin-bottom:4px">{w.get("meaning","")}</div>
-            <div style="font-size:12px;color:#7A9A7A;font-style:italic;margin-bottom:4px">"{w.get("example","")}"</div>
-            <div style="font-size:12px;color:#C9A84C;font-weight:700">💡 {w.get("tip","")}</div>
-        </div>""", unsafe_allow_html=True)
-
-    st.markdown("<div style=\"height:4px\"></div>", unsafe_allow_html=True)
-
-    # ── Stats row ─────────────────────────────────────────────
-    st.markdown("<div style=\"font-family:'Sora',sans-serif;font-size:13px;font-weight:800;"
-                "color:#7A9A7A;text-transform:uppercase;letter-spacing:1px;"
-                "margin-bottom:8px\">📊 Your Progress</div>", unsafe_allow_html=True)
-    total_q   = stats.get("total", 0)
-    streak_v  = stats.get("streak", 0)
-    badges_v  = len(u.get("badges", []))
-    quizzes_v = stats.get("quizzes_done", 0)
-    goals = {"q": 50, "streak": 7, "badges": 11, "quiz": 10}
-
-    c1,c2,c3,c4 = st.columns(4)
-    for col_w, icon, val, lbl, accent, pct in [
-        (c1,"❓", total_q,        "Questions",  "#0D6E3F", min(100, int(total_q/goals["q"]*100))),
-        (c2,"🔥", f"{streak_v}d", "Streak",     "#C0392B", min(100, int(streak_v/goals["streak"]*100))),
-        (c3,"🏆", badges_v,       "Badges",     "#C9A84C", min(100, int(badges_v/goals["badges"]*100))),
-        (c4,"📝", quizzes_v,      "Quizzes",    "#1A56C4", min(100, int(quizzes_v/goals["quiz"]*100))),
-    ]:
-        with col_w:
-            st.markdown(f"""
-            <div class="stat-card">
-                <div style="font-size:20px;margin-bottom:3px">{icon}</div>
-                <div style="font-family:'Sora',sans-serif;font-size:24px;font-weight:900;
-                    color:{accent};line-height:1">{val}</div>
-                <div class="stat-lbl">{lbl}</div>
-                <div style="background:rgba(13,110,63,0.08);border-radius:99px;height:5px;
-                    overflow:hidden;margin-top:8px">
-                    <div style="width:{pct}%;height:100%;border-radius:99px;background:{accent};
-                        transition:width .6s"></div>
-                </div>
-                <div style="font-size:9px;color:#7A9A7A;margin-top:3px;font-weight:700">{pct}% goal</div>
-            </div>""", unsafe_allow_html=True)
-
-    st.markdown("<div style=\"height:6px\"></div>", unsafe_allow_html=True)
-
-    # ── Upcoming Homework ─────────────────────────────────────
-    if role in ("student","parent"):
-        homework = load_json(HOMEWORK_FILE)
-        upcoming = []
-        for hw in homework.values():
-            try:
-                due = datetime.date.fromisoformat(hw.get("due_date",""))
-                days_left = (due - datetime.date.today()).days
-                if 0 <= days_left <= 7:
-                    upcoming.append({**hw, "days_left": days_left})
-            except: pass
-        upcoming.sort(key=lambda x: x["days_left"])
-        if upcoming:
-            st.markdown("<div style=\"font-family:'Sora',sans-serif;font-size:15px;font-weight:800;"
-                        "color:#0D1F0D;margin-bottom:10px;letter-spacing:-.3px\">📅 Upcoming Homework</div>",
-                        unsafe_allow_html=True)
-            for hw in upcoming[:3]:
-                dl = hw["days_left"]
-                dl_color = "#C0392B" if dl == 0 else "#E8770A" if dl <= 2 else "#0D6E3F"
-                dl_label = "Due Today!" if dl == 0 else f"Due in {dl} day{'s' if dl!=1 else ''}"
-                subj_info = SUBJECTS.get(hw.get("subject","Maths"), {"emoji":"📚","color":"#0D6E3F"})
-                st.markdown(f"""
-                <div style="background:#fff;border:1.5px solid #E2EAE2;border-radius:12px;
-                    padding:11px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;
-                    box-shadow:0 2px 8px rgba(13,110,63,0.05)">
-                    <div style="font-size:24px;flex-shrink:0">{subj_info["emoji"]}</div>
-                    <div style="flex:1;min-width:0">
-                        <div style="font-weight:800;font-size:13px;color:#0D1F0D;
-                            white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                            {hw.get("data",{}).get("title", hw.get("topic","Homework"))}</div>
-                        <div style="font-size:11px;color:#7A9A7A;margin-top:1px">
-                            {hw.get("subject","")} · {hw.get("grade","")}</div>
-                    </div>
-                    <span style="background:{dl_color}15;color:{dl_color};
-                        border:1px solid {dl_color}30;border-radius:99px;
-                        padding:3px 9px;font-size:10px;font-weight:800;white-space:nowrap">
-                        {dl_label}</span>
-                </div>""", unsafe_allow_html=True)
-
-    # ── Continue Last Chat ────────────────────────────────────
-    hist = load_json(HISTORY_FILE)
-    user_hist = hist.get(u["email"], [])
-    if user_hist:
-        last = user_hist[-1]
-        last_sub  = last.get("subject", "")
-        last_updated = last.get("updated", "")
-        last_msgs = last.get("messages", [])
-        # Only show if session has messages and was updated within the last 7 days
-        is_recent = True
-        if last_updated:
-            try:
-                updated_date = datetime.datetime.strptime(last_updated[:10], "%Y-%m-%d").date()
-                is_recent = (datetime.date.today() - updated_date).days <= 7
-            except Exception:
-                pass
-        if last_msgs and is_recent:
-            last_q = next((m["content"][:55] for m in reversed(last_msgs) if m["role"]=="user"), "")
-            if last_q:
-                ellipsis = "..." if len(last_q) == 55 else ""
-                time_label = last_updated[:16] if last_updated else ""
-                st.markdown(f"""
-                <div style="background:linear-gradient(135deg,rgba(13,110,63,0.06),rgba(13,110,63,0.02));
-                    border:1.5px solid rgba(13,110,63,0.15);border-radius:12px;
-                    padding:11px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
-                    <div style="font-size:20px">💬</div>
-                    <div style="flex:1;min-width:0">
-                        <div style="font-size:10px;font-weight:800;color:#0D6E3F;
-                            text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px">
-                            Continue last chat · {last_sub} · {time_label}</div>
-                        <div style="font-size:12px;color:#3D5C3D;font-weight:600;
-                            white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                            "{last_q}{ellipsis}"</div>
-                    </div>
-                </div>""", unsafe_allow_html=True)
-                if st.button("▶  Continue Chat", key="home_continue_chat"):
-                    st.session_state.page = "chat"; st.rerun()
-
-    # ── Quick Access ──────────────────────────────────────────
-    st.markdown("<div style=\"font-family:'Sora',sans-serif;font-size:15px;font-weight:800;"
-                "color:#0D1F0D;margin-bottom:10px;letter-spacing:-.3px\">⚡ Quick Access</div>",
-                unsafe_allow_html=True)
-
-    # Scoped CSS — only targets buttons inside .home-quick-access to avoid bleeding to other pages
-    st.markdown("""
-    <style>
-    .home-quick-access .stButton > button {
-        min-height: 72px !important;
-        font-size: 13px !important;
-        line-height: 1.4 !important;
-        border-radius: 14px !important;
-        font-weight: 800 !important;
-        white-space: normal !important;
-        word-break: break-word !important;
-    }
-    </style>
-    <div class="home-quick-access">""", unsafe_allow_html=True)
-
-    qa_items = [
-        ("💬", "Chat Tutor",    "chat"),
-        ("📝", "Practice Quiz", "quiz"),
-        ("👥", "Friendz Quiz",  "friends"),
-        ("🎨", "Image Gen",     "image"),
-    ]
-    qa_cols = st.columns(4)
-    for qa_col, (qa_icon, qa_label, qa_dest) in zip(qa_cols, qa_items):
-        with qa_col:
-            is_active = (st.session_state.page == qa_dest)
-            if st.button(
-                f"{qa_icon} {qa_label}",
-                key=f"home_go_{qa_dest}",
-                use_container_width=True,
-                type="primary" if is_active else "secondary",
-            ):
-                st.session_state.page = qa_dest; st.rerun()
-
-    st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────

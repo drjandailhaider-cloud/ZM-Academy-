@@ -701,7 +701,7 @@ for k, v in defaults.items():
 # ─────────────────────────────────────────────────────────────────
 @st.cache_resource
 def get_client():
-    key = st.secrets.get("ANTHROPIC_API_KEY","") or os.environ.get("ANTHROPIC_API_KEY","")
+    key = (st.secrets.get("ANTHROPIC_API_KEY","") or st.secrets.get("CLAUDE_API_KEY","") or os.environ.get("ANTHROPIC_API_KEY","") or os.environ.get("CLAUDE_API_KEY",""))
     if not key: return None
     return Anthropic(api_key=key)
 
@@ -1960,7 +1960,7 @@ def page_quiz():
                 "Quiz generator. Return ONLY valid raw JSON. No backticks. No markdown.", quiz_tokens
             )
         if raw.startswith("__API_KEY_MISSING__"):
-            st.error("⚠️ API key not configured. Add ANTHROPIC_API_KEY in Streamlit Secrets.")
+            st.error("⚠️ API key not configured. Add ANTHROPIC_API_KEY or CLAUDE_API_KEY in Streamlit Secrets.")
         elif raw.startswith("__EMPTY_RESPONSE__"):
             st.error("⚠️ AI returned an empty response. Please try again.")
         elif raw.startswith("__API_ERROR__:"):

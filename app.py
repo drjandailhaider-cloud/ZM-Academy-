@@ -149,7 +149,7 @@ def init_stats():
     return {"total":0,"Maths":0,"Physics":0,"Chemistry":0,"Biology":0,
             "English":0,"Computer Science":0,"Urdu":0,
             "streak":0,"lastDate":"","images":0,"quizzes_done":0,
-            "dailyQs":0,"dailyDate":""}
+            "dailyQs":0,"dailyDate":"","study_dates":[]}
 
 def get_daily_used(user):
     stats = user.get("stats", {})
@@ -227,6 +227,9 @@ defaults = {
     # Friends group
     "group_session": None,
     "group_player_idx": 0,
+    # UI state
+    "confirm_clear_hist": False,
+    "mobile_hint_shown": False,
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -738,7 +741,8 @@ def page_auth():
                         "avatar": AVATARS[avatar],
                         "grade": grade if grade != "-- Select --" else "Grade 6",
                         "joined": datetime.date.today().isoformat(),
-                        "plan": "free", "stats": init_stats(), "badges": [], "is_new": True
+                        "plan": "free", "stats": init_stats(), "badges": [],
+                        "studied_topics": {}, "is_new": True
                     }
                     users[email2] = new_user
                     save_json(USERS_FILE, users)
@@ -883,6 +887,7 @@ def render_sidebar():
             nav_btn("💬", "Chat Tutor",    "chat",    "_s")
             nav_btn("📝", "Practice Quiz", "quiz")
             nav_btn("👥", "Friendz Quiz",  "friends")
+            nav_btn("📋", "My Homework",   "my_homework")
             nav_btn("🕐", "Chat History",  "history", "_s")
             nav_btn("🏆", "Badges",        "badges")
 
@@ -925,7 +930,10 @@ def page_home():
     h     = datetime.datetime.now().hour
     greet = "Good morning" if h < 12 else "Good afternoon" if h < 17 else "Good evening"
     role  = u.get("role", "student")
-    stats = u.get("stats", {})
+    # Guard: always ensure stats is a complete dict (handles old user records)
+    _default_stats = init_stats()
+    _raw_stats = u.get("stats", {})
+    stats = {**_default_stats, **_raw_stats}  # merge so all keys exist
 
     # ── Onboarding for new users ──────────────────────────────
     if u.get("is_new") and not st.session_state.get("onboarding_done"):
@@ -1023,7 +1031,9 @@ def page_home():
     </div>""", unsafe_allow_html=True)
 
     today_str = datetime.date.today().isoformat()
-    if stats.get("lastDate","") != today_str:
+    last_date = stats.get("lastDate", "")
+    # Only show reminder if user has studied before (lastDate is set) but not today
+    if last_date and last_date != today_str:
         st.markdown("""<div class='reminder'>🔔 <b>Daily Reminder:</b> You haven't studied today! Even 15 minutes makes a difference 💪</div>""", unsafe_allow_html=True)
 
     # ── 7-Day Streak Calendar ─────────────────────────────────
@@ -1052,41 +1062,45 @@ def page_home():
 
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
-    # ── Word of the Day ───────────────────────────────────────
-    if not st.session_state.wod_loaded:
-        with st.spinner("Loading Word of the Day..."):
-            grade = u.get("grade","Grade 6")
-            raw = call_ai(
-                [{"role":"user","content":
-                  f"Give ONE interesting English word suitable for {grade} students in Pakistan. "
-                  f'Return ONLY this JSON: {{"word":"...","urdu":"...","meaning":"...","example":"...","tip":"..."}}'}],
-                "Vocabulary teacher. Return ONLY valid JSON. No markdown.",
-            )
-            try:
-                clean = raw.replace("```json","").replace("```","").strip()
-                st.session_state.word_of_day = json.loads(clean)
-            except:
-                st.session_state.word_of_day = {
-                    "word":"Perseverance","urdu":"ثابت قدمی",
-                    "meaning":"Continued effort despite difficulties",
-                    "example":"Success comes to those with perseverance.",
-                    "tip":"Use this word in your next essay!"
-                }
-            st.session_state.wod_loaded = True
+    # ── Word of the Day — lazy-loaded, non-blocking ───────────
+    # Pre-populate with a fallback immediately so page never crashes
+    if not st.session_state.word_of_day:
+        st.session_state.word_of_day = {
+            "word":"Perseverance","urdu":"ثابت قدمی",
+            "meaning":"Continued effort despite difficulties",
+            "example":"Success comes to those with perseverance.",
+            "tip":"Use this word in your next essay!"
+        }
 
-    if st.session_state.word_of_day:
+    with st.expander("📖 Word of the Day", expanded=not st.session_state.wod_loaded):
+        if not st.session_state.wod_loaded:
+            with st.spinner("Loading today's word..."):
+                grade = u.get("grade", "Grade 6")
+                try:
+                    raw = call_ai(
+                        [{"role":"user","content":
+                          f"Give ONE interesting English word suitable for {grade} students in Pakistan. "
+                          f'Return ONLY this JSON: {{"word":"...","urdu":"...","meaning":"...","example":"...","tip":"..."}}'}],
+                        "Vocabulary teacher. Return ONLY valid JSON. No markdown.",
+                    )
+                    clean = raw.replace("```json","").replace("```","").strip()
+                    parsed = json.loads(clean)
+                    if parsed.get("word"):
+                        st.session_state.word_of_day = parsed
+                except Exception:
+                    pass  # keep fallback
+                st.session_state.wod_loaded = True
+
         w = st.session_state.word_of_day
         st.markdown(f"""
-        <div class='word-card' style='margin-bottom:16px'>
-            <div style='font-size:10px;font-weight:800;opacity:.5;text-transform:uppercase;
-                letter-spacing:1px;margin-bottom:8px'>📖 Word of the Day</div>
-            <div style='display:flex;align-items:baseline;gap:12px;flex-wrap:wrap'>
-                <span style='font-family:"Sora",sans-serif;font-size:24px;font-weight:900;color:#E8C96A'>{w.get("word","")}</span>
-                <span style='font-size:13px;opacity:.6'>— {w.get("urdu","")}</span>
+        <div style='padding:8px 0'>
+            <div style='display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px'>
+                <span style='font-family:"Sora",sans-serif;font-size:22px;font-weight:900;color:#0D6E3F'>{w.get("word","")}</span>
+                <span style='font-size:13px;color:#7A9A7A'>— {w.get("urdu","")}</span>
             </div>
-            <div style='font-size:13px;opacity:.75;margin-top:6px'>{w.get("meaning","")}</div>
-            <div style='font-size:12px;opacity:.5;margin-top:4px;font-style:italic'>"{w.get("example","")}"</div>
-            <div style='font-size:11px;color:#E8C96A;margin-top:6px'>💡 {w.get("tip","")}</div>
+            <div style='font-size:13px;color:#3D5C3D;margin-bottom:4px'>{w.get("meaning","")}</div>
+            <div style='font-size:12px;color:#7A9A7A;font-style:italic;margin-bottom:4px'>"{w.get("example","")}"</div>
+            <div style='font-size:12px;color:#C9A84C;font-weight:700'>💡 {w.get("tip","")}</div>
         </div>""", unsafe_allow_html=True)
 
     # ── Stats row with goal bars ──────────────────────────────
@@ -1329,6 +1343,21 @@ def page_quiz():
 
     # ── Results screen ────────────────────────────────────────
     if q is not None and q["done"]:
+        # Guard against stat double-count: only increment once per quiz completion
+        if not q.get("_stat_saved"):
+            users = load_json(USERS_FILE)
+            eu    = users.get(u["email"], u)
+            eu.setdefault("stats", init_stats())
+            eu["stats"]["quizzes_done"] = eu["stats"].get("quizzes_done",0) + 1
+            eu, new_b = check_badges(eu)
+            users[u["email"]] = eu
+            save_json(USERS_FILE, users)
+            st.session_state.user = eu
+            for b in new_b:
+                st.toast(f"🏆 Badge: {b['icon']} {b['name']}!", icon="🎉")
+            q["_stat_saved"] = True
+            st.session_state.quiz = q
+
         total = len(q["questions"]); score = q["score"]
         pct   = int((score/total)*100)
         emoji = "🏆" if pct>=80 else "👍" if pct>=60 else "💪"
@@ -1348,18 +1377,6 @@ def page_quiz():
                 Topic: {q.get("topic","Custom")} · {q.get("difficulty","Medium")} · {q.get("sub","")} {q.get("lvl","")}
             </div>
         </div>""", unsafe_allow_html=True)
-
-        # Update quiz count stat
-        users = load_json(USERS_FILE)
-        eu    = users.get(u["email"], u)
-        eu.setdefault("stats", init_stats())
-        eu["stats"]["quizzes_done"] = eu["stats"].get("quizzes_done",0) + 1
-        eu, new_b = check_badges(eu)
-        users[u["email"]] = eu
-        save_json(USERS_FILE, users)
-        st.session_state.user = eu
-        for b in new_b:
-            st.toast(f"🏆 Badge: {b['icon']} {b['name']}!", icon="🎉")
 
         st.markdown("### 📋 Review Answers")
         for i,(ques,ans) in enumerate(zip(q["questions"],q["answers"])):
@@ -1481,6 +1498,8 @@ def page_quiz():
 
         if st.button("🚀 Generate Quiz", use_container_width=True, type="primary", key="gen_quiz_btn"):
             topic_str = quiz_topic.strip() if quiz_topic.strip() else f"{quiz_sub} general topics"
+            # Dynamic token budget: each MCQ question needs ~200 tokens (q+4opts+answer+explanation)
+            quiz_tokens = max(1200, num_qs * 220 + 300)
             with st.spinner(f"✨ Generating {num_qs} {difficulty} questions on '{topic_str}'..."):
                 raw = call_ai(
                     [{"role":"user","content":
@@ -1489,7 +1508,7 @@ def page_quiz():
                       f"Easy=basic recall, Medium=understanding+application, Hard=analysis+evaluation. "
                       f"Return ONLY raw JSON: "
                       f'{{"questions":[{{"q":"question text","options":["A. option","B. option","C. option","D. option"],"answer":"A. option","explanation":"why"}}]}}'}],
-                    "Quiz generator. Return ONLY valid raw JSON. No backticks. No markdown.", 2000
+                    "Quiz generator. Return ONLY valid raw JSON. No backticks. No markdown.", quiz_tokens
                 )
             try:
                 clean = raw.replace("```json","").replace("```","").strip()
@@ -1564,18 +1583,19 @@ def page_friends():
 
         ques = grp["questions"][qidx]
 
-        # Scoreboard strip
-        st.markdown("<div style='display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap'>", unsafe_allow_html=True)
+        # Scoreboard strip — fixed with proper unsafe_allow_html
+        scoreboard_html = "<div style='display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap'>"
         for i, p in enumerate(grp["players"]):
             active = (i == pidx)
             bg     = "#E8472A" if active else "#F0F0F5"
             color  = "#fff"    if active else "#555"
-            st.markdown(f"""
-            <div style='background:{bg};color:{color};border-radius:99px;
-                padding:6px 14px;font-size:12px;font-weight:800;display:inline-block'>
-                {p['avatar']} {p['name']}: {p['score']}/{total_q} {"← NOW" if active else ""}
-            </div>""", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+            scoreboard_html += (
+                f"<div style='background:{bg};color:{color};border-radius:99px;"
+                f"padding:6px 14px;font-size:12px;font-weight:800;display:inline-block'>"
+                f"{p['avatar']} {p['name']}: {p['score']}/{total_q} {'← NOW' if active else ''}</div>"
+            )
+        scoreboard_html += "</div>"
+        st.markdown(scoreboard_html, unsafe_allow_html=True)
 
         st.markdown(f"""
         <div style='background:linear-gradient(135deg,#7C3AED18,#A78BFA18);border-radius:14px;
@@ -1603,6 +1623,11 @@ def page_friends():
                     st.toast(f"❌ Correct: {ques['answer']}", icon="💡")
                 grp["players"][pidx]["q_index"] = qidx + 1
                 st.session_state.group_session = grp; st.rerun()
+
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+        if st.button("🚪 End Quiz Early", use_container_width=True, type="secondary"):
+            grp["done"] = True
+            st.session_state.group_session = grp; st.rerun()
         return
 
     # ── Group setup ───────────────────────────────────────────
@@ -1637,13 +1662,14 @@ def page_friends():
 
     if st.button("🚀 Start Group Quiz", use_container_width=True, type="primary"):
         topic_str = grp_topic.strip() if grp_topic.strip() else f"{grp_sub} general"
+        grp_tokens = max(1200, grp_num * 220 + 300)
         with st.spinner(f"Generating {grp_num} questions..."):
             raw = call_ai(
                 [{"role":"user","content":
                   f"Create exactly {grp_num} {grp_diff}-level MCQ questions about '{topic_str}' "
                   f"for {grp_lvl} {grp_sub} students. "
                   f'Return ONLY raw JSON: {{"questions":[{{"q":"...","options":["A. ...","B. ...","C. ...","D. ..."],"answer":"A. ...","explanation":"..."}}]}}'}],
-                "Quiz generator. Return ONLY valid raw JSON.", 2000
+                "Quiz generator. Return ONLY valid raw JSON.", grp_tokens
             )
         try:
             clean = raw.replace("```json","").replace("```","").strip()
@@ -1795,7 +1821,7 @@ def page_image():
             })
             save_json(IMAGES_FILE, imgs)
 
-            # Update stats
+            # Update stats + check badges
             users = load_json(USERS_FILE)
             eu    = users.get(u["email"], u)
             eu.setdefault("stats", init_stats())
@@ -1822,6 +1848,7 @@ def page_image():
                 if i+j < len(user_imgs):
                     img = user_imgs[i+j]
                     with c:
+                        prompt_preview = img['prompt'][:60] + ('...' if len(img['prompt'])>60 else '')
                         st.markdown(f"""
                         <div style='background:#fff;border-radius:14px;padding:12px;
                             box-shadow:0 2px 10px rgba(0,0,0,0.07);border:1px solid #F0F0F5;
@@ -1830,18 +1857,27 @@ def page_image():
                                 {img['style']} · {img['subject']} · {img['created']}
                             </div>
                             <div style='font-size:12px;color:#555;margin-bottom:8px'>
-                                📝 {img['prompt'][:60]}...
+                                📝 {prompt_preview}
                             </div>
                         </div>""", unsafe_allow_html=True)
                         with st.expander("🔍 View full image"):
                             st.components.v1.html(img["svg"], height=480, scrolling=False)
                             b64 = base64.b64encode(img["svg"].encode()).decode()
-                            st.markdown(
-                                f'<a href="data:image/svg+xml;base64,{b64}" download="zm_diagram.svg" '
-                                f'style="display:inline-block;padding:6px 14px;background:#7C3AED;color:#fff;'
-                                f'border-radius:8px;font-weight:700;font-size:12px;text-decoration:none">⬇️ Download</a>',
-                                unsafe_allow_html=True
-                            )
+                            dl_col, del_col = st.columns(2)
+                            with dl_col:
+                                st.markdown(
+                                    f'<a href="data:image/svg+xml;base64,{b64}" download="zm_diagram_{img["id"]}.svg" '
+                                    f'style="display:inline-block;padding:6px 14px;background:#7C3AED;color:#fff;'
+                                    f'border-radius:8px;font-weight:700;font-size:12px;text-decoration:none">⬇️ Download</a>',
+                                    unsafe_allow_html=True
+                                )
+                            with del_col:
+                                if st.button("🗑️ Delete", key=f"del_img_{img['id']}", use_container_width=True):
+                                    imgs_fresh = load_json(IMAGES_FILE)
+                                    user_list  = imgs_fresh.get(u["email"], [])
+                                    imgs_fresh[u["email"]] = [x for x in user_list if x["id"] != img["id"]]
+                                    save_json(IMAGES_FILE, imgs_fresh)
+                                    st.success("Image deleted."); st.rerun()
 
 
 # ═════════════════════════════════════════════════════════════════
@@ -1955,7 +1991,17 @@ def page_syllabus():
         return
 
     # ── Progress tracker ──────────────────────────────────────
-    studied_topics = u.get("studied_topics",{})
+    # Guard: ensure studied_topics exists for old user records
+    if "studied_topics" not in u:
+        users_tmp = load_json(USERS_FILE)
+        eu_tmp = users_tmp.get(u["email"], u)
+        eu_tmp.setdefault("studied_topics", {})
+        users_tmp[u["email"]] = eu_tmp
+        save_json(USERS_FILE, users_tmp)
+        st.session_state.user = eu_tmp
+        u = eu_tmp
+
+    studied_topics = u.get("studied_topics", {})
     key = f"{subj_key}_{sel_grade}"
     done_topics  = studied_topics.get(key,[])
     total_topics = sum(len(un["topics"]) for un in units)
@@ -2033,9 +2079,13 @@ def page_syllabus():
                         else: tlist.append(topic_key)
                         st_map[key] = tlist
                         eu["studied_topics"] = st_map
+                        eu, new_b = check_badges(eu)
                         users[u["email"]] = eu
                         save_json(USERS_FILE, users)
-                        st.session_state.user = eu; st.rerun()
+                        st.session_state.user = eu
+                        for b in new_b:
+                            st.toast(f"🏆 Badge: {b['icon']} {b['name']}!", icon="🎉")
+                        st.rerun()
 
             # Quick action buttons
             ba, bb, bc = st.columns(3)
@@ -2048,7 +2098,7 @@ def page_syllabus():
                               f"Create 5 MCQ questions for unit '{unit['unit']}' covering: {topics_str}. "
                               f"For {sel_grade} {sel_sub} students. "
                               f'Return ONLY raw JSON: {{"questions":[{{"q":"...","options":["A.","B.","C.","D."],"answer":"A.","explanation":"..."}}]}}'}],
-                            "Quiz generator. Return ONLY valid raw JSON.", 1200
+                            "Quiz generator. Return ONLY valid raw JSON.", 1600
                         )
                         try:
                             clean = raw.replace("```json","").replace("```","").strip()
@@ -2146,10 +2196,22 @@ def page_history():
         st.info("📭 No chat history yet. Start a conversation with Ustad!")
         return
 
-    if st.button("🗑️ Clear All History", type="secondary"):
-        hist[u["email"]] = []
-        save_json(HISTORY_FILE, hist)
-        st.success("History cleared."); st.rerun()
+    # Confirmation-guarded clear button
+    if not st.session_state.get("confirm_clear_hist"):
+        if st.button("🗑️ Clear All History", type="secondary"):
+            st.session_state.confirm_clear_hist = True; st.rerun()
+    else:
+        st.warning("⚠️ This will permanently delete all your chat history. Are you sure?")
+        cc1, cc2 = st.columns(2)
+        with cc1:
+            if st.button("✅ Yes, delete all", type="primary", use_container_width=True):
+                hist[u["email"]] = []
+                save_json(HISTORY_FILE, hist)
+                st.session_state.confirm_clear_hist = False
+                st.success("History cleared."); st.rerun()
+        with cc2:
+            if st.button("❌ Cancel", use_container_width=True):
+                st.session_state.confirm_clear_hist = False; st.rerun()
 
     for sess in sessions:
         info  = SUBJECTS.get(sess.get("subject",""), {"emoji":"📚","color":"#666"})
@@ -2158,10 +2220,12 @@ def page_history():
                  f"{sess.get('updated','')} ({len(msgs)} msgs)")
         with st.expander(label):
             for m in msgs:
+                # Escape < > to prevent HTML injection from AI responses or user messages
+                safe_content = m['content'].replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
                 if m["role"]=="user":
-                    st.markdown(f"<div class='msg-user' style='margin-left:40px'>{m['content']}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='msg-user' style='margin-left:40px'>{safe_content}</div>", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"<div class='msg-bot' style='margin-right:40px'>{m['content']}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='msg-bot' style='margin-right:40px'>{safe_content}</div>", unsafe_allow_html=True)
             if st.button("🔄 Continue chat", key=f"cont_{sess['id']}"):
                 st.session_state.chat_messages = msgs
                 st.session_state.session_id    = sess["id"]
@@ -2327,6 +2391,7 @@ def page_homework():
             topic_str = hw_topic.strip()
             desc_str  = hw_desc.strip() if hw_desc.strip() else "Standard homework assignment."
             with st.spinner(f"✨ Generating {hw_num_q} {hw_difficulty} questions on '{topic_str}'... (20–30 sec)"):
+                hw_tokens = max(2000, hw_num_q * 280 + 600)
                 raw = call_ai(
                     [{"role": "user", "content":
                       f"Create a complete homework assignment for {hw_grade} {hw_subject} students in Pakistan. "
@@ -2343,7 +2408,7 @@ def page_homework():
                       f'"hint":"a helpful hint without giving away the answer"}}],'
                       f'"total_marks":20,"marking_guide":"concise marking guide for each question type"}}'}],
                     "You are an expert Pakistani curriculum homework generator. Return ONLY valid JSON, no extra text.",
-                    3000
+                    hw_tokens
                 )
             try:
                 clean   = raw.replace("```json", "").replace("```", "").strip()
@@ -2365,6 +2430,8 @@ def page_homework():
                     "difficulty":    hw_difficulty,
                     "due_date":      due_date,
                     "created":       datetime.date.today().isoformat(),
+                    "status":        "active",
+                    "submissions":   {},
                     "data":          hw_data,
                 }
                 save_json(HOMEWORK_FILE, homework)
@@ -2411,9 +2478,9 @@ def page_homework():
             </div>
         </div>""", unsafe_allow_html=True)
 
-        # Preview first 5 questions
+        # Preview ALL questions (was limited to 5)
         questions = data.get("questions", [])
-        st.markdown(f"#### 📝 Question Preview (showing {min(5, len(questions))} of {len(questions)})")
+        st.markdown(f"#### 📝 Questions ({len(questions)} total)")
 
         type_icons = {
             "MCQ":          ("🔵", "#2563EB"),
@@ -2422,7 +2489,7 @@ def page_homework():
             "problem":      ("🔢", "#E8472A"),
         }
 
-        for i, q in enumerate(questions[:5]):
+        for i, q in enumerate(questions):
             t_icon, t_color = type_icons.get(q.get("type", ""), ("❓", "#666"))
             type_label = q.get("type", "").replace("_", " ").title()
 
@@ -2463,13 +2530,6 @@ def page_homework():
                             font-size:12px;color:#92400E;margin-top:6px'>
                             💡 <b>Hint:</b> {q.get("hint", "")}
                         </div>""", unsafe_allow_html=True)
-
-        if len(questions) > 5:
-            st.markdown(f"""
-            <div style='text-align:center;font-size:13px;color:#888;
-                background:#F8F9FA;border-radius:10px;padding:12px;margin-top:8px'>
-                📄 + {len(questions)-5} more questions saved in the assignment
-            </div>""", unsafe_allow_html=True)
 
         # Marking Guide
         if data.get("marking_guide"):
@@ -2666,9 +2726,16 @@ def page_admin():
         days  = [(today - datetime.timedelta(days=i)) for i in range(6, -1, -1)]
         activity = {d.isoformat(): 0 for d in days}
         for ud in students.values():
-            last = ud.get("stats",{}).get("lastDate","")
-            if last in activity:
-                activity[last] += 1
+            # Use study_dates list for accurate multi-day tracking
+            study_dates_list = ud.get("stats", {}).get("study_dates", [])
+            for d_iso in study_dates_list:
+                if d_iso in activity:
+                    activity[d_iso] += 1
+            # Fallback: also count lastDate for users without study_dates
+            if not study_dates_list:
+                last = ud.get("stats", {}).get("lastDate", "")
+                if last in activity:
+                    activity[last] += 1
 
         max_act = max(max(activity.values(), default=0), 1)
         st.markdown("<div style='display:flex;flex-direction:column;gap:6px;margin-top:10px'>",
@@ -2894,6 +2961,187 @@ def page_admin():
                         st.info("⏳ No submissions yet for this assignment.")
 
 
+
+# ═════════════════════════════════════════════════════════════════
+# STUDENT HOMEWORK VIEW & SUBMIT
+# ═════════════════════════════════════════════════════════════════
+def page_student_homework():
+    u = st.session_state.user
+    st.markdown("<div class='section-header blue'>📋 My Homework</div>", unsafe_allow_html=True)
+
+    homework = load_json(HOMEWORK_FILE)
+    today_str = datetime.date.today().isoformat()
+
+    # Collect all assignments
+    all_hw = sorted(homework.values(), key=lambda x: x.get("due_date",""), reverse=False)
+
+    if not all_hw:
+        st.info("📭 No homework assignments have been posted yet. Check back soon!")
+        return
+
+    # Tabs: Pending / Completed
+    tab_pending, tab_done = st.tabs(["📝 Pending", "✅ Submitted"])
+
+    with tab_pending:
+        pending = [
+            hw for hw in all_hw
+            if u["email"] not in hw.get("submissions", {})
+            and hw.get("status","active") == "active"
+        ]
+        if not pending:
+            st.success("🎉 You're all caught up! No pending homework.")
+        for hw in pending:
+            data      = hw.get("data", {})
+            info      = SUBJECTS.get(hw.get("subject","Maths"), {"emoji":"📚","color":"#2563EB"})
+            col_c     = info["color"]
+            due       = hw.get("due_date","")
+            days_left = (datetime.date.fromisoformat(due) - datetime.date.today()).days if due else 0
+            dl_color  = "#C0392B" if days_left <= 0 else "#E8770A" if days_left <= 2 else "#059669"
+            dl_label  = "Due Today!" if days_left == 0 else (f"⚠️ Overdue by {abs(days_left)}d" if days_left < 0 else f"Due in {days_left}d")
+            hw_title  = data.get("title", hw.get("topic","Homework"))
+
+            with st.expander(f"{info['emoji']} {hw_title} · {hw.get('grade','')} · {dl_label}"):
+                st.markdown(f"""
+                <div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px'>
+                    <span style='background:{col_c}18;color:{col_c};padding:3px 10px;
+                        border-radius:99px;font-size:12px;font-weight:700'>{info["emoji"]} {hw["subject"]}</span>
+                    <span style='background:{col_c}18;color:{col_c};padding:3px 10px;
+                        border-radius:99px;font-size:12px;font-weight:700'>🎯 {hw.get("difficulty","")}</span>
+                    <span style='background:{dl_color}18;color:{dl_color};padding:3px 10px;
+                        border-radius:99px;font-size:12px;font-weight:700'>📅 {dl_label}</span>
+                </div>
+                <div style='font-size:13px;color:#374151;margin-bottom:8px'>
+                    <b>📋 Instructions:</b> {data.get("instructions","")[:300]}
+                </div>
+                <div style='font-size:12px;color:#6B7280;margin-bottom:12px'>
+                    <b>🎯 Objectives:</b> {data.get("learning_objectives","")}
+                </div>""", unsafe_allow_html=True)
+
+                questions = data.get("questions", [])
+                if not questions:
+                    st.warning("No questions found for this assignment.")
+                    continue
+
+                st.markdown(f"**📝 Answer {len(questions)} Questions**")
+                answers = {}
+                type_icons = {"MCQ":("🔵","#2563EB"),"short_answer":("📝","#059669"),
+                              "long_answer":("📄","#7C3AED"),"problem":("🔢","#E8472A")}
+
+                for qi, question in enumerate(questions):
+                    q_type = question.get("type","MCQ")
+                    t_icon, t_color = type_icons.get(q_type, ("❓","#666"))
+                    st.markdown(f"""
+                    <div style='background:#F8F9FA;border-radius:10px;padding:12px 14px;
+                        margin-bottom:8px;border-left:4px solid {t_color}'>
+                        <span style='background:{t_color}18;color:{t_color};padding:2px 8px;
+                            border-radius:99px;font-size:11px;font-weight:700;margin-bottom:6px;display:inline-block'>
+                            {t_icon} {q_type.replace("_"," ").title()} · {question.get("marks",1)} mark(s)
+                        </span>
+                        <div style='font-size:14px;font-weight:700;color:#1A1A2E;margin-top:6px'>
+                            Q{qi+1}. {question["question"]}
+                        </div>
+                    </div>""", unsafe_allow_html=True)
+
+                    if question.get("hint"):
+                        with st.expander(f"💡 Hint for Q{qi+1}"):
+                            st.info(question["hint"])
+
+                    if q_type == "MCQ" and question.get("options"):
+                        answers[qi] = st.radio(
+                            f"Your answer for Q{qi+1}",
+                            question["options"],
+                            key=f"hw_ans_{hw['id']}_{qi}",
+                            label_visibility="collapsed"
+                        )
+                    else:
+                        answers[qi] = st.text_area(
+                            f"Your answer for Q{qi+1}",
+                            placeholder="Write your answer here...",
+                            height=80,
+                            key=f"hw_ans_{hw['id']}_{qi}",
+                            label_visibility="collapsed"
+                        )
+
+                st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+                if st.button(f"📤 Submit Homework", key=f"submit_hw_{hw['id']}", use_container_width=True, type="primary"):
+                    # Auto-grade MCQs
+                    score = 0
+                    total_marks = 0
+                    for qi, question in enumerate(questions):
+                        marks = question.get("marks", 1)
+                        total_marks += marks
+                        if question.get("type") == "MCQ":
+                            if answers.get(qi,"") == question.get("answer",""):
+                                score += marks
+
+                    score_pct = int((score / max(total_marks, 1)) * 100) if total_marks else 0
+
+                    # Save submission
+                    hw_fresh = load_json(HOMEWORK_FILE)
+                    if hw["id"] in hw_fresh:
+                        hw_fresh[hw["id"]].setdefault("submissions", {})
+                        hw_fresh[hw["id"]]["submissions"][u["email"]] = {
+                            "student_name": u["name"],
+                            "answers":      {str(k): v for k, v in answers.items()},
+                            "score":        score,
+                            "total_marks":  total_marks,
+                            "score_pct":    score_pct,
+                            "submitted_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+                        }
+                        save_json(HOMEWORK_FILE, hw_fresh)
+
+                    grade_emoji = "🏆" if score_pct >= 80 else "👍" if score_pct >= 60 else "💪"
+                    st.success(f"{grade_emoji} Submitted! Your MCQ score: **{score}/{total_marks}** ({score_pct}%)")
+                    st.balloons()
+                    time.sleep(1.5); st.rerun()
+
+    with tab_done:
+        submitted = [
+            hw for hw in all_hw
+            if u["email"] in hw.get("submissions", {})
+        ]
+        if not submitted:
+            st.info("📭 You haven't submitted any homework yet.")
+        for hw in submitted:
+            data     = hw.get("data", {})
+            sub      = hw["submissions"][u["email"]]
+            info     = SUBJECTS.get(hw.get("subject","Maths"), {"emoji":"📚","color":"#2563EB"})
+            col_c    = info["color"]
+            sp       = sub.get("score_pct", 0)
+            q_dot    = "🟢" if sp >= 80 else "🟡" if sp >= 60 else "🔴"
+            hw_title = data.get("title", hw.get("topic","Homework"))
+
+            with st.expander(f"{info['emoji']} {hw_title} · {q_dot} {sp}% · Submitted {sub.get('submitted_at','')[:10]}"):
+                st.markdown(f"""
+                <div style='background:#F0FDF4;border-radius:12px;padding:14px 16px;margin-bottom:12px'>
+                    <div style='font-size:15px;font-weight:900;color:#065F46;margin-bottom:6px'>
+                        {q_dot} Score: {sub.get("score",0)}/{sub.get("total_marks",0)} ({sp}%)
+                    </div>
+                    <div style='font-size:12px;color:#6B7280'>
+                        Submitted: {sub.get("submitted_at","")}
+                    </div>
+                </div>""", unsafe_allow_html=True)
+
+                # Show answers alongside correct answers
+                questions = data.get("questions", [])
+                student_answers = sub.get("answers", {})
+                for qi, question in enumerate(questions):
+                    student_ans = student_answers.get(str(qi), "—")
+                    correct_ans = question.get("answer","")
+                    is_mcq = question.get("type") == "MCQ"
+                    is_correct = (student_ans == correct_ans) if is_mcq else None
+                    bg = "#F0FDF4" if is_correct else ("#FFF1EE" if is_correct is False else "#F8F9FA")
+                    st.markdown(f"""
+                    <div style='background:{bg};border-radius:10px;padding:10px 14px;
+                        margin-bottom:6px;border-left:3px solid {"#059669" if is_correct else "#E8472A" if is_correct is False else "#ccc"}'>
+                        <div style='font-size:13px;font-weight:700;color:#1A1A2E'>Q{qi+1}. {question["question"][:100]}</div>
+                        <div style='font-size:12px;color:#555;margin-top:4px'>Your answer: <b>{student_ans}</b>
+                            {"✅" if is_correct else "❌" if is_correct is False else ""}
+                        </div>
+                        {f'<div style="font-size:12px;color:#059669;margin-top:2px">✅ Correct: <b>{correct_ans}</b></div>' if is_mcq and not is_correct else ""}
+                    </div>""", unsafe_allow_html=True)
+
+
 # ═════════════════════════════════════════════════════════════════
 # ROUTER
 # ═════════════════════════════════════════════════════════════════
@@ -2906,15 +3154,16 @@ else:
         st.session_state.mobile_hint_shown = True
 
     p = st.session_state.page
-    if   p == "home":     page_home()
-    elif p == "chat":     page_chat()
-    elif p == "syllabus": page_syllabus()
-    elif p == "quiz":     page_quiz()
-    elif p == "friends":  page_friends()
-    elif p == "image":    page_image()
-    elif p == "homework": page_homework()
-    elif p == "admin":    page_admin()
-    elif p == "progress": page_progress()
-    elif p == "history":  page_history()
-    elif p == "badges":   page_badges()
-    elif p == "profile":  page_profile()
+    if   p == "home":        page_home()
+    elif p == "chat":        page_chat()
+    elif p == "syllabus":    page_syllabus()
+    elif p == "quiz":        page_quiz()
+    elif p == "friends":     page_friends()
+    elif p == "image":       page_image()
+    elif p == "homework":    page_homework()
+    elif p == "my_homework": page_student_homework()
+    elif p == "admin":       page_admin()
+    elif p == "progress":    page_progress()
+    elif p == "history":     page_history()
+    elif p == "badges":      page_badges()
+    elif p == "profile":     page_profile()

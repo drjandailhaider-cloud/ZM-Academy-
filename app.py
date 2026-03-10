@@ -5,7 +5,474 @@
 import streamlit as st
 import json, hashlib, datetime, time, os, base64, random
 from anthropic import Anthropic
-from curriculum import CAMBRIDGE_CURRICULUM
+# ─────────────────────────────────────────────────────────────────
+# CAMBRIDGE + PAKISTAN NATIONAL CURRICULUM
+# Grades 1–10, O Level, A Level
+# Subjects: Maths, Physics, Chemistry, Biology, English, CS, Urdu
+# ─────────────────────────────────────────────────────────────────
+def _u(name, topics): return {"unit": name, "topics": topics}
+
+CAMBRIDGE_CURRICULUM = {}
+
+# ── MATHS ─────────────────────────────────────────────────────────
+CAMBRIDGE_CURRICULUM["Maths"] = {
+  "Grade 1": {"board":"Pakistan National Curriculum","units":[
+    _u("Numbers 1–100",["Counting to 100","Number names","Before, after, between","Comparing numbers","Ordinal numbers 1st–10th"]),
+    _u("Addition & Subtraction",["Adding single digits","Subtracting single digits","Number bonds to 10","Word problems"]),
+    _u("Shapes & Measurement",["2D shapes: circle, square, triangle, rectangle","3D shapes: cube, sphere, cylinder","Long and short","Heavy and light","Measuring with non-standard units"]),
+    _u("Patterns & Data",["Repeating patterns","Sorting objects","Simple pictographs","More and fewer"]),
+  ]},
+  "Grade 2": {"board":"Pakistan National Curriculum","units":[
+    _u("Numbers to 1000",["Place value: hundreds, tens, ones","Reading and writing numbers","Comparing and ordering","Even and odd numbers","Skip counting 2s, 5s, 10s"]),
+    _u("Addition & Subtraction",["Adding 2-digit numbers with regrouping","Subtracting with borrowing","Mental strategies","Word problems"]),
+    _u("Multiplication & Division",["Multiplication as repeated addition","Times tables 2, 5, 10","Division as sharing equally","Simple division facts"]),
+    _u("Fractions",["Half, quarter, third","Equal parts of shapes","Fractions of a set","Comparing simple fractions"]),
+    _u("Geometry & Measurement",["Lines: straight and curved","Right angles","Perimeter of simple shapes","Telling time to half hour","Calendar and months"]),
+  ]},
+  "Grade 3": {"board":"Pakistan National Curriculum","units":[
+    _u("Numbers & Place Value",["Numbers to 10,000","Place value to thousands","Rounding to nearest 10 and 100","Roman numerals I–XII","Negative numbers introduction"]),
+    _u("Operations",["Addition with regrouping (4 digits)","Subtraction with regrouping","Multiplication tables 2–10","Long multiplication 2×1 digit","Division with remainders"]),
+    _u("Fractions & Decimals",["Equivalent fractions","Comparing fractions","Tenths as decimals","Adding fractions with same denominator"]),
+    _u("Geometry",["Angles: right, acute, obtuse","Perimeter of polygons","Area by counting squares","Parallel and perpendicular lines","Symmetry"]),
+    _u("Data Handling",["Tally charts","Bar charts","Pictograms","Collecting and recording data"]),
+  ]},
+  "Grade 4": {"board":"Pakistan National Curriculum","units":[
+    _u("Numbers",["Numbers to 1,000,000","Prime and composite numbers","Factors and multiples","LCM and HCF","Negative numbers on number line"]),
+    _u("Fractions & Decimals",["Mixed numbers and improper fractions","Adding/subtracting unlike fractions","Multiplying fractions","Decimals to hundredths","Rounding decimals"]),
+    _u("Algebra Basics",["Number patterns and rules","Simple equations: x+3=7","Variables and expressions","Function machines"]),
+    _u("Measurement",["Area of triangles","Volume of cuboids","Units of length, mass, capacity","Converting between units","Perimeter of compound shapes"]),
+    _u("Geometry",["Properties of quadrilaterals","Angles in triangles sum to 180°","Coordinates in first quadrant","Translation and reflection"]),
+  ]},
+  "Grade 5": {"board":"Pakistan National Curriculum","units":[
+    _u("Number Theory",["Prime factorisation","LCM and HCF using prime factors","Indices/powers and square roots","BODMAS/BIDMAS","Estimation and approximation"]),
+    _u("Fractions, Decimals & Percentages",["Converting fractions, decimals, percentages","Percentage of a quantity","Profit and loss","Discount","Ratio and proportion"]),
+    _u("Algebra",["Algebraic expressions and simplification","Solving simple linear equations","Substitution into formulae","Sequences and patterns"]),
+    _u("Geometry & Mensuration",["Area of circles: πr²","Volume of prisms","Surface area","Coordinates in all four quadrants","Interior and exterior angles"]),
+    _u("Data & Statistics",["Pie charts","Bar graphs and line graphs","Mean, median, mode, range","Basic probability"]),
+  ]},
+  "Grade 6": {"board":"Cambridge Lower Secondary (0862)","units":[
+    _u("Number",["Integers and ordering","Factors, multiples, primes, LCM, HCF","Powers and roots","Fractions, decimals, percentages","Ratio and proportion","Standard form introduction"]),
+    _u("Algebra",["Algebraic notation","Simplifying expressions","Expanding brackets","Solving linear equations","Substitution","Sequences and term-to-term rules","Coordinates and graphs"]),
+    _u("Geometry",["Angles on lines and at points","Properties of triangles and quadrilaterals","Circles: radius, diameter, circumference","Transformations: reflection, rotation, translation","Construction with compass and ruler"]),
+    _u("Statistics & Probability",["Mean, median, mode, range","Bar charts, pie charts, line graphs","Frequency tables","Probability scale 0 to 1","Listing outcomes"]),
+  ]},
+  "Grade 7": {"board":"Cambridge Lower Secondary (0862)","units":[
+    _u("Number",["Ordering integers and decimals","Percentage increase and decrease","Reverse percentages","Standard form","Rational and irrational numbers"]),
+    _u("Algebra",["Expanding and factorising expressions","Equations with unknowns on both sides","Linear inequalities","Straight-line graphs: y = mx + c","Gradient and y-intercept","Simultaneous equations introduction"]),
+    _u("Geometry",["Area of compound shapes","Surface area of prisms and cylinders","Volume of cylinders: πr²h","Bearings","Congruence and similarity","Pythagoras' theorem"]),
+    _u("Statistics & Probability",["Scatter graphs and correlation","Two-way tables","Combined events and sample space","Relative frequency","Comparing distributions"]),
+  ]},
+  "Grade 8": {"board":"Cambridge Lower Secondary (0862)","units":[
+    _u("Number",["Laws of indices","Introduction to surds","Upper and lower bounds","Direct and inverse proportion","Problems involving percentage"]),
+    _u("Algebra",["Quadratic expressions: expanding (a+b)²","Factorising quadratics","Solving quadratics by factorisation","Simultaneous equations: elimination and substitution","Graphing quadratics"]),
+    _u("Geometry",["Trigonometry: sin, cos, tan","Circle theorems","Vectors: addition and scalar multiplication","Loci and constructions","3D shapes and Pythagoras"]),
+    _u("Statistics",["Cumulative frequency graphs","Box-and-whisker plots","Histograms","Stratified sampling","Comparing distributions"]),
+  ]},
+  "Grade 9": {"board":"Cambridge IGCSE Mathematics (0580)","units":[
+    _u("Number",["Types of numbers","Indices and standard form","Ratio, rate and proportion","Compound interest and reverse percentages","Surds"]),
+    _u("Algebra",["Algebraic manipulation","Linear and quadratic equations","Simultaneous equations","Inequalities","Functions: domain and range","Arithmetic and geometric sequences"]),
+    _u("Coordinate Geometry",["Gradient and equation of a line","Parallel and perpendicular lines","Distance and midpoint formulae","Graphs of functions","Distance–time and speed–time graphs"]),
+    _u("Geometry & Trigonometry",["Circle theorems","Pythagoras and trigonometry","Sine and cosine rules","Arc length and sector area","Vectors","Transformations"]),
+    _u("Statistics & Probability",["Sampling and data collection","Averages and spread","Histograms and cumulative frequency","Tree diagrams","Conditional probability"]),
+  ]},
+  "Grade 10": {"board":"Cambridge IGCSE Mathematics (0580) Extended","units":[
+    _u("Advanced Algebra",["Quadratic formula and completing the square","Algebraic fractions","Remainder and factor theorems","Binomial expansion","Partial fractions"]),
+    _u("Functions & Graphs",["Domain and range","Composite and inverse functions","Exponential and logarithmic functions","Differentiation introduction","Rates of change"]),
+    _u("Advanced Trigonometry",["Sine and cosine rules","Trigonometric graphs","Solving trig equations","3D trigonometry","Radians"]),
+    _u("Matrices & Transformations",["Matrix operations","Determinant and inverse","Transformation matrices","Combined transformations"]),
+    _u("Statistics",["Standard deviation","Conditional probability","Normal distribution introduction","Regression lines"]),
+  ]},
+  "O Level": {"board":"Cambridge O Level Mathematics (4024)","units":[
+    _u("Number & Algebra",["Number systems","Algebraic expressions","Equations and inequalities","Matrices","Vectors","Functions"]),
+    _u("Geometry & Trigonometry",["Circle theorems","Trigonometry in 2D and 3D","Mensuration","Transformations","Loci"]),
+    _u("Statistics & Probability",["Statistical diagrams","Averages and spread","Probability","Cumulative frequency"]),
+  ]},
+  "A Level": {"board":"Cambridge A Level Mathematics (9709)","units":[
+    _u("Pure 1",["Quadratics","Functions","Coordinate geometry","Binomial expansion","Trigonometry","Vectors","Differentiation","Integration"]),
+    _u("Pure 2 & 3",["Algebra","Logarithms and exponentials","Trigonometry","Differential equations","Complex numbers","Numerical methods"]),
+    _u("Statistics 1",["Data representation","Permutations and combinations","Probability","Discrete random variables","Normal distribution"]),
+    _u("Mechanics 1",["Forces and equilibrium","Kinematics in 1D","Newton's laws","Energy, work and power","Momentum"]),
+  ]},
+}
+
+# ── PHYSICS ───────────────────────────────────────────────────────
+CAMBRIDGE_CURRICULUM["Physics"] = {
+  "Grade 1": {"board":"Pakistan National Curriculum (Science)","units":[
+    _u("Forces & Motion",["Push and pull forces","Moving and stationary objects","Fast and slow","Friction basics"]),
+    _u("Light & Sound",["Sources of light","Light travels in straight lines","Loud and soft sounds","High and low pitch"]),
+    _u("Materials",["Hard and soft","Rough and smooth","Waterproof materials","Magnetic and non-magnetic"]),
+  ]},
+  "Grade 2": {"board":"Pakistan National Curriculum (Science)","units":[
+    _u("Forces",["Gravity pulls things down","Floating and sinking","Stretching and squashing"]),
+    _u("Light",["Transparent and opaque materials","Shadows","Day and night"]),
+    _u("Sound",["Sound made by vibrations","Travelling through materials","Volume and pitch"]),
+  ]},
+  "Grade 3": {"board":"Pakistan National Curriculum (Science)","units":[
+    _u("Forces & Magnets",["Types of forces","Magnetic force","Poles of a magnet","Friction and its effects","Balanced and unbalanced forces"]),
+    _u("Light",["Light sources","Reflection","Shadows and their properties","Colour spectrum"]),
+    _u("Sound",["How sound travels","Loudness and pitch","Musical instruments","Sound absorption"]),
+  ]},
+  "Grade 4": {"board":"Pakistan National Curriculum (Science)","units":[
+    _u("Electricity",["Simple circuits","Conductors and insulators","Series and parallel circuits","Switches","Electrical safety"]),
+    _u("Energy",["Forms of energy","Energy transfers","Renewable sources","Non-renewable sources","Saving energy"]),
+    _u("Forces & Motion",["Speed and distance","Measuring speed","Gravity","Air resistance"]),
+  ]},
+  "Grade 5": {"board":"Pakistan National Curriculum (Science)","units":[
+    _u("Forces & Space",["Gravity and weight","Mass vs weight","The solar system","Earth's orbit and seasons"]),
+    _u("Electricity & Magnetism",["Current and voltage","Circuit diagrams","Electromagnets","Magnetic fields"]),
+    _u("Earth Sciences",["Rock cycle","Weathering and erosion","Water cycle","Natural disasters"]),
+  ]},
+  "Grade 6": {"board":"Cambridge Lower Secondary (0893)","units":[
+    _u("Forces & Motion",["Contact and non-contact forces","Balanced and unbalanced forces","Friction and air resistance","Gravity and weight","Speed = distance ÷ time"]),
+    _u("Energy",["Forms of energy","Energy transfers and transformations","Renewable energy","Non-renewable energy","Conservation of energy"]),
+    _u("Sound & Light",["Sound wave properties: amplitude, frequency","Reflection and echo","Reflection of light","Refraction introduction","Colour spectrum"]),
+  ]},
+  "Grade 7": {"board":"Cambridge Lower Secondary (0893)","units":[
+    _u("Matter & Properties",["States of matter and particle model","Density: mass ÷ volume","Pressure in fluids","Upthrust and Archimedes' principle","Gas pressure"]),
+    _u("Electricity & Magnetism",["Static electricity","Series and parallel circuits","Resistance and Ohm's law introduction","Magnetic fields","Electromagnets and applications"]),
+    _u("Waves",["Wave properties: amplitude, frequency, wavelength","Transverse and longitudinal waves","Electromagnetic spectrum","Uses of EM waves","Sound and hearing"]),
+  ]},
+  "Grade 8": {"board":"Cambridge Lower Secondary (0893)","units":[
+    _u("Mechanics",["Speed, velocity and acceleration","Distance-time graphs","Velocity-time graphs","Newton's three laws","Momentum and impulse"]),
+    _u("Thermal Physics",["Specific heat capacity","Latent heat: melting and boiling","Conduction, convection and radiation","Thermal expansion","Gas laws: Boyle's and Charles's"]),
+    _u("Space Physics",["The solar system","Stellar life cycles","Galaxies and universe","Gravitational fields and orbits","Satellites"]),
+  ]},
+  "Grade 9": {"board":"Cambridge IGCSE Physics (0625)","units":[
+    _u("General Physics",["Measurements and SI units","Scalars and vectors","Velocity and acceleration","Forces and Newton's laws","Moments and equilibrium","Work, energy, power","Pressure"]),
+    _u("Thermal Physics",["Kinetic theory","Thermometers and temperature scales","Specific heat capacity","Specific latent heat","Gas laws and Kelvin scale","Heat transfer"]),
+    _u("Waves",["General wave properties","Sound waves","Reflection and refraction of light","Total internal reflection","Lenses","Electromagnetic spectrum"]),
+    _u("Electricity & Magnetism",["Electric charge and current","Potential difference and resistance","Ohm's law","Series and parallel circuits","Electromagnetic induction","Transformers"]),
+    _u("Atomic Physics",["Atomic structure","Radioactive emissions: α, β, γ","Nuclear equations","Half-life","Uses and dangers of radiation","Nuclear fission and fusion"]),
+  ]},
+  "Grade 10": {"board":"Cambridge IGCSE Physics (0625) Extended","units":[
+    _u("Advanced Mechanics",["Projectile motion","Circular motion and centripetal force","Gravitational fields","Satellite orbital speed"]),
+    _u("Advanced Electricity",["Internal resistance and EMF","Kirchhoff's laws","Capacitors","Semiconductors and diodes","Logic gates"]),
+    _u("Waves & Optics",["Interference and diffraction","Young's double-slit experiment","Polarisation","Doppler effect","Optical fibres"]),
+    _u("Nuclear Physics",["Mass-energy equivalence: E = mc²","Nuclear fission reactors","Nuclear fusion","Binding energy per nucleon"]),
+  ]},
+  "O Level": {"board":"Cambridge O Level Physics (5054)","units":[
+    _u("Mechanics",["Measurements","Kinematics","Dynamics and Newton's laws","Mass, weight, density","Moments","Energy and power","Pressure"]),
+    _u("Thermal Physics",["Kinetic theory","Thermal properties","Heat transfer: conduction, convection, radiation"]),
+    _u("Waves",["General waves","Light and optics","Electromagnetic spectrum","Sound"]),
+    _u("Electricity & Magnetism",["Magnetism","Electrical quantities","Circuits","Practical electricity","Electromagnetic effects"]),
+    _u("Atomic Physics",["Radioactivity","Nuclear energy"]),
+  ]},
+  "A Level": {"board":"Cambridge A Level Physics (9702)","units":[
+    _u("Measurement & Mechanics",["SI units, scalars and vectors","Kinematics equations","Newton's laws and momentum","Circular motion","Gravitational fields","Oscillations and SHM"]),
+    _u("Matter & Thermal Physics",["Deformation of solids: Hooke's law","Thermal properties of materials","Ideal gases and kinetic theory"]),
+    _u("Waves & Superposition",["Progressive waves","Superposition and interference","Diffraction","EM waves and polarisation"]),
+    _u("Electricity & Electromagnetism",["Electric fields and potential","Capacitance","Magnetic fields","Electromagnetic induction","AC theory and transformers"]),
+    _u("Modern & Quantum Physics",["Photoelectric effect","de Broglie wavelength","Atomic spectra","Nuclear physics","Medical imaging","Astrophysics"]),
+  ]},
+}
+
+# ── CHEMISTRY ─────────────────────────────────────────────────────
+CAMBRIDGE_CURRICULUM["Chemistry"] = {
+  "Grade 1": {"board":"Pakistan National Curriculum (Science)","units":[
+    _u("Materials",["Names of common materials","Properties: hard/soft, rough/smooth","Natural and man-made materials","Uses of materials"]),
+  ]},
+  "Grade 2": {"board":"Pakistan National Curriculum (Science)","units":[
+    _u("Materials & Changes",["Solid, liquid, gas","Melting and freezing","Water and ice","Mixing materials"]),
+  ]},
+  "Grade 3": {"board":"Pakistan National Curriculum (Science)","units":[
+    _u("Rocks & Soils",["Types of rocks","Properties of rocks","Soil types","Fossils"]),
+    _u("States of Matter",["Particle theory introduction","Evaporation and condensation","Dissolving and solutions","Filtering"]),
+  ]},
+  "Grade 4": {"board":"Pakistan National Curriculum (Science)","units":[
+    _u("Materials & Properties",["Thermal and electrical conductors","Insulators","Magnetic materials","Reversible and irreversible changes"]),
+    _u("Mixtures & Separation",["Mixtures and solutions","Filtering and evaporation","Distillation introduction","Solubility"]),
+  ]},
+  "Grade 5": {"board":"Pakistan National Curriculum (Science)","units":[
+    _u("Chemical Changes",["Physical vs chemical change","Burning","Rusting","Signs of chemical reactions","Acids and bases: pH scale"]),
+    _u("Earth & Resources",["Earth's structure","Rock cycle","Water cycle","Fossil fuels","Renewable resources"]),
+  ]},
+  "Grade 6": {"board":"Cambridge Lower Secondary (0893)","units":[
+    _u("States of Matter",["Solids, liquids and gases","Particle model and kinetic theory","Changes of state","Evaporation and condensation","Diffusion"]),
+    _u("Elements, Compounds & Mixtures",["Elements and the periodic table","Compounds vs mixtures","Chemical formulae","Acids and alkalis","pH scale and indicators"]),
+    _u("Separating Mixtures",["Filtration","Evaporation to dryness","Simple distillation","Chromatography","Crystallisation"]),
+  ]},
+  "Grade 7": {"board":"Cambridge Lower Secondary (0893)","units":[
+    _u("Atoms & Elements",["Atomic structure: protons, neutrons, electrons","Proton number and mass number","Isotopes","Periodic table: groups and periods","Symbols and formulae"]),
+    _u("Chemical Reactions",["Physical and chemical changes","Word equations","Conservation of mass","Exothermic and endothermic reactions","Burning reactions"]),
+    _u("Metals & Non-Metals",["Properties of metals","Properties of non-metals","Reactions of metals with oxygen, water, acid","Metal oxides","Displacement reactions"]),
+  ]},
+  "Grade 8": {"board":"Cambridge Lower Secondary (0893)","units":[
+    _u("Periodic Table",["Groups I, II, VII, 0","Alkali metals","Halogens","Noble gases","Transition metals","Trends across periods"]),
+    _u("Chemical Bonding",["Ionic bonding: electron transfer","Covalent bonding: electron sharing","Metallic bonding","Properties related to bonding","Giant structures"]),
+    _u("Acids, Bases & Salts",["Properties of acids and bases","Neutralisation","Making salts","Precipitation reactions","Ionic equations"]),
+  ]},
+  "Grade 9": {"board":"Cambridge IGCSE Chemistry (0620)","units":[
+    _u("Principles of Chemistry",["Atomic structure and subatomic particles","The Periodic Table: trends and groups","Ionic, covalent and metallic bonding","Chemical formulae and equations","Stoichiometry and mole concept","Electrolysis"]),
+    _u("Physical Chemistry",["Energetics: exothermic and endothermic","Rates of reaction: factors","Reversible reactions and equilibrium","Oxidation and reduction (redox)","Electrochemical cells"]),
+    _u("Inorganic Chemistry",["Reactivity series of metals","Extraction of metals: iron, aluminium","Corrosion and prevention","Acids, bases, salts","Ammonia and the Haber process","Sulfuric acid and its uses"]),
+    _u("Organic Chemistry",["Introduction to organic chemistry","Alkanes: properties and reactions","Alkenes: addition reactions","Ethanol: fermentation and hydration","Carboxylic acids","Addition and condensation polymers"]),
+  ]},
+  "Grade 10": {"board":"Cambridge IGCSE Chemistry (0620) Extended","units":[
+    _u("Advanced Stoichiometry",["Mole calculations","Empirical and molecular formulae","Titration calculations","Gas volume calculations","Yield and percentage purity"]),
+    _u("Advanced Organic Chemistry",["Structural and geometric isomerism","Benzene and aromatic compounds","Condensation polymerisation: nylon, polyesters","Amino acids and proteins","Carbohydrates and fats"]),
+    _u("Advanced Physical Chemistry",["Enthalpy cycle: Hess's law","Activation energy and catalysts","Le Chatelier's principle","Quantitative electrolysis (Faraday)","Electrochemical series"]),
+    _u("Analytical Chemistry",["Identifying ions: flame tests and precipitates","Gas tests: CO₂, H₂, O₂, NH₃, Cl₂","Chromatography Rf values","Identifying organic compounds","Instrumental analysis introduction"]),
+  ]},
+  "O Level": {"board":"Cambridge O Level Chemistry (5070)","units":[
+    _u("Physical & Inorganic Chemistry",["Atomic structure","Bonding","Stoichiometry","Electrolysis","Energetics","Kinetics","Equilibrium","Acids, bases and salts","Periodic table","Metals","Nitrogen and sulfur"]),
+    _u("Organic Chemistry",["Alkanes","Alkenes","Alcohols","Halogenoalkanes","Carboxylic acids","Esters","Amines","Amino acids","Polymers","Benzene"]),
+  ]},
+  "A Level": {"board":"Cambridge A Level Chemistry (9701)","units":[
+    _u("Physical Chemistry",["Atoms, molecules and stoichiometry","Atomic structure","Chemical bonding and structure","States of matter","Chemical energetics","Electrochemistry","Equilibria","Reaction kinetics"]),
+    _u("Inorganic Chemistry",["Periodicity","Group 2 and Group 17","Period 3","Transition elements","Nitrogen and sulfur chemistry"]),
+    _u("Organic Chemistry",["Hydrocarbons","Halogen compounds","Hydroxy compounds","Carbonyl compounds","Carboxylic acids and derivatives","Nitrogen compounds","Polymerisation","Spectroscopic techniques"]),
+  ]},
+}
+
+# ── BIOLOGY ───────────────────────────────────────────────────────
+CAMBRIDGE_CURRICULUM["Biology"] = {
+  "Grade 1": {"board":"Pakistan National Curriculum (Science)","units":[
+    _u("Living Things",["Animals and plants","Habitats","Basic food chains","Life cycles","Caring for living things"]),
+    _u("Human Body",["Main body parts","Five senses","Healthy foods","Exercise and hygiene","Growing and changing"]),
+  ]},
+  "Grade 2": {"board":"Pakistan National Curriculum (Science)","units":[
+    _u("Plants",["Parts of a plant: roots, stem, leaves, flower","What plants need to grow","Seeds and germination","Photosynthesis basics"]),
+    _u("Animals",["Animal groups: mammals, birds, fish, reptiles, amphibians","Food chains","Habitats and adaptation","Life cycles"]),
+    _u("Human Body",["Skeletal system","Muscular system","Digestive system basics","Healthy diet and exercise"]),
+  ]},
+  "Grade 3": {"board":"Pakistan National Curriculum (Science)","units":[
+    _u("Life Processes",["MRS GREN overview","Photosynthesis","Respiration basics","Nutrition in animals","Excretion"]),
+    _u("Ecosystems",["Food webs","Producers and consumers","Decomposers","Habitats: forest, desert, ocean","Adaptation"]),
+    _u("Human Health",["Diseases: bacteria and viruses","Hygiene and prevention","Vaccines and immunity","Medicines"]),
+  ]},
+  "Grade 4": {"board":"Pakistan National Curriculum (Science)","units":[
+    _u("Cells",["Plant and animal cells","Cell parts: nucleus, cytoplasm, membrane, wall","Unicellular organisms","Using a microscope"]),
+    _u("Reproduction",["Plant reproduction: pollination, fertilisation, seed dispersal","Animal reproduction","Human life cycle"]),
+    _u("Environment",["Carbon cycle","Nitrogen cycle","Pollution types","Conservation","Endangered species"]),
+  ]},
+  "Grade 5": {"board":"Pakistan National Curriculum (Science)","units":[
+    _u("Body Systems",["Circulatory system: heart and blood","Respiratory system","Nervous system basics","Digestive system in detail","Excretory system"]),
+    _u("Genetics & Variation",["Heredity basics","Variation in species","Natural selection introduction","Selective breeding"]),
+    _u("Ecology",["Biomes of the world","Energy flow in ecosystems","Human impact","Sustainable development"]),
+  ]},
+  "Grade 6": {"board":"Cambridge Lower Secondary (0893)","units":[
+    _u("Cells & Organisation",["Plant and animal cells: structure and function","Cell organelles","Unicellular vs multicellular","Tissues, organs, organ systems","Using a light microscope"]),
+    _u("Ecosystems",["Biotic and abiotic factors","Food chains and webs","Producers, consumers, decomposers","Adaptation to environments","Competition and predation"]),
+    _u("Human Body Systems",["Skeletal and muscular systems","Digestive system: digestion and absorption","Circulatory system overview","Teeth types and functions","Healthy lifestyle"]),
+  ]},
+  "Grade 7": {"board":"Cambridge Lower Secondary (0893)","units":[
+    _u("Life Processes",["MRS GREN in detail","Photosynthesis: equation and factors","Aerobic and anaerobic respiration","Nutrition: balanced diet and food tests","Excretion in humans and plants"]),
+    _u("Reproduction",["Sexual and asexual reproduction","Flowering plant reproduction","Human reproductive system","Menstrual cycle","Pregnancy and development"]),
+    _u("Environment & Ecology",["Carbon and nitrogen cycles","Decomposers and decay","Pollution: air, water, land","Conservation strategies","Climate change and biodiversity"]),
+  ]},
+  "Grade 8": {"board":"Cambridge Lower Secondary (0893)","units":[
+    _u("Cells & Biological Molecules",["Prokaryotic vs eukaryotic cells","Osmosis and diffusion","Active transport","Carbohydrates, lipids, proteins","Enzymes: activity, denaturation, pH"]),
+    _u("Disease & Immunity",["Pathogens: bacteria, viruses, fungi, parasites","How diseases spread","Immune system: antibodies and phagocytes","Vaccination","Antibiotics and limitations"]),
+    _u("Genetics & Variation",["DNA structure: double helix and bases","Chromosomes and genes","Mitosis: growth and repair","Meiosis: sexual reproduction","Inheritance: dominant and recessive","Mutations and genetic disorders"]),
+  ]},
+  "Grade 9": {"board":"Cambridge IGCSE Biology (0610)","units":[
+    _u("Characteristics & Classification",["Characteristics of living organisms","Classification: kingdom to species","Dichotomous keys","Cell structure: animal, plant, bacterial","Biological molecules and enzymes"]),
+    _u("Nutrition",["Photosynthesis: equation and limiting factors","Human digestive system","Enzymes in digestion","Absorption in small intestine","Malnutrition and deficiency diseases"]),
+    _u("Respiration & Gas Exchange",["Aerobic respiration equation","Anaerobic respiration in muscles and yeast","Gas exchange in humans: alveoli","Gas exchange in plants: stomata","Breathing mechanism"]),
+    _u("Transport",["Blood: plasma, red cells, white cells, platelets","Blood vessels: artery, vein, capillary","Heart structure and cardiac cycle","Double circulatory system","Transport in plants: xylem and phloem","Transpiration and factors"]),
+    _u("Excretion & Coordination",["Kidney structure and ultrafiltration","Nervous system: neurones and reflex arc","Hormones: insulin, glucagon, ADH","Homeostasis: temperature and blood glucose","Eye and ear structure"]),
+    _u("Reproduction & Genetics",["Human reproduction: fertilisation to birth","Cell division: mitosis and meiosis","Monohybrid inheritance","Codominance","Natural selection and evolution"]),
+  ]},
+  "Grade 10": {"board":"Cambridge IGCSE Biology (0610) Extended","units":[
+    _u("Advanced Genetics",["Dihybrid crosses","Codominance and multiple alleles","Sex-linked inheritance: haemophilia, colour blindness","Genetic engineering: insulin production","Selective breeding","Cloning: tissue culture"]),
+    _u("Advanced Physiology",["Kidney failure: dialysis and transplant","Plant hormones: auxins and phototropism","Immune response: T and B lymphocytes","Biotechnology: fermenters","Brain regions and functions"]),
+    _u("Ecology & Environment",["Energy flow and trophic levels","Carbon and nitrogen cycles in detail","Human population growth impact","Deforestation and habitat destruction","Conservation strategies","Global warming and climate change"]),
+  ]},
+  "O Level": {"board":"Cambridge O Level Biology (5090)","units":[
+    _u("Cell Biology",["Cell structure","Biological molecules","Enzymes","Cell division","Transport in cells"]),
+    _u("Physiology",["Nutrition","Transport","Respiration","Gas exchange","Excretion","Coordination","Reproduction","Growth"]),
+    _u("Genetics, Evolution & Ecology",["Inheritance and variation","Natural selection","Ecosystems","Human impact on environment"]),
+  ]},
+  "A Level": {"board":"Cambridge A Level Biology (9700)","units":[
+    _u("Cell Biology & Biochemistry",["Cell ultrastructure","Biological molecules","Enzyme kinetics","Membrane structure and transport","Cell division"]),
+    _u("Physiology",["Gas exchange in plants, insects, fish","Transport in plants","Transport in mammals","Nutrition and digestion","Excretion","Homeostasis","Nervous coordination","Hormonal coordination","Reproduction"]),
+    _u("Genetics & Evolution",["Inheritance: mono, di, sex-linked","Population genetics","Selection and speciation","Mutations and cancer"]),
+    _u("Ecology",["Energy and nutrient cycles","Populations and communities","Human impact and conservation"]),
+    _u("Biochemistry",["Photosynthesis: light-dependent and light-independent","Respiration: glycolysis, Krebs cycle, oxidative phosphorylation","Genetic technology"]),
+  ]},
+}
+
+# ── ENGLISH ───────────────────────────────────────────────────────
+CAMBRIDGE_CURRICULUM["English"] = {
+  "Grade 1": {"board":"Pakistan National Curriculum","units":[
+    _u("Phonics & Reading",["Alphabet sounds (phonics)","CVC words: cat, dog, pen","Sight words","Simple sentences","Reading aloud"]),
+    _u("Writing",["Letter formation","Copying words and sentences","Capital letters and full stops","Writing own name"]),
+    _u("Listening & Speaking",["Listening to and retelling stories","Answering simple questions","Describing pictures","Basic conversation"]),
+  ]},
+  "Grade 2": {"board":"Pakistan National Curriculum","units":[
+    _u("Reading & Comprehension",["Reading short texts","Answering literal questions","Identifying characters and setting","Sequencing story events","Word meanings in context"]),
+    _u("Grammar",["Nouns: common and proper","Pronouns","Verbs","Adjectives","Plural nouns","Simple present and past tense"]),
+    _u("Writing",["Writing sentences","Punctuation: full stop, question mark, exclamation mark","Simple paragraphs","Short stories"]),
+  ]},
+  "Grade 3": {"board":"Pakistan National Curriculum","units":[
+    _u("Reading",["Comprehension strategies","Main idea and supporting details","Making inferences","Skimming and scanning","Different text types"]),
+    _u("Grammar",["Parts of speech","Simple and continuous tenses","Articles: a, an, the","Prepositions","Conjunctions","Comma and apostrophe"]),
+    _u("Writing",["Paragraph structure","Narrative writing","Descriptive writing","Informal letters","Dictionary and thesaurus use"]),
+  ]},
+  "Grade 4": {"board":"Pakistan National Curriculum","units":[
+    _u("Reading",["Fact and opinion","Summarising a text","Author's purpose","Figurative language: simile, metaphor","Poetry: rhyme, rhythm"]),
+    _u("Grammar",["Main and subordinate clauses","Active and passive voice","Direct and indirect speech","Conditional sentences","Modal verbs"]),
+    _u("Writing",["Five-paragraph essay","Persuasive writing","Report writing","Story writing: plot structure","Editing and proofreading"]),
+  ]},
+  "Grade 5": {"board":"Pakistan National Curriculum","units":[
+    _u("Reading",["Analysing texts","Comparing two texts","Themes and messages","Literary devices: irony, symbolism","Non-fiction texts"]),
+    _u("Grammar & Vocabulary",["Complex sentences","Relative clauses","Reported speech","Synonyms, antonyms, homonyms","Word roots, prefixes, suffixes"]),
+    _u("Writing",["Formal and informal register","Argumentative essays","Creative writing techniques","Research note-taking","Presentation skills"]),
+  ]},
+  "Grade 6": {"board":"Cambridge Lower Secondary (0851)","units":[
+    _u("Reading",["Fiction and non-fiction","Comprehension strategies","Inference and deduction","Author's viewpoint and purpose","Comparing texts"]),
+    _u("Writing",["Narrative writing: structure and technique","Descriptive writing: sensory language","Formal letters","Reports and summaries","Planning and drafting"]),
+    _u("Grammar & Vocabulary",["Tenses review","Sentence types","Punctuation: semicolon, colon, dash","Figurative language","Word formation: affixes"]),
+    _u("Speaking & Listening",["Formal presentations","Group discussion and debate","Active listening and note-taking","Interviews","Role play"]),
+  ]},
+  "Grade 7": {"board":"Cambridge Lower Secondary (0851)","units":[
+    _u("Reading",["Analysing language choices","Dramatic techniques in texts","Unseen poetry: form, structure, language","Media texts: bias and persuasion","Comparing texts from different periods"]),
+    _u("Writing",["Discursive writing: balanced argument","Reviews: film, book, music","Newspaper and magazine articles","Creative writing: character and setting","Editing for impact"]),
+    _u("Grammar",["Complex sentences with subordinate clauses","Passive voice for effect","All types of conditional sentences","Cohesive devices"]),
+  ]},
+  "Grade 8": {"board":"Cambridge Lower Secondary (0851)","units":[
+    _u("Literature",["Short story analysis: narrative voice and structure","Poetry comparison: form, imagery, tone","Drama: stage directions and dialogue","Novel study: themes and character","Motifs and symbolism"]),
+    _u("Language Skills",["Argumentative essays","Analytical writing with quotations","Language features and their effects","Tone, register and audience","Advanced proofreading"]),
+    _u("Grammar",["Subjunctive mood","Participle clauses","Inversion for emphasis","Parenthetical phrases","Sentence rhythm and variety"]),
+  ]},
+  "Grade 9": {"board":"Cambridge IGCSE First Language English (0500)","units":[
+    _u("Reading",["Comprehension: explicit and implicit","Inference questions: evidence-based","Summary writing: selecting key points","Comparison of two texts","Analysis of language, structure and effect"]),
+    _u("Writing",["Descriptive writing: vivid language","Narrative writing: effective techniques","Persuasive writing: rhetorical devices","Argumentative writing: thesis and counterargument","Writing for audience and purpose"]),
+    _u("Directed Writing",["Transforming text form: letter, speech, article","Writing from given information","Formal register and conventions","Combining source material","Directed writing accuracy"]),
+  ]},
+  "Grade 10": {"board":"Cambridge IGCSE First Language English (0500)","units":[
+    _u("Extended Reading",["Analysing complex layered texts","Evaluating writer's craft","Comparing texts for purpose and effect","Unseen poetry: detailed analysis","Literary criticism introduction"]),
+    _u("Extended Writing",["Distinction-level persuasive essays","Narrative technique: non-linear structure","Descriptive complexity: extended metaphor","Original composition and commentary","Editing for sophistication"]),
+  ]},
+  "O Level": {"board":"Cambridge O Level English Language (1123)","units":[
+    _u("Reading",["Comprehension and summary","Directed writing from text","Implicit and explicit meaning","Language analysis","Evaluation of texts"]),
+    _u("Writing",["Personal, descriptive and narrative","Argumentative and discursive","Formal and informal registers","Style and accuracy"]),
+  ]},
+  "A Level": {"board":"Cambridge A Level English Language (9093)","units":[
+    _u("Language Analysis",["Spoken and written language features","Language variation: regional and social","Language change over time","Language and identity","Discourse analysis"]),
+    _u("Writing & Editing",["Original writing for specific purpose","Coursework commentary","Analytical essays on language","Language frameworks","Critical analysis of unseen texts"]),
+  ]},
+}
+
+# ── COMPUTER SCIENCE ──────────────────────────────────────────────
+CAMBRIDGE_CURRICULUM["Computer Science"] = {
+  "Grade 1": {"board":"Pakistan National Curriculum (ICT)","units":[
+    _u("Introduction to Computers",["Parts of a computer: monitor, keyboard, mouse, CPU","Turning on and off safely","Using a mouse: click, double-click, drag","Basic typing","Computer care and safety"]),
+  ]},
+  "Grade 2": {"board":"Pakistan National Curriculum (ICT)","units":[
+    _u("Basic Computer Skills",["Using keyboard and mouse","Opening and closing programs","Drawing with Paint","Saving files","Printing documents"]),
+  ]},
+  "Grade 3": {"board":"Pakistan National Curriculum (ICT)","units":[
+    _u("Software & Internet",["Word processing: typing and formatting","Using the internet safely","Searching for information","Email basics","Passwords and digital safety"]),
+    _u("Introduction to Programming",["What is a computer program?","Scratch: sprites and backgrounds","Events: when green flag clicked","Simple movement commands","Sequences in Scratch"]),
+  ]},
+  "Grade 4": {"board":"Pakistan National Curriculum (ICT)","units":[
+    _u("Algorithms & Programming",["What is an algorithm?","Flowcharts: start, end, process, decision","Scratch: loops (repeat, forever)","Scratch: conditionals (if/else)","Debugging simple programs"]),
+    _u("Digital Tools",["Spreadsheets: entering data and simple formulas","Presentations: slides and layout","Organising files and folders","Effective search engine use"]),
+  ]},
+  "Grade 5": {"board":"Pakistan National Curriculum (ICT)","units":[
+    _u("Computer Systems",["Hardware vs software","Input and output devices","Storage devices: HDD, USB, cloud","Operating systems","Binary numbers introduction"]),
+    _u("Programming",["Variables in Scratch","User input and output","Procedures in Scratch","Nested loops","Testing and debugging"]),
+    _u("Internet & Society",["How the internet works","Networks: LAN and WAN","Cyberbullying","Copyright and fair use","Digital footprint"]),
+  ]},
+  "Grade 6": {"board":"Pakistan National Curriculum (ICT)","units":[
+    _u("Computer Systems",["Hardware: CPU, RAM, ROM, storage","System and application software","Input devices","Output devices","Computer maintenance"]),
+    _u("Programming (Python)",["Introduction: print and input","Variables and data types: int, str, float","Arithmetic operators","if/elif/else statements","for and while loops"]),
+    _u("Networks & Safety",["LAN, WAN, internet","IP addresses and URLs","Email and communication tools","Online safety and privacy","Digital citizenship"]),
+  ]},
+  "Grade 7": {"board":"Pakistan National Curriculum (ICT)","units":[
+    _u("Data Representation",["Binary number system","Converting binary to denary and back","Hexadecimal","ASCII character codes","Storage units: bit, byte, KB, MB, GB"]),
+    _u("Programming (Python)",["Lists and tuples","String methods","Functions: defining and calling","Scope: local and global variables","Importing modules"]),
+    _u("Networks & Security",["Network topologies: bus, star, ring","Network protocols: TCP/IP, HTTP","Cybersecurity threats: malware, phishing","Firewalls and antivirus","Encryption basics"]),
+  ]},
+  "Grade 8": {"board":"Pakistan National Curriculum (ICT)","units":[
+    _u("Databases",["What is a database?","Tables, records and fields","Data types in databases","SQL: SELECT and WHERE","Sorting and filtering","Forms and reports"]),
+    _u("Advanced Programming",["2D lists and dictionaries","File reading and writing","Exception handling: try/except","OOP: classes and objects","Pseudocode writing"]),
+    _u("Systems Development",["Software development lifecycle (SDLC)","Requirements analysis","Testing: white-box and black-box","Evaluation and maintenance","Ethical issues in computing"]),
+  ]},
+  "Grade 9": {"board":"Cambridge IGCSE Computer Science (0478)","units":[
+    _u("Data Representation",["Binary, denary, hexadecimal conversions","Binary arithmetic and overflow","Character encoding: ASCII and Unicode","Image representation: pixels, colour depth, resolution","Sound: sampling rate and bit depth","Lossless and lossy compression"]),
+    _u("Computer Systems",["CPU: ALU, CU, MAR, MDR, PC, accumulator","Fetch-execute cycle","RAM and ROM","Secondary storage: HDD, SSD, optical, flash","Input and output devices"]),
+    _u("Networks",["PAN, LAN, WAN, internet","Network hardware: hub, switch, router","Topologies: bus, star, mesh","Protocols: TCP/IP, HTTP, HTTPS, FTP, DNS","Wired vs wireless","Security threats and solutions"]),
+    _u("Programming & Algorithms",["Sequence, selection, iteration","Data structures: arrays and records","Procedures and functions","Boolean logic and truth tables","Pseudocode and flowcharts","Sorting and searching algorithms"]),
+    _u("Security, Ethics & Environment",["Malware, phishing, brute force attacks","Encryption, 2FA, access levels","Ethical and legal issues in computing","Environmental impact","Intellectual property and privacy"]),
+  ]},
+  "Grade 10": {"board":"Cambridge IGCSE Computer Science (0478)","units":[
+    _u("Advanced Programming",["Python: full syntax revision","Bubble sort and merge sort implementation","Linear and binary search","Recursion","OOP: classes, inheritance, polymorphism"]),
+    _u("Database & Web",["Relational databases: primary and foreign keys","SQL: SELECT, INSERT, UPDATE, DELETE, JOIN","HTML structure","CSS styling","JavaScript DOM basics","Web security: HTTPS, SQL injection"]),
+    _u("Computational Thinking",["Decomposition","Abstraction","Pattern recognition","Algorithm efficiency: Big O introduction","System design and flowcharting"]),
+  ]},
+  "O Level": {"board":"Cambridge O Level Computer Science (2210)","units":[
+    _u("Theory",["Data representation","Communication and internet technologies","Hardware","Software and development","Security and privacy","Ethics and sustainability"]),
+    _u("Programming & Algorithms",["Algorithm design: pseudocode and flowcharts","Programming in Python","Data structures","Testing and debugging","Trace tables","Validation and verification"]),
+    _u("Database & Spreadsheets",["Database design and SQL","Spreadsheet functions and formulas","Data manipulation","Charts and graphs"]),
+  ]},
+  "A Level": {"board":"Cambridge A Level Computer Science (9618)","units":[
+    _u("Theory of CS",["Data representation","Communication","Hardware and virtual machines","Logic gates and Boolean algebra","Processor architecture","System software","Security and ethics"]),
+    _u("Algorithms & Data Structures",["Algorithm design and analysis","Big O complexity","ADTs: stack, queue, linked list, tree, graph, hash table","Sorting algorithms","Graph traversal: BFS, DFS","Recursion"]),
+    _u("Advanced Programming",["OOP: encapsulation, inheritance, polymorphism","File handling","Database: SQL and relational design","Web technologies","Functional programming","Declarative programming"]),
+  ]},
+}
+
+# ── URDU ──────────────────────────────────────────────────────────
+CAMBRIDGE_CURRICULUM["Urdu"] = {
+  "Grade 1": {"board":"Pakistan National Curriculum","units":[
+    _u("حروفِ تہجی",["حروف کی پہچان","حروف کی آوازیں","مصوتے: ا، و، ی","مصمتے","الف مد اور اس کا استعمال"]),
+    _u("پڑھنا اور لکھنا",["حروف لکھنے کی مشق","آسان الفاظ پڑھنا","تصویروں کے نام","جوڑ توڑ: حروف ملانا"]),
+  ]},
+  "Grade 2": {"board":"Pakistan National Curriculum","units":[
+    _u("قواعد",["اسم: جاندار اور بے جاندار","مذکر اور مؤنث","واحد اور جمع","فعل: کام کا لفظ","حرفِ جار"]),
+    _u("پڑھنا اور لکھنا",["چھوٹی کہانیاں پڑھنا","مختصر جملے لکھنا","سوالوں کے جواب","الفاظ کے معنی"]),
+  ]},
+  "Grade 3": {"board":"Pakistan National Curriculum","units":[
+    _u("قواعد",["اسم کی اقسام","ضمیر","صفت","فعل کی اقسام","زمانہ: حال، ماضی، مستقبل"]),
+    _u("تحریر",["پیراگراف لکھنا","غیر رسمی خط","چھوٹی کہانی","الفاظ کے معنی و استعمال"]),
+    _u("ادب",["آسان نظمیں","چھوٹی کہانیاں","محاورے","کہاوتیں"]),
+  ]},
+  "Grade 4": {"board":"Pakistan National Curriculum","units":[
+    _u("ادب",["نظم و نثر میں فرق","مختصر کہانیاں","نظمیں یاد کرنا","محاورے اور ضرب الامثال","ادبی شخصیات"]),
+    _u("قواعد",["مرکب جملے","فاعل اور مفعول","مصدر","حروفِ عطف","جملہ اسمیہ اور فعلیہ"]),
+    _u("تحریر",["مضمون نویسی","رسمی خط","خلاصہ لکھنا","تصویر بیانی"]),
+  ]},
+  "Grade 5": {"board":"Pakistan National Curriculum","units":[
+    _u("ادبی تفہیم",["علامہ اقبالؒ کی نظمیں","حمد و نعت","مختصر افسانے","ڈرامہ: مکالمہ","سفرنامہ"]),
+    _u("قواعد و انشاء",["تراکیب: اضافی اور توصیفی","بیانِ واقعہ","متن کا تجزیہ","لغت کا استعمال"]),
+  ]},
+  "Grade 6": {"board":"Pakistan National Curriculum","units":[
+    _u("نثر",["سبق کا خلاصہ","سوال و جواب","مرکزی خیال","کردار نگاری","اقتباس کی تشریح"]),
+    _u("نظم",["نظم کی تشریح","شاعر کا تعارف","اصنافِ سخن: نظم، غزل، قطعہ","نعت","حمد"]),
+    _u("قواعد",["اسم کی اقسام","فعل لازم اور متعدی","حروف","مرکب الفاظ","تذکیر و تانیث"]),
+    _u("تحریر",["مضمون نویسی","کہانی نویسی","غیر رسمی خط","خلاصہ نویسی","درخواست"]),
+  ]},
+  "Grade 7": {"board":"Pakistan National Curriculum","units":[
+    _u("نثر و نظم",["متن کی تفہیم و تجزیہ","شاعری کا تجزیہ","ادبی اصناف","کلاسیکی شاعری","جدید نثر"]),
+    _u("قواعد",["جملے کی اقسام","فقرے","محاورے و ضرب الامثال","ہم معنی الفاظ","متضاد الفاظ"]),
+    _u("تحریر",["رسمی خط","وضاحتی مضامین","تقریر","ڈائری نویسی","رپورٹ"]),
+  ]},
+  "Grade 8": {"board":"Pakistan National Curriculum","units":[
+    _u("ادب",["کلاسیکی غزل: میرؔ، غالبؔ","اقبالؒ کا کلام","ترقی پسند ادب","افسانہ نگاری","انشائیہ"]),
+    _u("قواعد",["صنعتِ بدیع: تشبیہ، استعارہ","علمِ عروض: بحریں","قوافی اور ردیف","ادبی اصطلاحات"]),
+    _u("تحریر",["تنقیدی مضمون","تحقیقی مقالہ","ادبی خط","تقریر و مناظرہ","خبر نویسی"]),
+  ]},
+  "Grade 9": {"board":"Pakistan FBISE / Provincial Boards","units":[
+    _u("نثر",["نثری اقتباسات کی تشریح","مضامین کا تجزیہ","نثری اصناف","اسلوبِ نویسی","اردو ادب کی تاریخ"]),
+    _u("نظم",["غزل کی تشریح و تجزیہ","نظم کا تجزیہ","علامہ اقبالؒ: بانگِ درا","میرؔ اور غالبؔ","جدید شاعری"]),
+    _u("قواعد و انشاء",["قواعد کا اطلاق","مضمون نویسی: مختلف اقسام","خط نویسی: رسمی و غیر رسمی","خلاصہ نویسی","درخواست و رپورٹ"]),
+  ]},
+  "Grade 10": {"board":"Pakistan FBISE / Provincial Boards","units":[
+    _u("نثر و ادب",["اردو ادب کی تاریخ: جدید دور","ممتاز ادیب و شعراء","ادبی تحریکیں","تنقید کے اصول","جدید نثری اصناف"]),
+    _u("شاعری",["کلیاتِ اقبال: منتخب کلام","غالبؔ کا دیوان: منتخب اشعار","دیگر کلاسیکی شعراء","جدید شاعری","تقابلی مطالعہ"]),
+    _u("زبان و قواعد",["اعلیٰ قواعد کا اطلاق","انشاء پردازی: فنی پہلو","تنقیدی تحریر","ترجمہ","اردو صحافت"]),
+  ]},
+  "O Level": {"board":"Cambridge O Level Urdu (3247)","units":[
+    _u("Reading & Comprehension",["Passage comprehension","Summary writing in Urdu","Directed writing","Vocabulary in context","Inferential and evaluative questions"]),
+    _u("Writing",["Essay writing: various types","Formal letters","Narrative writing","Descriptive writing","Argumentative writing"]),
+  ]},
+  "A Level": {"board":"Cambridge A Level Urdu (9676)","units":[
+    _u("Language Skills",["Advanced comprehension","Translation: Urdu to English","Critical analysis of texts","Register and style","Language variation in Pakistan"]),
+    _u("Literature",["Classical poetry: detailed study","Modern prose","Drama: structure and themes","Short stories: technique","Literary criticism"]),
+  ]},
+}
 
 # ─────────────────────────────────────────────────────────────────
 # PAGE CONFIG
@@ -1480,18 +1947,22 @@ def page_quiz():
                 "Quiz generator. Return ONLY valid raw JSON. No backticks. No markdown.", quiz_tokens
             )
         try:
-            clean = raw.replace("```json","").replace("```","").strip()
-            data  = json.loads(clean)
+            clean = raw.strip().replace("```json","").replace("```","").strip()
+            j0 = clean.find("{"); j1 = clean.rfind("}") + 1
+            if j0 >= 0 and j1 > j0: clean = clean[j0:j1]
+            data = json.loads(clean)
+            qs = data.get("questions", [])
+            if not qs: raise ValueError("No questions found in AI response")
             st.session_state.quiz = {
-                "questions": data["questions"][:num_qs],
+                "questions": qs[:num_qs],
                 "current":0, "score":0, "answers":[], "done":False,
                 "sub":quiz_sub, "lvl":quiz_lvl,
                 "topic":topic_str, "difficulty":difficulty
             }
             st.rerun()
-        except:
-            st.error("⚠️ Could not generate quiz. Please try again with a different topic.")
-            with st.expander("Debug info"): st.code(raw[:500])
+        except Exception as _qe:
+            st.error(f"⚠️ Quiz generation failed: {_qe}")
+            with st.expander("Debug info"): st.code(raw[:800])
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -1810,9 +2281,12 @@ def page_friends():
                     "Quiz generator. Return ONLY valid raw JSON.", grp_tokens
                 )
             try:
-                clean     = raw.replace("```json","").replace("```","").strip()
+                clean = raw.strip().replace("```json","").replace("```","").strip()
+                j0 = clean.find("{"); j1 = clean.rfind("}") + 1
+                if j0 >= 0 and j1 > j0: clean = clean[j0:j1]
                 data      = json.loads(clean)
-                questions = data["questions"][:grp_num]
+                questions = data.get("questions",[])[:grp_num]
+                if not questions: raise ValueError("No questions returned")
                 room_id   = _gen_room_id()
                 av_idx    = list(AVATARS.values()).index(u.get("avatar","👦")) if u.get("avatar","👦") in list(AVATARS.values()) else 0
                 room_data = {
@@ -2256,15 +2730,21 @@ def page_syllabus():
                             "Quiz generator. Return ONLY valid raw JSON.", 1600
                         )
                         try:
-                            clean = raw.replace("```json","").replace("```","").strip()
-                            data  = json.loads(clean)
+                            clean = raw.strip().replace("```json","").replace("```","").strip()
+                            j0 = clean.find("{"); j1 = clean.rfind("}") + 1
+                            if j0 >= 0 and j1 > j0: clean = clean[j0:j1]
+                            data = json.loads(clean)
+                            qs = data.get("questions",[])
+                            if not qs: raise ValueError("No questions returned")
                             st.session_state.quiz = {
-                                "questions":data["questions"],"current":0,"score":0,
+                                "questions":qs,"current":0,"score":0,
                                 "answers":[],"done":False,"sub":subj_key,"lvl":sel_grade,
                                 "topic":unit["unit"],"difficulty":"Medium"
                             }
                             st.session_state.page = "quiz"; st.rerun()
-                        except: st.error("Could not generate quiz.")
+                        except Exception as _qe2:
+                            st.error(f"Could not generate quiz: {_qe2}")
+                            with st.expander("Debug"): st.code(raw[:500])
             with bb:
                 if st.button(f"🎨 Diagram", key=f"imgunit_{ui}", use_container_width=True):
                     st.session_state.page = "image"; st.rerun()

@@ -1686,22 +1686,27 @@ def page_home():
 
 
 
+
 # ─────────────────────────────────────────────────────────────────
-# CHAT / AI TUTOR
+# CHAT / AI TUTOR — Ustad
 # ─────────────────────────────────────────────────────────────────
 def build_system(u, sub, lvl):
-    urdu_rule = "- Reply in Urdu script. Use English only for technical terms." if sub == "Urdu" else ""
-    parent_rule = "- User is a parent. Explain how to help their child understand." if u.get("role") == "parent" else ""
-    return f"""You are Ustad, a warm and encouraging homework tutor for Pakistani students.
+    urdu_rule   = "- Reply in Urdu script. Use English only for technical terms." if sub == "Urdu" else ""
+    parent_rule = "- User is a parent. Explain how to help their child understand this topic." if u.get("role") == "parent" else ""
+    return f"""You are Ustad, a warm, patient and encouraging AI tutor for Pakistani students.
 Student: {u['name']} | Role: {'Parent' if u.get('role')=='parent' else 'Student'} | Class: {lvl} | Subject: {sub}
 
 Teaching rules:
-- Adapt complexity to {lvl}: Grade 1-3=very simple+emojis; Grade 4-5=simple+examples; Grade 6-8=structured steps; O Level=exam-focused; A Level=university depth
+- Adapt complexity to {lvl}: Grade 1-3 = very simple language + emojis + one idea at a time; Grade 4-5 = simple + real-life examples; Grade 6-8 = clear steps + diagrams described in text; O Level = exam technique + mark schemes; A Level = university depth + derivations
 {urdu_rule}
 {parent_rule}
-- For Maths/Physics/Chemistry: ALWAYS show step-by-step working
-- Use Pakistani curriculum context (FBISE, Cambridge Pakistan, local examples)
-- Be warm, positive, and end with encouragement or a follow-up question"""
+- For Maths / Physics / Chemistry: ALWAYS show numbered step-by-step working
+- Use Pakistani curriculum context (FBISE, Cambridge Pakistan, local examples like rupees, cricket, lahore etc.)
+- Format answers clearly: use numbered lists for steps, bullet points for facts
+- End every answer with a short encouragement OR one follow-up question to check understanding
+- If a question is unclear, ask the student to clarify before answering
+- You can answer questions in ANY subject — not just the selected subject — if the student asks"""
+
 
 def save_chat_session(sub, lvl):
     hist  = load_json(HISTORY_FILE)
@@ -1710,78 +1715,412 @@ def save_chat_session(sub, lvl):
     sid = st.session_state.session_id or datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     st.session_state.session_id = sid
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-    ex = next((s for s in hist[email] if s["id"]==sid), None)
+    ex  = next((s for s in hist[email] if s["id"] == sid), None)
     if ex:
         ex["messages"] = st.session_state.chat_messages
         ex["updated"]  = now
     else:
         hist[email].append({
-            "id":sid,"subject":sub,"level":lvl,
-            "messages":st.session_state.chat_messages,
-            "created":now,"updated":now
+            "id": sid, "subject": sub, "level": lvl,
+            "messages": st.session_state.chat_messages,
+            "created": now, "updated": now
         })
     save_json(HISTORY_FILE, hist)
 
+
 def page_chat():
-    u = st.session_state.user
-    st.markdown("<div class=\"section-header\">💬 Chat Tutor — Ask Ustad Anything</div>", unsafe_allow_html=True)
-    c1, c2 = st.columns(2)
-    with c1:
-        sub = st.selectbox("📚 Subject", list(SUBJECTS.keys()),
-                           index=list(SUBJECTS.keys()).index(st.session_state.subject))
-    with c2:
-        lvl_idx = get_level_index(u.get("grade","Grade 6"))
-        lvl = st.selectbox("🏫 Grade", LEVELS, index=lvl_idx)
+    u   = st.session_state.user
+    sub = st.session_state.get("subject", "Maths")
+
+    # ── Ustad header ──────────────────────────────────────────
+    st.markdown("""
+    <style>
+    /* ── Ustad AI Chat Page ─────────────────────────────── */
+    .ustad-header {
+        background: linear-gradient(135deg, #1A1D23 0%, #1C3A2A 50%, #0F2D1E 100%);
+        border-radius: 18px;
+        padding: 20px 24px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        border: 1px solid rgba(28,124,84,0.3);
+        box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+        position: relative;
+        overflow: hidden;
+    }
+    .ustad-header::after {
+        content: '';
+        position: absolute;
+        top: -40px; right: -40px;
+        width: 120px; height: 120px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(28,124,84,0.25), transparent 70%);
+    }
+    .ustad-avatar {
+        width: 56px; height: 56px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #1C7C54, #25A870);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 28px;
+        flex-shrink: 0;
+        box-shadow: 0 4px 14px rgba(28,124,84,0.4);
+        border: 2px solid rgba(255,255,255,0.1);
+    }
+    .ustad-name {
+        font-family: 'DM Serif Display', serif;
+        font-size: 22px;
+        color: #fff;
+        line-height: 1.1;
+    }
+    .ustad-status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 4px;
+    }
+    .ustad-dot {
+        width: 7px; height: 7px;
+        border-radius: 50%;
+        background: #34C77B;
+        box-shadow: 0 0 6px #34C77B;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
+    .ustad-status-text {
+        font-size: 12px;
+        color: rgba(255,255,255,0.6);
+        font-weight: 600;
+    }
+    .ai-badge {
+        margin-left: auto;
+        background: rgba(28,124,84,0.25);
+        border: 1px solid rgba(28,124,84,0.5);
+        border-radius: 99px;
+        padding: 5px 12px;
+        font-size: 11px;
+        font-weight: 800;
+        color: #34C77B;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+    }
+
+    /* ── Subject pill selector ───────────────────────────── */
+    .subj-pills {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+    }
+    .subj-pill {
+        padding: 7px 16px;
+        border-radius: 99px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        border: 2px solid #E4E8EE;
+        background: #fff;
+        color: #5A6070;
+        transition: all 0.15s;
+        white-space: nowrap;
+    }
+    .subj-pill.active {
+        border-color: #1C7C54;
+        background: #EBF7F1;
+        color: #1C7C54;
+    }
+
+    /* ── Chat messages ───────────────────────────────────── */
+    .chat-wrap {
+        background: #fff;
+        border: 1.5px solid #E4E8EE;
+        border-radius: 18px;
+        padding: 20px 18px;
+        margin-bottom: 12px;
+        min-height: 120px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    }
+    .ustad-msg {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 16px;
+        align-items: flex-start;
+    }
+    .ustad-msg-avatar {
+        width: 34px; height: 34px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #1C7C54, #25A870);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 16px;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+    .ustad-msg-bubble {
+        background: #F5F7FA;
+        border: 1.5px solid #E4E8EE;
+        border-radius: 4px 16px 16px 16px;
+        padding: 12px 16px;
+        font-size: 14px;
+        line-height: 1.75;
+        color: #1A1D23;
+        max-width: 88%;
+        white-space: pre-wrap;
+    }
+    .user-msg {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 16px;
+    }
+    .user-msg-bubble {
+        background: #1C7C54;
+        color: #fff;
+        border-radius: 16px 4px 16px 16px;
+        padding: 12px 16px;
+        font-size: 14px;
+        line-height: 1.65;
+        max-width: 78%;
+        white-space: pre-wrap;
+    }
+    .msg-time {
+        font-size: 10px;
+        color: #9BA3B0;
+        margin-top: 4px;
+        font-weight: 500;
+    }
+
+    /* ── Empty state ─────────────────────────────────────── */
+    .ustad-empty {
+        text-align: center;
+        padding: 32px 24px;
+    }
+    .ustad-empty-icon {
+        font-size: 52px;
+        margin-bottom: 12px;
+    }
+    .ustad-empty-title {
+        font-family: 'DM Serif Display', serif;
+        font-size: 20px;
+        color: #1A1D23;
+        margin-bottom: 8px;
+    }
+    .ustad-empty-sub {
+        font-size: 13px;
+        color: #9BA3B0;
+        line-height: 1.6;
+    }
+
+    /* ── Quick prompts ───────────────────────────────────── */
+    .quick-label {
+        font-size: 10px;
+        font-weight: 800;
+        color: #9BA3B0;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+    }
+
+    /* ── Input area ──────────────────────────────────────── */
+    .input-wrap {
+        background: #fff;
+        border: 2px solid #E4E8EE;
+        border-radius: 14px;
+        padding: 4px 4px 4px 16px;
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        transition: border-color 0.15s;
+    }
+    .input-wrap:focus-within {
+        border-color: #1C7C54;
+        box-shadow: 0 0 0 3px rgba(28,124,84,0.08);
+    }
+    .daily-limit-bar {
+        background: #F0FDF4;
+        border: 1.5px solid #D1FAE5;
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-size: 12px;
+        color: #065F46;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Ustad header card
+    lvl_idx = get_level_index(u.get("grade","Grade 6"))
+
+    st.markdown(
+        "<div class=\"ustad-header\">"
+        "<div class=\"ustad-avatar\">🎓</div>"
+        "<div>"
+        "<div class=\"ustad-name\">Ustad — Your AI Tutor</div>"
+        "<div class=\"ustad-status\">"
+        "<div class=\"ustad-dot\"></div>"
+        "<span class=\"ustad-status-text\">Online · Ready to help you learn anything</span>"
+        "</div></div>"
+        "<div class=\"ai-badge\">✦ AI Powered</div>"
+        "</div>",
+        unsafe_allow_html=True
+    )
+
+    # ── Controls row: subject + grade + new chat ──────────────
+    cc1, cc2, cc3 = st.columns([2, 2, 1])
+    with cc1:
+        sub = st.selectbox(
+            "Subject", list(SUBJECTS.keys()),
+            index=list(SUBJECTS.keys()).index(st.session_state.get("subject","Maths")),
+            label_visibility="collapsed",
+            key="chat_sub_select"
+        )
+    with cc2:
+        lvl = st.selectbox(
+            "Grade", LEVELS, index=lvl_idx,
+            label_visibility="collapsed",
+            key="chat_lvl_select"
+        )
+    with cc3:
+        if st.button("🆕 New Chat", use_container_width=True, key="new_chat_btn"):
+            st.session_state.chat_messages = []
+            st.session_state.session_id    = None
+            st.rerun()
     st.session_state.subject = sub
 
-    if st.button("🆕 New Chat", type="secondary"):
-        st.session_state.chat_messages = []
-        st.session_state.session_id    = None
-        st.rerun()
+    # ── Chat message window ───────────────────────────────────
+    msgs = st.session_state.get("chat_messages", [])
 
-    st.markdown("<div style=\"font-size:11px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin:10px 0 6px\">⚡ Quick Questions</div>", unsafe_allow_html=True)
-    qc = st.columns(2)
-    for i, p in enumerate(QUICK_PROMPTS.get(sub, [])):
-        with qc[i%2]:
-            if st.button(p, key=f"qp{i}", use_container_width=True):
+    if not msgs:
+        # Empty / welcome state
+        first = u["name"].split()[0]
+        st.markdown(
+            "<div class=\"chat-wrap\">"
+            "<div class=\"ustad-empty\">"
+            "<div class=\"ustad-empty-icon\">🎓</div>"
+            f"<div class=\"ustad-empty-title\">Assalam-o-Alaikum, {first}!</div>"
+            "<div class=\"ustad-empty-sub\">"
+            f"I'm Ustad, your personal AI tutor.<br>"
+            f"Ask me <b>anything</b> about {sub}, or any other subject!<br><br>"
+            "Try one of the questions below to get started 👇"
+            "</div></div></div>",
+            unsafe_allow_html=True
+        )
+    else:
+        # Render messages
+        bubble_html = "<div class=\"chat-wrap\">"
+        for m in msgs:
+            safe = (m["content"]
+                    .replace("&","&amp;")
+                    .replace("<","&lt;")
+                    .replace(">","&gt;")
+                    .replace("\n","<br>"))
+            if m["role"] == "user":
+                bubble_html += (
+                    "<div class=\"user-msg\">"
+                    f"<div class=\"user-msg-bubble\">{safe}</div>"
+                    "</div>"
+                )
+            else:
+                bubble_html += (
+                    "<div class=\"ustad-msg\">"
+                    "<div class=\"ustad-msg-avatar\">🎓</div>"
+                    f"<div class=\"ustad-msg-bubble\">{safe}</div>"
+                    "</div>"
+                )
+        bubble_html += "</div>"
+        st.markdown(bubble_html, unsafe_allow_html=True)
+
+    # ── Quick prompts ─────────────────────────────────────────
+    st.markdown("<div class=\"quick-label\">⚡ Quick Questions</div>", unsafe_allow_html=True)
+    prompts = QUICK_PROMPTS.get(sub, [])
+    qcols   = st.columns(len(prompts)) if prompts else []
+    for i, (qcol, p) in enumerate(zip(qcols, prompts)):
+        with qcol:
+            if st.button(p, key=f"qp_{i}_{sub}", use_container_width=True):
                 st.session_state.chat_messages.append({"role":"user","content":p})
-                with st.spinner("Ustad is thinking... 🤔"):
+                with st.spinner("Ustad is thinking… 🤔"):
                     reply = call_ai(st.session_state.chat_messages, build_system(u, sub, lvl))
-                st.session_state.chat_messages.append({"role":"assistant","content":reply})
-                bump_stats(sub); save_chat_session(sub, lvl); st.rerun()
+                if reply.startswith("__"):
+                    st.error("⚠️ Could not reach Ustad. Please check your API key in Streamlit secrets.")
+                else:
+                    st.session_state.chat_messages.append({"role":"assistant","content":reply})
+                    bump_stats(sub)
+                    save_chat_session(sub, lvl)
+                st.rerun()
 
-    if not st.session_state.chat_messages:
-        st.info(f"👋 Assalam-o-Alaikum {u['name'].split()[0]}! I'm Ustad, your {sub} tutor for {lvl}. Ask me anything!")
-
-    for m in st.session_state.chat_messages:
-        # Escape content to prevent XSS — user input must never be injected raw into HTML
-        safe_content = (m['content']
-                        .replace('&', '&amp;')
-                        .replace('<', '&lt;')
-                        .replace('>', '&gt;'))
-        if m["role"] == "user":
-            st.markdown(f"<div class=\"msg-lbl msg-lbl-r\">You</div><div class=\"msg-user\">{safe_content}</div>", unsafe_allow_html=True)
-        else:
-            st.markdown(f"<div class=\"msg-lbl\">🎓 Ustad</div><div class=\"msg-bot\">{safe_content}</div>", unsafe_allow_html=True)
-
+    # ── Ask input form ────────────────────────────────────────
+    st.markdown("<div style=\"height:4px\"></div>", unsafe_allow_html=True)
     with st.form("chat_form", clear_on_submit=True):
-        ph  = "یہاں سوال لکھیں..." if sub=="Urdu" else f"Ask your {sub} question here..."
-        txt = st.text_area("Q", placeholder=ph, height=80, label_visibility="collapsed")
-        c1f, c2f = st.columns([3,1])
-        with c1f:
-            send = st.form_submit_button("📤 Send", use_container_width=True, type="primary")
-        with c2f:
-            clear = st.form_submit_button("🗑️ Clear", use_container_width=True)
+        ph  = "یہاں سوال لکھیں..." if sub == "Urdu" else f"Type any question — {sub}, Maths, Science, English, anything…"
+        txt = st.text_area(
+            "Ask Ustad",
+            placeholder=ph,
+            height=80,
+            label_visibility="collapsed",
+            key="chat_input_area"
+        )
+        btn_c1, btn_c2, btn_c3 = st.columns([3, 1, 1])
+        with btn_c1:
+            send = st.form_submit_button("📤  Send to Ustad", use_container_width=True, type="primary")
+        with btn_c2:
+            clear = st.form_submit_button("🗑️  Clear", use_container_width=True)
+        with btn_c3:
+            st.form_submit_button("📚  Syllabus", use_container_width=True, disabled=True)
+
         if clear:
             st.session_state.chat_messages = []
             st.session_state.session_id    = None
             st.rerun()
+
         if send and txt.strip():
-            st.session_state.chat_messages.append({"role":"user","content":txt.strip()})
-            with st.spinner("Ustad is thinking... 🤔"):
-                reply = call_ai(st.session_state.chat_messages, build_system(u, sub, lvl))
-            st.session_state.chat_messages.append({"role":"assistant","content":reply})
-            bump_stats(sub); save_chat_session(sub, lvl); st.rerun()
+            # Check daily limit
+            used  = get_daily_used()
+            limit = check_daily_limit()
+            if used >= limit:
+                st.error(f"⏰ You've reached today's limit of {limit} questions. Come back tomorrow — or upgrade to Pro for unlimited!")
+            else:
+                st.session_state.chat_messages.append({"role":"user","content":txt.strip()})
+                with st.spinner("🎓 Ustad is thinking…"):
+                    reply = call_ai(st.session_state.chat_messages, build_system(u, sub, lvl))
+                if reply.startswith("__"):
+                    st.session_state.chat_messages.pop()
+                    if "API_KEY_MISSING" in reply:
+                        st.error("🔑 API key not configured. Add ANTHROPIC_API_KEY or CLAUDE_API_KEY to Streamlit secrets.")
+                    else:
+                        st.error(f"⚠️ Ustad couldn't respond: {reply}")
+                else:
+                    st.session_state.chat_messages.append({"role":"assistant","content":reply})
+                    bump_stats(sub)
+                    save_chat_session(sub, lvl)
+                st.rerun()
+
+    # ── Daily limit indicator ─────────────────────────────────
+    used  = get_daily_used()
+    limit = check_daily_limit()
+    left  = max(0, limit - used)
+    pct   = int((used / max(limit,1)) * 100)
+    bar_color = "#1C7C54" if pct < 70 else "#D97706" if pct < 90 else "#DC3545"
+    st.markdown(
+        "<div class=\"daily-limit-bar\">"
+        f"<span>💬</span>"
+        "<div style=\"flex:1\">"
+        "<div style=\"display:flex;justify-content:space-between;margin-bottom:4px\">"
+        f"<span style=\"font-weight:700\">Daily Questions: {used}/{limit}</span>"
+        f"<span style=\"color:#9BA3B0\">{left} left today</span>"
+        "</div>"
+        "<div style=\"background:#D1FAE5;border-radius:99px;height:5px;overflow:hidden\">"
+        f"<div style=\"width:{pct}%;height:5px;border-radius:99px;background:{bar_color};transition:width .4s\"></div>"
+        "</div></div>"
+        "</div>",
+        unsafe_allow_html=True
+    )
+
 
 
 # ─────────────────────────────────────────────────────────────────

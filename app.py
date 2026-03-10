@@ -709,7 +709,7 @@ client = get_client()
 
 def call_ai(messages, system, max_tokens=1200):
     if not client:
-        return "⚠️ API key not configured. Add ANTHROPIC_API_KEY in Streamlit secrets."
+        return "__API_KEY_MISSING__"
     try:
         r = client.messages.create(
             model="claude-haiku-4-5-20251001",
@@ -717,9 +717,10 @@ def call_ai(messages, system, max_tokens=1200):
             system=system,
             messages=messages
         )
-        return r.content[0].text
+        text = r.content[0].text if r.content else ""
+        return text if text.strip() else "__EMPTY_RESPONSE__"
     except Exception as e:
-        return f"⚠️ Error: {e}"
+        return f"__API_ERROR__: {e}"
 
 def call_ai_svg(messages, system):
     if not client:
@@ -1115,7 +1116,6 @@ def page_auth():
         with st.form("signup_form"):
             name   = st.text_input("👤 Full Name", placeholder="Ahmed Khan")
             email2 = st.text_input("📧 Email", placeholder="you@example.com")
-            role   = st.selectbox("👥 I am a", ["Student 🎒","Parent 👨‍👩‍👦","Teacher 👨‍🏫","Admin 🛡️"])
             avatar = st.selectbox("🧑 Choose Avatar", list(AVATARS.keys()))
             grade  = st.selectbox("🏫 Grade", ["-- Select --"]+LEVELS)
             pw     = st.text_input("🔒 Password", type="password", placeholder="Min 6 characters")
@@ -1130,10 +1130,7 @@ def page_auth():
                     new_user = {
                         "name": name.strip(), "email": email2.strip(),
                         "password": hash_pw(pw),
-                        "role": ("student"  if "Student" in role
-                                 else "parent"  if "Parent"  in role
-                                 else "teacher" if "Teacher" in role
-                                 else "admin"),
+                        "role": "student",
                         "avatar": AVATARS[avatar],
                         "grade": grade if grade != "-- Select --" else "Grade 6",
                         "joined": datetime.date.today().isoformat(),
@@ -1212,6 +1209,13 @@ def render_sidebar():
             )
 
         stats = u.get("stats", {})
+
+        # ── Role switcher ─────────────────────────────────────────
+        ROLE_OPTIONS = ["Student 🎒", "Teacher 👨‍🏫", "Parent 👨‍👩‍👦", "Admin 🛡️"]
+        ROLE_MAP     = {"Student 🎒":"student","Teacher 👨‍🏫":"teacher","Parent 👨‍👩‍👦":"parent","Admin 🛡️":"admin"}
+        ROLE_REVERSE = {v:k for k,v in ROLE_MAP.items()}
+        cur_role_label = ROLE_REVERSE.get(u.get("role","student"), "Student 🎒")
+        cur_role_idx   = ROLE_OPTIONS.index(cur_role_label) if cur_role_label in ROLE_OPTIONS else 0
         st.markdown(f"""
         <div style="padding:14px 12px 14px;border-bottom:1px solid rgba(201,168,76,0.15)">
             <div style="display:flex;flex-direction:column;align-items:center">
@@ -1275,34 +1279,43 @@ def render_sidebar():
                 unsafe_allow_html=True
             )
 
+        # ── Role selector ──────────────────────────────────────────
+        new_role_label = st.selectbox(
+            "Role", ROLE_OPTIONS, index=cur_role_idx,
+            key="sidebar_role_select", label_visibility="collapsed"
+        )
+        if ROLE_MAP[new_role_label] != u.get("role","student"):
+            users_tmp = load_json(USERS_FILE)
+            u["role"] = ROLE_MAP[new_role_label]
+            users_tmp[u["email"]]["role"] = ROLE_MAP[new_role_label]
+            save_json(USERS_FILE, users_tmp)
+            st.session_state.user = u
+            role = ROLE_MAP[new_role_label]
+            st.rerun()
+        else:
+            role = u.get("role","student")
+
         section_label("📊  Dashboard")
         nav_btn("🏠", "Home",            "home")
         nav_btn("📚", "Syllabus",        "syllabus")
-        nav_btn("🎨", "Image Generator", "image")
         nav_btn("📈", "My Progress",     "progress")
 
-        if role in ("student", "parent"):
-            section_label("🎒  Student")
-            nav_btn("💬", "Chat Tutor",    "chat",    "_s")
-            nav_btn("📝", "Practice Quiz", "quiz")
-            nav_btn("👥", "Friendz Quiz",  "friends")
-            nav_btn("📋", "My Homework",   "my_homework")
-            nav_btn("🕐", "Chat History",  "history", "_s")
-            nav_btn("🏆", "Badges",        "badges")
+        section_label("🎓  Learning")
+        nav_btn("💬", "Chat Tutor",      "chat")
+        nav_btn("📝", "Practice Quiz",   "quiz")
+        nav_btn("👥", "Friendz Quiz",    "friends")
+        nav_btn("🎨", "Image Generator", "image")
 
-        if role == "teacher":
-            section_label("👨‍🏫  Teacher", "#C9A84C")
-            nav_btn("📋", "Create Homework",     "homework", "_t")
-            nav_btn("💬", "Chat Tutor",          "chat",     "_t")
-            nav_btn("📊", "Student Performance", "admin",    "_t")
-            nav_btn("🏆", "Badges",              "badges",   "_t")
+        section_label("📋  Study")
+        nav_btn("📋", "Homework",        "my_homework")
+        nav_btn("🕐", "Chat History",    "history")
+        nav_btn("🏆", "Badges",          "badges")
 
-        if role == "admin":
-            section_label("🛡️  Admin", "#E87070")
-            nav_btn("📊", "Student Performance", "admin",    "_a")
-            nav_btn("🕐", "Chat History",        "history",  "_a")
-            nav_btn("📋", "Homework Tracker",    "homework", "_a")
-            nav_btn("💬", "Chat Tutor",          "chat",     "_a")
+        if role in ("teacher", "admin"):
+            section_label("🛡️  Admin Panel", "#E87070")
+            nav_btn("📊", "Student Performance", "admin")
+            if role == "teacher":
+                nav_btn("📋", "Create Homework", "homework")
 
         section_label("👤  Account")
         nav_btn("👤", "Profile", "profile")
@@ -1946,23 +1959,37 @@ def page_quiz():
                   f"{{\"questions\":[{{\"q\":\"question text\",\"options\":[\"A. option\",\"B. option\",\"C. option\",\"D. option\"],\"answer\":\"A. option\",\"explanation\":\"why\"}}]}}"}],
                 "Quiz generator. Return ONLY valid raw JSON. No backticks. No markdown.", quiz_tokens
             )
-        try:
-            clean = raw.strip().replace("```json","").replace("```","").strip()
-            j0 = clean.find("{"); j1 = clean.rfind("}") + 1
-            if j0 >= 0 and j1 > j0: clean = clean[j0:j1]
-            data = json.loads(clean)
-            qs = data.get("questions", [])
-            if not qs: raise ValueError("No questions found in AI response")
-            st.session_state.quiz = {
-                "questions": qs[:num_qs],
-                "current":0, "score":0, "answers":[], "done":False,
-                "sub":quiz_sub, "lvl":quiz_lvl,
-                "topic":topic_str, "difficulty":difficulty
-            }
-            st.rerun()
-        except Exception as _qe:
-            st.error(f"⚠️ Quiz generation failed: {_qe}")
-            with st.expander("Debug info"): st.code(raw[:800])
+        if raw.startswith("__API_KEY_MISSING__"):
+            st.error("⚠️ API key not configured. Add ANTHROPIC_API_KEY in Streamlit Secrets.")
+        elif raw.startswith("__EMPTY_RESPONSE__"):
+            st.error("⚠️ AI returned an empty response. Please try again.")
+        elif raw.startswith("__API_ERROR__:"):
+            st.error(f"⚠️ API error: {raw[14:]}")
+        else:
+            try:
+                clean = raw.strip()
+                for fence in ["```json", "```"]:
+                    clean = clean.replace(fence, "")
+                clean = clean.strip()
+                j0 = clean.find("{"); j1 = clean.rfind("}") + 1
+                if j0 >= 0 and j1 > j0:
+                    clean = clean[j0:j1]
+                data = json.loads(clean)
+                qs = data.get("questions", [])
+                if not qs:
+                    st.error("⚠️ AI returned no questions. Try a different topic.")
+                else:
+                    st.session_state.quiz = {
+                        "questions": qs[:num_qs],
+                        "current":0, "score":0, "answers":[], "done":False,
+                        "sub":quiz_sub, "lvl":quiz_lvl,
+                        "topic":topic_str, "difficulty":difficulty
+                    }
+                    st.rerun()
+            except Exception as _qe:
+                st.error(f"⚠️ Could not parse AI response: {_qe}")
+                with st.expander("Debug — AI raw output"):
+                    st.code(raw[:1000])
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -2280,40 +2307,45 @@ def page_friends():
                       f"\"answer\":\"A. ...\",\"explanation\":\"...\"}}]}}"}],
                     "Quiz generator. Return ONLY valid raw JSON.", grp_tokens
                 )
-            try:
-                clean = raw.strip().replace("```json","").replace("```","").strip()
-                j0 = clean.find("{"); j1 = clean.rfind("}") + 1
-                if j0 >= 0 and j1 > j0: clean = clean[j0:j1]
-                data      = json.loads(clean)
-                questions = data.get("questions",[])[:grp_num]
-                if not questions: raise ValueError("No questions returned")
-                room_id   = _gen_room_id()
-                av_idx    = list(AVATARS.values()).index(u.get("avatar","👦")) if u.get("avatar","👦") in list(AVATARS.values()) else 0
-                room_data = {
-                    "created":  datetime.datetime.now().isoformat(),
-                    "host":     my_email,
-                    "phase":    "waiting",
-                    "sub":      grp_sub,
-                    "lvl":      grp_lvl,
-                    "topic":    topic_str,
-                    "difficulty": grp_diff,
-                    "questions": questions,
-                    "answers":  {},
-                    "players":  {
-                        my_email: {
-                            "name":   u["name"],
-                            "avatar": u.get("avatar","👦"),
-                            "joined": datetime.datetime.now().isoformat(),
+            if raw.startswith(("__API_KEY_MISSING__","__EMPTY_RESPONSE__","__API_ERROR__:")):
+                st.error(f"⚠️ AI error: {raw}")
+            else:
+                try:
+                    clean = raw.strip()
+                    for fence in ["```json","```"]:
+                        clean = clean.replace(fence,"")
+                    clean = clean.strip()
+                    j0 = clean.find("{"); j1 = clean.rfind("}") + 1
+                    if j0 >= 0 and j1 > j0: clean = clean[j0:j1]
+                    data      = json.loads(clean)
+                    questions = data.get("questions",[])[:grp_num]
+                    if not questions: raise ValueError("No questions returned")
+                    room_id   = _gen_room_id()
+                    room_data = {
+                        "created":  datetime.datetime.now().isoformat(),
+                        "host":     my_email,
+                        "phase":    "waiting",
+                        "sub":      grp_sub,
+                        "lvl":      grp_lvl,
+                        "topic":    topic_str,
+                        "difficulty": grp_diff,
+                        "questions": questions,
+                        "answers":  {},
+                        "players":  {
+                            my_email: {
+                                "name":   u["name"],
+                                "avatar": u.get("avatar","👦"),
+                                "joined": datetime.datetime.now().isoformat(),
+                            }
                         }
                     }
-                }
-                _grp_save(room_id, room_data)
-                st.session_state.fq_room_id = room_id
-                st.session_state.fq_role    = "host"
-                st.rerun()
-            except Exception as e:
-                st.error(f"⚠️ Could not generate quiz: {e}")
-                with st.expander("Debug"): st.code(raw[:500])
+                    _grp_save(room_id, room_data)
+                    st.session_state.fq_room_id = room_id
+                    st.session_state.fq_role    = "host"
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"⚠️ Could not generate quiz: {e}")
+                    with st.expander("Debug"): st.code(raw[:500])
 
     with tab_join:
         st.markdown("#### 🔗 Enter the room code your friend shared with you")
@@ -2729,22 +2761,32 @@ def page_syllabus():
                               f"Return ONLY raw JSON: {{\"questions\":[{{\"q\":\"...\",\"options\":[\"A.\",\"B.\",\"C.\",\"D.\"],\"answer\":\"A.\",\"explanation\":\"...\"}}]}}"}],
                             "Quiz generator. Return ONLY valid raw JSON.", 1600
                         )
-                        try:
-                            clean = raw.strip().replace("```json","").replace("```","").strip()
-                            j0 = clean.find("{"); j1 = clean.rfind("}") + 1
-                            if j0 >= 0 and j1 > j0: clean = clean[j0:j1]
-                            data = json.loads(clean)
-                            qs = data.get("questions",[])
-                            if not qs: raise ValueError("No questions returned")
-                            st.session_state.quiz = {
-                                "questions":qs,"current":0,"score":0,
-                                "answers":[],"done":False,"sub":subj_key,"lvl":sel_grade,
-                                "topic":unit["unit"],"difficulty":"Medium"
-                            }
-                            st.session_state.page = "quiz"; st.rerun()
-                        except Exception as _qe2:
-                            st.error(f"Could not generate quiz: {_qe2}")
-                            with st.expander("Debug"): st.code(raw[:500])
+                        if raw.startswith("__API_KEY_MISSING__"):
+                            st.error("⚠️ API key not configured.")
+                        elif raw.startswith(("__EMPTY_RESPONSE__","__API_ERROR__:")):
+                            st.error(f"⚠️ AI error: {raw}")
+                        else:
+                            try:
+                                clean = raw.strip()
+                                for fence in ["```json","```"]:
+                                    clean = clean.replace(fence,"")
+                                clean = clean.strip()
+                                j0 = clean.find("{"); j1 = clean.rfind("}") + 1
+                                if j0 >= 0 and j1 > j0: clean = clean[j0:j1]
+                                data = json.loads(clean)
+                                qs = data.get("questions",[])
+                                if not qs:
+                                    st.error("⚠️ No questions returned. Try again.")
+                                else:
+                                    st.session_state.quiz = {
+                                        "questions":qs,"current":0,"score":0,
+                                        "answers":[],"done":False,"sub":subj_key,"lvl":sel_grade,
+                                        "topic":unit["unit"],"difficulty":"Medium"
+                                    }
+                                    st.session_state.page = "quiz"; st.rerun()
+                            except Exception as _qe2:
+                                st.error(f"⚠️ Parse error: {_qe2}")
+                                with st.expander("Debug"): st.code(raw[:500])
             with bb:
                 if st.button(f"🎨 Diagram", key=f"imgunit_{ui}", use_container_width=True):
                     st.session_state.page = "image"; st.rerun()

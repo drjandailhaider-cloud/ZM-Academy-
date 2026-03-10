@@ -2080,9 +2080,8 @@ def page_chat():
 
         if send and txt.strip():
             # Check daily limit
-            used  = get_daily_used()
-            limit = check_daily_limit()
-            if used >= limit:
+            _ok, used, limit = check_daily_limit(u)
+            if not _ok:
                 st.error(f"⏰ You've reached today's limit of {limit} questions. Come back tomorrow — or upgrade to Pro for unlimited!")
             else:
                 st.session_state.chat_messages.append({"role":"user","content":txt.strip()})
@@ -2101,8 +2100,7 @@ def page_chat():
                 st.rerun()
 
     # ── Daily limit indicator ─────────────────────────────────
-    used  = get_daily_used()
-    limit = check_daily_limit()
+    _ok, used, limit = check_daily_limit(u)
     left  = max(0, limit - used)
     pct   = int((used / max(limit,1)) * 100)
     bar_color = "#1C7C54" if pct < 70 else "#D97706" if pct < 90 else "#DC3545"

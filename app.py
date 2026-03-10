@@ -985,7 +985,7 @@ def page_home():
         studied = day_str in study_dates
         is_today = (day == today)
         bdr = "#E8C96A" if is_today else ("#0D6E3F" if studied else "rgba(13,110,63,0.1)")
-        icon = "✅" if studied else ("📍" if is_today else "⬜")
+        icon = "✅" if studied else ("📍" if is_today else "<span style=\"opacity:.3\">○</span>")
         day_color = "#0D6E3F" if studied else ("#C9A84C" if is_today else "#7A9A7A")
         shadow = "0 3px 12px rgba(13,110,63,0.2)" if studied else "none"
         calendar_cells += f"""

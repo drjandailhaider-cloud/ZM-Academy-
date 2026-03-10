@@ -36,9 +36,8 @@ LEVELS = [
     "O Level","A Level"
 ]
 
-# FIX #7: Legacy compat mapping — was missing Class 6-10
+# Legacy compat mapping: Class 1-10 → Grade 1-10
 _LEVEL_ALIAS = {f"Class {i}": f"Grade {i}" for i in range(1, 11)}
-_LEVEL_ALIAS.update({"Class 5": "Grade 5"})
 
 def normalise_level(grade):
     return _LEVEL_ALIAS.get(grade, grade)
@@ -840,7 +839,10 @@ def render_sidebar():
         <div style="margin:16px 0 4px;border-top:1px solid rgba(255,255,255,0.08);
             padding-top:12px"></div>""", unsafe_allow_html=True)
         if st.button("🚪  Logout", key="logout_btn", use_container_width=True):
-            for k in list(st.session_state.keys()): del st.session_state[k]
+            # Only clear app-defined keys to avoid disturbing Streamlit internals
+            for k in list(defaults.keys()):
+                if k in st.session_state:
+                    del st.session_state[k]
             st.rerun()
 
 
@@ -924,7 +926,7 @@ def page_home():
         ("ہر مشکل کے بعد آسانی ہے", "After every difficulty comes ease"),
         ("علم روشنی ہے", "Knowledge is light"),
     ]
-    q_urdu, q_eng = quotes[datetime.date.today().toordinal() % len(quotes)]
+    q_urdu, q_eng = quotes[(datetime.date.today().month * 31 + datetime.date.today().day) % len(quotes)]
     streak_extra = f"&nbsp;·&nbsp;🔥 {streak}-day streak!" if streak > 1 else ""
 
     # FIX #1 (CRITICAL): Use double-quotes for ALL HTML attributes.
@@ -963,38 +965,45 @@ def page_home():
 
     today_str = datetime.date.today().isoformat()
     last_date = stats.get("lastDate", "")
+
+    # Mobile hint — shown once per session, only on home page
+    if not st.session_state.get("mobile_hint_shown", False):
+        st.info("📱 **On mobile?** Tap the **☰ arrow** at top-left to open the menu!", icon="📱")
+        st.session_state.mobile_hint_shown = True
+
     if last_date and last_date != today_str:
         st.markdown("""<div class="reminder">🔔 <b>Daily Reminder:</b> You haven't studied today! Even 15 minutes makes a difference 💪</div>""", unsafe_allow_html=True)
 
-    # ── 7-Day Streak Calendar ─────────────────────────────────
+    # ── 7-Day Streak Calendar (mobile-friendly horizontal scroll) ────
     study_dates = set(stats.get("study_dates", []))
     today = datetime.date.today()
     day_labels = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]
-    cols_7 = st.columns(7)
+    calendar_cells = ""
     for i in range(7):
         day = today - datetime.timedelta(days=6-i)
         day_str = day.isoformat()
         studied = day_str in study_dates
         is_today = (day == today)
-        bdr = "#E8C96A" if is_today else ("#0D6E3F" if studied else "rgba(255,255,255,0.08)")
+        bdr = "#E8C96A" if is_today else ("#0D6E3F" if studied else "rgba(13,110,63,0.1)")
         icon = "✅" if studied else ("📍" if is_today else "⬜")
         day_color = "#0D6E3F" if studied else ("#C9A84C" if is_today else "#7A9A7A")
         shadow = "0 3px 12px rgba(13,110,63,0.2)" if studied else "none"
-        with cols_7[i]:
-            st.markdown(f"""
-            <div style="background:var(--surface);border:1.5px solid {bdr};
-                border-radius:10px;padding:8px 4px;text-align:center;
-                box-shadow:{shadow}">
-                <div style="font-size:14px">{icon}</div>
-                <div style="font-size:9px;font-weight:800;color:{day_color};
-                    text-transform:uppercase;letter-spacing:.5px;margin-top:2px">{day_labels[day.weekday()]}</div>
-                <div style="font-size:8px;color:#7A9A7A;margin-top:1px">{day.day}</div>
-            </div>""", unsafe_allow_html=True)
+        calendar_cells += f"""
+        <div style="background:var(--surface);border:1.5px solid {bdr};border-radius:10px;
+            padding:8px 4px;text-align:center;box-shadow:{shadow};min-width:44px;flex:1">
+            <div style="font-size:14px">{icon}</div>
+            <div style="font-size:9px;font-weight:800;color:{day_color};
+                text-transform:uppercase;letter-spacing:.5px;margin-top:2px">{day_labels[day.weekday()]}</div>
+            <div style="font-size:8px;color:#7A9A7A;margin-top:1px">{day.day}</div>
+        </div>"""
+    st.markdown(f"""
+    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:4px">
+        {calendar_cells}
+    </div>""", unsafe_allow_html=True)
 
-    st.markdown("<div style=\"height:16px\"></div>", unsafe_allow_html=True)
+    st.markdown("<div style=\"height:8px\"></div>", unsafe_allow_html=True)
 
-    # ── Word of the Day ───────────────────────────────────────
-    # FIX #3: Ensure fallback is always set before expander renders
+    # ── Word of the Day (collapsed by default — not blocking) ─────
     if not st.session_state.word_of_day:
         st.session_state.word_of_day = {
             "word":"Perseverance","urdu":"ثابت قدمی",
@@ -1003,8 +1012,8 @@ def page_home():
             "tip":"Use this word in your next essay!"
         }
 
-    with st.expander("📖 Word of the Day", expanded=not st.session_state.wod_loaded):
-        # FIX #3: Load AI word once per session — not every render
+    with st.expander("📖 Word of the Day", expanded=False):
+        # Load AI word once per session — not every render
         if not st.session_state.wod_loaded:
             with st.spinner("Loading today's word..."):
                 grade = u.get("grade", "Grade 6")
@@ -1022,6 +1031,7 @@ def page_home():
                 except Exception:
                     pass
             st.session_state.wod_loaded = True
+            st.rerun()
 
         w = st.session_state.word_of_day
         st.markdown(f"""
@@ -1035,7 +1045,12 @@ def page_home():
             <div style="font-size:12px;color:#C9A84C;font-weight:700">💡 {w.get("tip","")}</div>
         </div>""", unsafe_allow_html=True)
 
+    st.markdown("<div style=\"height:4px\"></div>", unsafe_allow_html=True)
+
     # ── Stats row ─────────────────────────────────────────────
+    st.markdown("<div style=\"font-family:'Sora',sans-serif;font-size:13px;font-weight:800;"
+                "color:#7A9A7A;text-transform:uppercase;letter-spacing:1px;"
+                "margin-bottom:8px\">📊 Your Progress</div>", unsafe_allow_html=True)
     total_q   = stats.get("total", 0)
     streak_v  = stats.get("streak", 0)
     badges_v  = len(u.get("badges", []))
@@ -1064,7 +1079,7 @@ def page_home():
                 <div style="font-size:9px;color:#7A9A7A;margin-top:3px;font-weight:700">{pct}% goal</div>
             </div>""", unsafe_allow_html=True)
 
-    st.markdown("<div style=\"height:18px\"></div>", unsafe_allow_html=True)
+    st.markdown("<div style=\"height:6px\"></div>", unsafe_allow_html=True)
 
     # ── Upcoming Homework ─────────────────────────────────────
     if role in ("student","parent"):
@@ -1111,11 +1126,21 @@ def page_home():
     if user_hist:
         last = user_hist[-1]
         last_sub  = last.get("subject", "")
+        last_updated = last.get("updated", "")
         last_msgs = last.get("messages", [])
-        if last_msgs:
+        # Only show if session has messages and was updated within the last 7 days
+        is_recent = True
+        if last_updated:
+            try:
+                updated_date = datetime.datetime.strptime(last_updated[:10], "%Y-%m-%d").date()
+                is_recent = (datetime.date.today() - updated_date).days <= 7
+            except Exception:
+                pass
+        if last_msgs and is_recent:
             last_q = next((m["content"][:55] for m in reversed(last_msgs) if m["role"]=="user"), "")
             if last_q:
                 ellipsis = "..." if len(last_q) == 55 else ""
+                time_label = last_updated[:16] if last_updated else ""
                 st.markdown(f"""
                 <div style="background:linear-gradient(135deg,rgba(13,110,63,0.06),rgba(13,110,63,0.02));
                     border:1.5px solid rgba(13,110,63,0.15);border-radius:12px;
@@ -1124,7 +1149,7 @@ def page_home():
                     <div style="flex:1;min-width:0">
                         <div style="font-size:10px;font-weight:800;color:#0D6E3F;
                             text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px">
-                            Continue last chat · {last_sub}</div>
+                            Continue last chat · {last_sub} · {time_label}</div>
                         <div style="font-size:12px;color:#3D5C3D;font-weight:600;
                             white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
                             "{last_q}{ellipsis}"</div>
@@ -1138,35 +1163,40 @@ def page_home():
                 "color:#0D1F0D;margin-bottom:10px;letter-spacing:-.3px\">⚡ Quick Access</div>",
                 unsafe_allow_html=True)
 
+    # Scoped CSS — only targets buttons inside .home-quick-access to avoid bleeding to other pages
+    st.markdown("""
+    <style>
+    .home-quick-access .stButton > button {
+        min-height: 72px !important;
+        font-size: 13px !important;
+        line-height: 1.4 !important;
+        border-radius: 14px !important;
+        font-weight: 800 !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+    }
+    </style>
+    <div class="home-quick-access">""", unsafe_allow_html=True)
+
     qa_items = [
-        ("💬","Chat Tutor",    "chat"),
-        ("📝","Practice Quiz", "quiz"),
-        ("👥","Friendz Quiz",  "friends"),
-        ("🎨","Image Gen",     "image"),
+        ("💬", "Chat Tutor",    "chat"),
+        ("📝", "Practice Quiz", "quiz"),
+        ("👥", "Friendz Quiz",  "friends"),
+        ("🎨", "Image Gen",     "image"),
     ]
     qa_cols = st.columns(4)
-    for col_w, (icon, label, page) in zip(qa_cols, qa_items):
-        with col_w:
-            is_active = (st.session_state.page == page)
+    for qa_col, (qa_icon, qa_label, qa_dest) in zip(qa_cols, qa_items):
+        with qa_col:
+            is_active = (st.session_state.page == qa_dest)
             if st.button(
-                f"{icon}\n{label}",
-                key=f"home_go_{page}",
+                f"{qa_icon} {qa_label}",
+                key=f"home_go_{qa_dest}",
                 use_container_width=True,
                 type="primary" if is_active else "secondary",
             ):
-                st.session_state.page = page; st.rerun()
+                st.session_state.page = qa_dest; st.rerun()
 
-    st.markdown("""
-    <style>
-    div[data-testid="stHorizontalBlock"] .stButton > button {
-        min-height: 80px !important;
-        font-size: 13px !important;
-        white-space: pre-line !important;
-        line-height: 1.5 !important;
-        border-radius: 14px !important;
-        font-weight: 800 !important;
-    }
-    </style>""", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -1237,10 +1267,15 @@ def page_chat():
         st.info(f"👋 Assalam-o-Alaikum {u['name'].split()[0]}! I'm Ustad, your {sub} tutor for {lvl}. Ask me anything!")
 
     for m in st.session_state.chat_messages:
+        # Escape content to prevent XSS — user input must never be injected raw into HTML
+        safe_content = (m['content']
+                        .replace('&', '&amp;')
+                        .replace('<', '&lt;')
+                        .replace('>', '&gt;'))
         if m["role"] == "user":
-            st.markdown(f"<div class=\"msg-lbl msg-lbl-r\">You</div><div class=\"msg-user\">{m['content']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class=\"msg-lbl msg-lbl-r\">You</div><div class=\"msg-user\">{safe_content}</div>", unsafe_allow_html=True)
         else:
-            st.markdown(f"<div class=\"msg-lbl\">🎓 Ustad</div><div class=\"msg-bot\">{m['content']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class=\"msg-lbl\">🎓 Ustad</div><div class=\"msg-bot\">{safe_content}</div>", unsafe_allow_html=True)
 
     with st.form("chat_form", clear_on_submit=True):
         ph  = "یہاں سوال لکھیں..." if sub=="Urdu" else f"Ask your {sub} question here..."
@@ -1460,6 +1495,12 @@ def page_friends():
     grp = st.session_state.group_session
 
     if grp is not None and grp.get("done"):
+        # Save quiz stat once — guard prevents double-count on re-render
+        if not grp.get("_stat_saved"):
+            bump_stats(grp.get("sub"), "quizzes_done")
+            grp["_stat_saved"] = True
+            st.session_state.group_session = grp
+
         st.markdown("## 🏆 Final Leaderboard")
         players = sorted(grp["players"], key=lambda p: p["score"], reverse=True)
         rank_icons = ["🥇","🥈","🥉","4️⃣"]
@@ -1538,8 +1579,8 @@ def page_friends():
             Q{qidx+1}. {ques["q"]}
         </div>""", unsafe_allow_html=True)
 
-        for opt in ques["options"]:
-            if st.button(opt, key=f"grp_{pidx}_{qidx}_{opt}", use_container_width=True):
+        for opt_idx, opt in enumerate(ques["options"]):
+            if st.button(opt, key=f"grp_{pidx}_{qidx}_{opt_idx}", use_container_width=True):
                 if opt == ques["answer"]:
                     grp["players"][pidx]["score"] += 1
                     st.toast("✅ Correct!", icon="🎉")
@@ -2942,10 +2983,6 @@ if not st.session_state.logged_in:
     page_auth()
 else:
     render_sidebar()
-    if not st.session_state.get("mobile_hint_shown", False):
-        st.info("📱 **On mobile?** Tap the **☰ arrow** at top-left to open the menu!", icon="📱")
-        st.session_state.mobile_hint_shown = True
-
     p = st.session_state.page
     if   p == "home":        page_home()
     elif p == "chat":        page_chat()

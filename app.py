@@ -3013,230 +3013,531 @@ def page_profile():
 # HOMEWORK PAGE (Teacher / Admin)
 # ─────────────────────────────────────────────────────────────────
 def page_homework():
-    u = st.session_state.user
-    st.markdown("<div class=\"section-header\">📋 Create Homework</div>", unsafe_allow_html=True)
+    u    = st.session_state.user
+    role = u.get("role", "student")
 
-    st.markdown("""
-    <div style="background:#EFF4FF;border-radius:14px;padding:14px 18px;
-        margin-bottom:20px;font-size:13px;color:#1B4FD8;border-left:4px solid #2563EB">
-        📝 <b>AI Homework Generator</b> — Fill in the details below and let AI create
-        a complete assignment with questions, answers, hints, marking guide, and learning objectives.
-    </div>""", unsafe_allow_html=True)
+    st.markdown("<div class=\"section-header\">📋 Homework Creator</div>", unsafe_allow_html=True)
 
-    st.markdown("#### 📚 Step 1 — Subject & Grade")
-    c1, c2 = st.columns(2)
-    with c1:
-        hw_subject = st.selectbox("Subject", list(SUBJECTS.keys()), key="hw_subject")
-    with c2:
-        lvl_idx = get_level_index(u.get("grade", "Grade 6"))
-        hw_grade = st.selectbox("Grade Level", LEVELS, index=lvl_idx, key="hw_grade")
+    tab_create, tab_manage = st.tabs(["✏️  Create New", "📂  Manage Assignments"])
 
-    st.markdown("#### ✏️ Step 2 — Topic & Description")
-    hw_topic = st.text_input(
-        "Topic / Chapter",
-        placeholder="e.g. Quadratic Equations, Photosynthesis, World War II, Newton's Laws...",
-        key="hw_topic"
-    )
-    hw_desc = st.text_area(
-        "Assignment Description & Instructions",
-        placeholder="Describe what students should do...",
-        height=110,
-        key="hw_desc"
-    )
-
-    st.markdown("#### ⚙️ Step 3 — Homework Settings")
-    c3, c4, c5 = st.columns(3)
-    with c3:
-        hw_type = st.selectbox("Homework Type", [
-            "Mixed (MCQ + Short + Long)",
-            "MCQ Only",
-            "Short Answer",
-            "Long Answer / Essay",
-            "Problem Solving",
-            "Research & Summary",
-        ], key="hw_type")
-    with c4:
-        hw_difficulty = st.selectbox("Difficulty", ["Easy", "Medium", "Hard", "Mixed"], index=1, key="hw_diff")
-    with c5:
-        hw_num_q = st.selectbox("Number of Questions", [5, 8, 10, 12, 15], index=1, key="hw_num_q")
-
-    st.markdown("#### 📅 Step 4 — Due Date")
-    hw_due_days = st.slider("Due in how many days from today?", 1, 14, 3, key="hw_due_days")
-    due_date = (datetime.date.today() + datetime.timedelta(days=hw_due_days)).isoformat()
-    st.markdown(f"""
-    <div style="background:#F0FDF4;border-radius:10px;padding:10px 16px;
-        font-size:13px;color:#065F46;font-weight:700;display:inline-block">
-        📅 Due Date: {due_date}
-    </div>""", unsafe_allow_html=True)
-
-    st.markdown("<div style=\"height:16px\"></div>", unsafe_allow_html=True)
-
-    if st.button("🚀 Generate Homework with AI", use_container_width=True, type="primary", key="gen_hw_btn"):
-        if not hw_topic.strip():
-            st.error("⚠️ Please enter a topic in Step 2 before generating.")
-        else:
-            topic_str = hw_topic.strip()
-            desc_str  = hw_desc.strip() if hw_desc.strip() else "Standard homework assignment."
-            with st.spinner(f"✨ Generating {hw_num_q} {hw_difficulty} questions on '{topic_str}'... (20-30 sec)"):
-                hw_tokens = max(2000, hw_num_q * 280 + 600)
-                raw = call_ai(
-                    [{"role": "user", "content":
-                      f"Create a complete homework assignment for {hw_grade} {hw_subject} students in Pakistan. "
-                      f"Topic: {topic_str}. Teacher instructions: {desc_str}. "
-                      f"Homework type: {hw_type}. Difficulty: {hw_difficulty}. "
-                      f"Generate exactly {hw_num_q} questions. "
-                      f"Return ONLY raw JSON with no backticks and no markdown, in this exact structure: "
-                      f"{{\"title\":\"homework title\",\"instructions\":\"detailed student-facing instructions\","
-                      f"\"learning_objectives\":\"what students will learn\","
-                      f"\"questions\":[{{\"number\":1,\"type\":\"MCQ|short_answer|long_answer|problem\","
-                      f"\"question\":\"question text\",\"marks\":2,"
-                      f"\"options\":[\"A. ...\",\"B. ...\",\"C. ...\",\"D. ...\"],"
-                      f"\"answer\":\"correct answer or full model answer\","
-                      f"\"hint\":\"a helpful hint without giving away the answer\"}}],"
-                      f"\"total_marks\":20,\"marking_guide\":\"concise marking guide for each question type\"}}"}],
-                    "You are an expert Pakistani curriculum homework generator. Return ONLY valid JSON, no extra text.",
-                    hw_tokens
-                )
-            try:
-                clean   = raw.replace("```json", "").replace("```", "").strip()
-                hw_data = json.loads(clean)
-
-                homework = load_json(HOMEWORK_FILE)
-                hw_id = (f"hw_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_"
-                         f"{u['email'].split('@')[0]}")
-                homework[hw_id] = {
-                    "id":            hw_id,
-                    "created_by":    u["email"],
-                    "creator_name":  u["name"],
-                    "subject":       hw_subject,
-                    "grade":         hw_grade,
-                    "topic":         topic_str,
-                    "description":   desc_str,
-                    "type":          hw_type,
-                    "difficulty":    hw_difficulty,
-                    "due_date":      due_date,
-                    "created":       datetime.date.today().isoformat(),
-                    "status":        "active",
-                    "submissions":   {},
-                    "data":          hw_data,
-                }
-                save_json(HOMEWORK_FILE, homework)
-                st.session_state["hw_preview"] = homework[hw_id]
-                st.success("✅ Homework generated and saved successfully!")
-                st.rerun()
-            except Exception as e:
-                st.error(f"⚠️ Could not parse AI response. Please try again. ({e})")
-                with st.expander("🔍 Debug info"):
-                    st.code(raw[:800])
-
-    hw_prev = st.session_state.get("hw_preview")
-    if hw_prev:
-        data = hw_prev["data"]
-        info = SUBJECTS.get(hw_prev["subject"], {"emoji": "📚", "color": "#2563EB"})
-        col_c  = info["color"]
-
-        st.markdown("---")
-        st.markdown(f"""
-        <div style="background:linear-gradient(135deg,{col_c}18,{col_c}08);
-            border:2px solid {col_c}44;border-radius:18px;padding:20px 22px;margin-bottom:18px">
-            <div style="font-size:20px;font-weight:900;color:#1A1A2E;margin-bottom:10px">
-                {info["emoji"]} {data.get("title", hw_prev["topic"])}
-            </div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-                <span style="background:{col_c}22;color:{col_c};padding:3px 12px;
-                    border-radius:99px;font-size:12px;font-weight:700">📚 {hw_prev["subject"]}</span>
-                <span style="background:{col_c}22;color:{col_c};padding:3px 12px;
-                    border-radius:99px;font-size:12px;font-weight:700">🏫 {hw_prev["grade"]}</span>
-                <span style="background:{col_c}22;color:{col_c};padding:3px 12px;
-                    border-radius:99px;font-size:12px;font-weight:700">🎯 {hw_prev["difficulty"]}</span>
-                <span style="background:{col_c}22;color:{col_c};padding:3px 12px;
-                    border-radius:99px;font-size:12px;font-weight:700">
-                    📝 {len(data.get("questions", []))} questions · {data.get("total_marks", 0)} marks</span>
-                <span style="background:#D1FAE5;color:#065F46;padding:3px 12px;
-                    border-radius:99px;font-size:12px;font-weight:700">📅 Due: {hw_prev["due_date"]}</span>
-            </div>
-            <div style="font-size:13px;color:#374151;margin-bottom:8px">
-                <b>📋 Instructions:</b> {data.get("instructions", "")[:250]}
-            </div>
-            <div style="font-size:12px;color:#6B7280">
-                <b>🎯 Learning Objectives:</b> {data.get("learning_objectives", "")}
-            </div>
+    # ══════════════════════════════════════════════════════
+    # TAB 1 — CREATE
+    # ══════════════════════════════════════════════════════
+    with tab_create:
+        st.markdown("""
+        <div style="background:linear-gradient(135deg,#EFF4FF,#F5F0FF);border-radius:14px;
+            padding:14px 18px;margin-bottom:20px;font-size:13px;color:#1B4FD8;
+            border-left:4px solid #2563EB">
+            🤖 <b>AI Homework Generator</b> — Choose subject, topic, question types and difficulty.
+            AI builds a complete assignment with questions, model answers, hints and a marking guide.
         </div>""", unsafe_allow_html=True)
 
-        questions = data.get("questions", [])
-        st.markdown(f"#### 📝 Questions ({len(questions)} total)")
+        # ── Step 1: Subject & Grade ──────────────────────────
+        st.markdown("#### 📚 Step 1 — Subject & Grade")
+        c1, c2 = st.columns(2)
+        with c1:
+            hw_subject = st.selectbox("Subject", list(SUBJECTS.keys()), key="hw_subject")
+        with c2:
+            hw_grade = st.selectbox("Grade Level", LEVELS,
+                                    index=get_level_index(u.get("grade", "Grade 6")),
+                                    key="hw_grade")
 
-        type_icons = {
-            "MCQ":          ("🔵", "#2563EB"),
-            "short_answer": ("📝", "#059669"),
-            "long_answer":  ("📄", "#7C3AED"),
-            "problem":      ("🔢", "#E8472A"),
+        # Quick-pick topics from curriculum
+        subj_key_map = {
+            "Maths":"Maths","Physics":"Physics","Chemistry":"Chemistry",
+            "Biology":"Biology","English":"English",
+            "Computer Science":"Computer Science","Urdu":"Urdu",
+        }
+        curr_units = (CAMBRIDGE_CURRICULUM
+                      .get(subj_key_map.get(hw_subject, "Maths"), {})
+                      .get(hw_grade, {})
+                      .get("units", []))
+
+        # ── Step 2: Topic ───────────────────────────────────
+        st.markdown("#### ✏️ Step 2 — Topic")
+
+        if curr_units:
+            with st.expander("📖 Quick-pick from Cambridge syllabus (optional)"):
+                for unit in curr_units[:6]:
+                    st.markdown(f"<div style='font-size:12px;font-weight:800;color:#2563EB;"
+                                f"margin:6px 0 4px'>{unit['unit']}</div>",
+                                unsafe_allow_html=True)
+                    chip_cols = st.columns(3)
+                    for ti, topic in enumerate(unit["topics"]):
+                        with chip_cols[ti % 3]:
+                            btn_key = f"tpick_{unit['unit'][:6]}_{ti}"
+                            if st.button(topic, key=btn_key, use_container_width=True):
+                                st.session_state["_hw_topic_pick"] = topic
+                                st.rerun()
+
+        picked = st.session_state.get("_hw_topic_pick", "")
+        hw_topic = st.text_input(
+            "Topic / Chapter",
+            value=picked,
+            placeholder="e.g. Quadratic Equations, Photosynthesis, Newton's Laws...",
+            key="hw_topic_input"
+        )
+        if picked:
+            st.caption(f"📌 Picked from syllabus: **{picked}** — edit above if needed")
+
+        hw_context = st.text_area(
+            "Additional Instructions (optional)",
+            placeholder="e.g. Focus on diagrams. Include a real-life word problem. Time limit: 30 min...",
+            height=75, key="hw_context"
+        )
+
+        # ── Step 3: Homework Type ───────────────────────────
+        st.markdown("#### 📝 Step 3 — Homework Type")
+
+        HW_TYPES = {
+            "Mixed (MCQ + Short + Long)":  ("🎯","#2563EB","Balanced: multiple types in one assignment"),
+            "MCQ Only":                    ("🔵","#0891B2","Multiple choice — easy to auto-mark"),
+            "Short Answer":                ("📝","#059669","Brief written answers — tests understanding"),
+            "Long Answer / Essay":         ("📄","#7C3AED","Extended writing — analytical skills"),
+            "Problem Solving":             ("🔢","#E8472A","Step-by-step worked problems — Maths/Science"),
+            "Fill in the Blanks":          ("📑","#D97706","Key-term completion — great for vocabulary"),
+            "True / False + Justify":      ("✅","#0D6E3F","Critical thinking — justify each answer"),
+            "Research & Summary":          ("🔍","#BE185D","Read and summarise — builds study skills"),
+            "Diagram & Label":             ("🗺️","#6D28D9","Draw, label or interpret diagrams"),
+            "Past Paper Style":            ("🏆","#B45309","Exam-format questions following board style"),
         }
 
-        for i, q in enumerate(questions):
-            t_icon, t_color = type_icons.get(q.get("type", ""), ("❓", "#666"))
-            type_label = q.get("type", "").replace("_", " ").title()
+        col_t1, col_t2 = st.columns(2)
+        hw_type_list = list(HW_TYPES.keys())
+        with col_t1:
+            hw_type = st.selectbox("Question Type", hw_type_list, key="hw_type")
+        t_icon, t_color, t_desc = HW_TYPES[hw_type]
+        with col_t2:
+            st.markdown(f"""
+            <div style="background:{t_color}12;border-radius:10px;padding:10px 14px;
+                font-size:12px;color:{t_color};border-left:3px solid {t_color};margin-top:28px">
+                {t_icon} <b>{hw_type}:</b> {t_desc}
+            </div>""", unsafe_allow_html=True)
 
-            with st.expander(
-                f"Q{i+1}. {q['question'][:75]}{'...' if len(q['question'])>75 else ''}  "
-                f"[{q.get('marks', 0)} mark{'s' if q.get('marks',0)!=1 else ''}]"
-            ):
-                st.markdown(f"""
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-                    <span style="background:{t_color}18;color:{t_color};padding:2px 10px;
-                        border-radius:99px;font-size:12px;font-weight:700">
-                        {t_icon} {type_label}</span>
-                    <span style="font-size:12px;color:#888">{q.get("marks",0)} marks</span>
-                </div>
-                <div style="font-size:14px;font-weight:700;color:#1A1A2E;margin-bottom:10px;line-height:1.5">
-                    {q["question"]}
-                </div>""", unsafe_allow_html=True)
+        # ── Step 4: Settings ────────────────────────────────
+        st.markdown("#### ⚙️ Step 4 — Question Settings")
+        c3, c4, c5, c6 = st.columns(4)
+        with c3:
+            hw_difficulty  = st.selectbox("Difficulty", ["Easy","Medium","Hard","Mixed"], index=1, key="hw_diff")
+        with c4:
+            hw_num_q       = st.selectbox("No. of Questions", [3,5,8,10,12,15], index=1, key="hw_num_q")
+        with c5:
+            hw_marks_each  = st.selectbox("Marks Each", [1,2,3,5], index=1, key="hw_marks")
+        with c6:
+            hw_due_days    = st.selectbox("Due In", [1,2,3,5,7,10,14,21],
+                                          index=2, format_func=lambda x: f"{x} day{'s' if x!=1 else ''}",
+                                          key="hw_due_days")
 
-                if q.get("options"):
-                    for opt in q["options"]:
-                        st.markdown(f"""
-                        <div style="background:#F8F9FA;border-radius:8px;padding:7px 12px;
-                            margin-bottom:4px;font-size:13px;color:#374151">
-                            {opt}
-                        </div>""", unsafe_allow_html=True)
+        due_date          = (datetime.date.today() + datetime.timedelta(days=hw_due_days)).isoformat()
+        total_marks_prev  = hw_num_q * hw_marks_each
+        est_mins          = hw_num_q * (3 if hw_difficulty=="Easy" else 5 if hw_difficulty=="Medium" else 7)
 
-                col1, col2 = st.columns(2)
-                with col1:
+        st.markdown(f"""
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px">
+            <span style="background:#EFF4FF;color:#1B4FD8;padding:5px 14px;border-radius:99px;
+                font-size:12px;font-weight:700">📊 Total: {total_marks_prev} marks</span>
+            <span style="background:#F0FDF4;color:#065F46;padding:5px 14px;border-radius:99px;
+                font-size:12px;font-weight:700">⏱️ ~{est_mins} minutes</span>
+            <span style="background:#FFF8E7;color:#92400E;padding:5px 14px;border-radius:99px;
+                font-size:12px;font-weight:700">📅 Due: {due_date}</span>
+        </div>""", unsafe_allow_html=True)
+
+        # Options row
+        oc1, oc2, oc3 = st.columns(3)
+        with oc1: hw_hints    = st.checkbox("Include hints",             value=True,  key="hw_hints")
+        with oc2: hw_show_ans = st.checkbox("Show answers after submit", value=True,  key="hw_show_ans")
+        with oc3: hw_obj      = st.checkbox("Learning objectives",       value=True,  key="hw_obj")
+
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+        # ── Generate ────────────────────────────────────────
+        if st.button("🚀 Generate Homework with AI", use_container_width=True,
+                     type="primary", key="gen_hw_btn"):
+            topic_str = hw_topic.strip()
+            if not topic_str:
+                st.error("⚠️ Please enter a topic in Step 2.")
+            else:
+                type_instruction = {
+                    "MCQ Only":
+                        f"ALL {hw_num_q} questions MUST be MCQ type with exactly 4 options each.",
+                    "Short Answer":
+                        f"ALL {hw_num_q} questions MUST be short_answer type (2–3 sentences).",
+                    "Long Answer / Essay":
+                        f"ALL {hw_num_q} questions MUST be long_answer type (paragraph response).",
+                    "Problem Solving":
+                        f"ALL {hw_num_q} questions MUST be problem type with step-by-step solution.",
+                    "Fill in the Blanks":
+                        f"ALL {hw_num_q} questions MUST be short_answer fill-in-the-blank style.",
+                    "True / False + Justify":
+                        f"ALL {hw_num_q} questions MUST be short_answer true/false with justification.",
+                    "Research & Summary":
+                        f"ALL {hw_num_q} tasks MUST be long_answer research/summary style.",
+                    "Diagram & Label":
+                        f"ALL {hw_num_q} questions MUST be short_answer asking students to label/describe diagrams.",
+                    "Past Paper Style":
+                        f"Generate {hw_num_q} exam-style questions following Cambridge/FBISE format.",
+                    "Mixed (MCQ + Short + Long)":
+                        f"Generate a MIX: roughly {hw_num_q//3} MCQ, {hw_num_q//3} short_answer, "
+                        f"{hw_num_q - 2*(hw_num_q//3)} long_answer.",
+                }.get(hw_type, f"Generate {hw_num_q} questions.")
+
+                ctx_part = f" Additional context: {hw_context.strip()}." if hw_context.strip() else ""
+                hint_part = " Include a helpful hint for every question." if hw_hints else ""
+                obj_part  = " Include clear learning objectives." if hw_obj else ""
+
+                prompt = (
+                    f"Create a complete homework assignment for {hw_grade} {hw_subject} students in Pakistan.\n"
+                    f"Topic: {topic_str}.{ctx_part}\n"
+                    f"Homework type: {hw_type}. {type_instruction}\n"
+                    f"Difficulty: {hw_difficulty}. Each question is worth {hw_marks_each} mark(s).\n"
+                    f"{hint_part}{obj_part}\n"
+                    f"Return ONLY raw JSON (no markdown, no backticks):\n"
+                    f'{{"title":"homework title",'
+                    f'"instructions":"clear student instructions",'
+                    f'"learning_objectives":"what students will learn",'
+                    f'"estimated_time":"{est_mins} minutes",'
+                    f'"questions":[{{'
+                    f'"number":1,'
+                    f'"type":"MCQ|short_answer|long_answer|problem",'
+                    f'"question":"question text",'
+                    f'"marks":{hw_marks_each},'
+                    f'"options":["A. ...","B. ...","C. ...","D. ..."],'
+                    f'"answer":"correct answer or full model answer",'
+                    f'"hint":"helpful hint without giving away the answer",'
+                    f'"explanation":"why this answer is correct"'
+                    f'}}],'
+                    f'"total_marks":{total_marks_prev},'
+                    f'"marking_guide":"concise marking guidance"}}'
+                )
+
+                hw_tokens = max(2500, hw_num_q * 350 + 800)
+                with st.spinner(f"✨ Generating {hw_num_q} {hw_difficulty} questions on '{topic_str}'…"):
+                    raw = call_ai(
+                        [{"role":"user","content": prompt}],
+                        "Expert Pakistani curriculum homework generator. Return ONLY valid JSON, no extra text.",
+                        hw_tokens
+                    )
+
+                if raw.startswith(("__API_KEY_MISSING__","__EMPTY_RESPONSE__","__API_ERROR__:")):
+                    st.error(f"⚠️ AI error: {raw}")
+                else:
+                    try:
+                        clean = raw.strip()
+                        for fence in ["```json","```"]:
+                            clean = clean.replace(fence,"")
+                        clean = clean.strip()
+                        j0 = clean.find("{"); j1 = clean.rfind("}") + 1
+                        if j0 >= 0 and j1 > j0:
+                            clean = clean[j0:j1]
+                        hw_data = json.loads(clean)
+                        questions = hw_data.get("questions",[])
+                        if not questions:
+                            raise ValueError("No questions in AI response")
+
+                        homework = load_json(HOMEWORK_FILE)
+                        hw_id    = (f"hw_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_"
+                                    f"{u['email'].split('@')[0]}")
+                        homework[hw_id] = {
+                            "id":           hw_id,
+                            "created_by":   u["email"],
+                            "creator_name": u["name"],
+                            "creator_role": role,
+                            "subject":      hw_subject,
+                            "grade":        hw_grade,
+                            "topic":        topic_str,
+                            "type":         hw_type,
+                            "difficulty":   hw_difficulty,
+                            "due_date":     due_date,
+                            "created":      datetime.date.today().isoformat(),
+                            "status":       "active",
+                            "show_hints":   hw_hints,
+                            "show_answers": hw_show_ans,
+                            "submissions":  {},
+                            "data":         hw_data,
+                        }
+                        save_json(HOMEWORK_FILE, homework)
+                        st.session_state["hw_preview_id"] = hw_id
+                        st.session_state["_hw_topic_pick"] = ""
+                        st.success("✅ Homework generated and saved!")
+                        st.balloons()
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"⚠️ Could not parse AI response: {e}")
+                        with st.expander("🔍 Debug — AI raw output"):
+                            st.code(raw[:1000])
+
+        # ── Preview ─────────────────────────────────────────
+        prev_id = st.session_state.get("hw_preview_id")
+        if prev_id:
+            hw_all  = load_json(HOMEWORK_FILE)
+            hw_prev = hw_all.get(prev_id)
+            if hw_prev:
+                _render_hw_card(hw_prev, show_answers=True, creator_view=True)
+
+    # ══════════════════════════════════════════════════════
+    # TAB 2 — MANAGE
+    # ══════════════════════════════════════════════════════
+    with tab_manage:
+        homework = load_json(HOMEWORK_FILE)
+        if role == "admin":
+            my_hw = list(homework.values())
+        else:
+            my_hw = [h for h in homework.values()
+                     if h.get("created_by") == u["email"]]
+
+        if not my_hw:
+            st.info("📭 No assignments yet. Use the 'Create New' tab to get started!")
+        else:
+            total_subs = sum(len(h.get("submissions",{})) for h in my_hw)
+            avg_all    = 0
+            sub_scores = []
+            for h in my_hw:
+                for s in h.get("submissions",{}).values():
+                    sub_scores.append(s.get("score_pct",0))
+            if sub_scores:
+                avg_all = int(sum(sub_scores)/len(sub_scores))
+
+            ma, mb, mc = st.columns(3)
+            for col, icon, val, lbl, col_c in [
+                (ma,"📋",len(my_hw),  "Assignments","#2563EB"),
+                (mb,"📬",total_subs,  "Submissions", "#7C3AED"),
+                (mc,"📈",f"{avg_all}%","Avg Score",  "#059669"),
+            ]:
+                with col:
+                    st.markdown(f"""
+                    <div style="background:#fff;border-radius:12px;padding:14px;text-align:center;
+                        box-shadow:0 2px 10px rgba(0,0,0,.06);border-top:4px solid {col_c}">
+                        <div style="font-size:22px">{icon}</div>
+                        <div style="font-size:22px;font-weight:900;color:{col_c}">{val}</div>
+                        <div style="font-size:11px;color:#999;font-weight:700">{lbl}</div>
+                    </div>""", unsafe_allow_html=True)
+
+            st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+            f1, f2, f3 = st.columns(3)
+            with f1: f_sub  = st.selectbox("Subject",["All"]+list(SUBJECTS.keys()), key="mng_fsub")
+            with f2: f_stat = st.selectbox("Status", ["All","Active","Inactive"],    key="mng_fstat")
+            with f3: f_sort = st.selectbox("Sort by",["Newest","Oldest","Subject"],  key="mng_fsort")
+
+            filtered = [
+                h for h in my_hw
+                if (f_sub=="All" or h.get("subject")==f_sub)
+                and (f_stat=="All"
+                     or (f_stat=="Active"   and h.get("status","active")=="active")
+                     or (f_stat=="Inactive" and h.get("status","active")!="active"))
+            ]
+            if f_sort=="Newest":   filtered.sort(key=lambda x:x.get("created",""), reverse=True)
+            elif f_sort=="Oldest": filtered.sort(key=lambda x:x.get("created",""))
+            else:                  filtered.sort(key=lambda x:x.get("subject",""))
+
+            for hw in filtered:
+                info      = SUBJECTS.get(hw.get("subject","Maths"), {"emoji":"📚","color":"#2563EB"})
+                col_c     = info["color"]
+                subs      = hw.get("submissions",{})
+                sub_cnt   = len(subs)
+                data      = hw.get("data",{})
+                hw_title  = data.get("title", hw.get("topic","Homework"))
+                due       = hw.get("due_date","")
+                overdue   = due < datetime.date.today().isoformat() if due else False
+                is_active = hw.get("status","active") == "active"
+                scores    = [s.get("score_pct",0) for s in subs.values()]
+                avg_sc    = int(sum(scores)/len(scores)) if scores else 0
+                hi = sum(1 for s in scores if s>=80)
+                lo = sum(1 for s in scores if s<60)
+
+                due_bg  = "#FEE2E2" if overdue else "#D1FAE5"
+                due_col = "#991B1B" if overdue else "#065F46"
+                due_lbl = f"⚠️ Overdue" if overdue else f"📅 Due {due}"
+
+                with st.expander(
+                    f"{info['emoji']} {hw_title[:48]}{'…' if len(hw_title)>48 else ''} "
+                    f"| {hw.get('grade','')} | {'🟢' if is_active else '🔴'} "
+                    f"| {sub_cnt} sub(s) | Avg {avg_sc}%"
+                ):
+                    st.markdown(f"""
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+                        <span style="background:{col_c}18;color:{col_c};padding:3px 12px;
+                            border-radius:99px;font-size:12px;font-weight:700">
+                            {info['emoji']} {hw.get('subject','')}</span>
+                        <span style="background:{col_c}18;color:{col_c};padding:3px 12px;
+                            border-radius:99px;font-size:12px;font-weight:700">
+                            🏫 {hw.get('grade','')}</span>
+                        <span style="background:#F3F4F6;color:#374151;padding:3px 12px;
+                            border-radius:99px;font-size:12px;font-weight:700">
+                            📝 {hw.get('type','')}</span>
+                        <span style="background:{col_c}18;color:{col_c};padding:3px 12px;
+                            border-radius:99px;font-size:12px;font-weight:700">
+                            🎯 {hw.get('difficulty','')}</span>
+                        <span style="background:{due_bg};color:{due_col};padding:3px 12px;
+                            border-radius:99px;font-size:12px;font-weight:700">{due_lbl}</span>
+                    </div>""", unsafe_allow_html=True)
+
+                    if sub_cnt > 0:
+                        sc1,sc2,sc3,sc4 = st.columns(4)
+                        with sc1: st.metric("📬 Submitted", sub_cnt)
+                        with sc2: st.metric("📈 Avg Score", f"{avg_sc}%")
+                        with sc3: st.metric("🏆 High ≥80%", hi)
+                        with sc4: st.metric("⚠️ Low <60%",  lo)
+                        st.markdown("**Students:**")
+                        for em, sub in sorted(subs.items(),
+                                              key=lambda x:x[1].get("score_pct",0), reverse=True):
+                            sp  = sub.get("score_pct",0)
+                            dot = "🟢" if sp>=80 else "🟡" if sp>=60 else "🔴"
+                            st.markdown(f"""
+                            <div style="background:#F8F9FA;border-radius:8px;padding:7px 14px;
+                                margin-bottom:3px;display:flex;justify-content:space-between">
+                                <span style="font-size:13px;font-weight:700">{dot} {sub.get('student_name',em)}</span>
+                                <span style="font-size:12px;color:#666">
+                                    {sub.get('score',0)}/{sub.get('total_marks',0)} ({sp}%)
+                                    · {sub.get('submitted_at','')}</span>
+                            </div>""", unsafe_allow_html=True)
+                    else:
+                        st.info("No submissions yet.")
+
+                    ba, bb, bc = st.columns(3)
+                    with ba:
+                        lbl_toggle = "🔴 Deactivate" if is_active else "🟢 Activate"
+                        if st.button(lbl_toggle, key=f"tog_{hw['id']}", use_container_width=True):
+                            hw_fresh = load_json(HOMEWORK_FILE)
+                            if hw["id"] in hw_fresh:
+                                hw_fresh[hw["id"]]["status"] = "inactive" if is_active else "active"
+                                save_json(HOMEWORK_FILE, hw_fresh)
+                            st.rerun()
+                    with bb:
+                        if st.button("👁️ Preview", key=f"prv_{hw['id']}", use_container_width=True):
+                            st.session_state["hw_preview_id"] = hw["id"]
+                            st.rerun()
+                    with bc:
+                        if st.button("🗑️ Delete", key=f"del_{hw['id']}", use_container_width=True):
+                            hw_fresh = load_json(HOMEWORK_FILE)
+                            hw_fresh.pop(hw["id"], None)
+                            save_json(HOMEWORK_FILE, hw_fresh)
+                            if st.session_state.get("hw_preview_id") == hw["id"]:
+                                st.session_state["hw_preview_id"] = None
+                            st.rerun()
+
+
+
+def _render_hw_card(hw_prev, show_answers=True, creator_view=False):
+    """Shared renderer: homework preview card with all questions, answers, hints."""
+    data   = hw_prev.get("data", {})
+    info   = SUBJECTS.get(hw_prev.get("subject","Maths"), {"emoji":"📚","color":"#2563EB"})
+    col_c  = info["color"]
+    qs     = data.get("questions", [])
+
+    st.markdown("---")
+    st.markdown(f"""
+    <div style="background:linear-gradient(135deg,{col_c}14,{col_c}06);
+        border:2px solid {col_c}40;border-radius:18px;padding:20px 22px;margin-bottom:16px">
+        <div style="font-size:20px;font-weight:900;color:#1A1A2E;margin-bottom:10px">
+            {info['emoji']} {data.get('title', hw_prev.get('topic','Homework'))}
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            <span style="background:{col_c}20;color:{col_c};padding:3px 12px;
+                border-radius:99px;font-size:12px;font-weight:700">
+                📚 {hw_prev.get('subject','')}</span>
+            <span style="background:{col_c}20;color:{col_c};padding:3px 12px;
+                border-radius:99px;font-size:12px;font-weight:700">
+                🏫 {hw_prev.get('grade','')}</span>
+            <span style="background:{col_c}20;color:{col_c};padding:3px 12px;
+                border-radius:99px;font-size:12px;font-weight:700">
+                🎯 {hw_prev.get('difficulty','')}</span>
+            <span style="background:{col_c}20;color:{col_c};padding:3px 12px;
+                border-radius:99px;font-size:12px;font-weight:700">
+                📝 {len(qs)} questions · {data.get('total_marks',0)} marks</span>
+            <span style="background:#D1FAE5;color:#065F46;padding:3px 12px;
+                border-radius:99px;font-size:12px;font-weight:700">
+                📅 Due: {hw_prev.get('due_date','')}</span>
+            <span style="background:#FFF8E7;color:#92400E;padding:3px 12px;
+                border-radius:99px;font-size:12px;font-weight:700">
+                ⏱️ {data.get('estimated_time','')}</span>
+        </div>
+        <div style="font-size:13px;color:#374151;margin-bottom:6px;line-height:1.6">
+            <b>📋 Instructions:</b> {data.get('instructions','')[:300]}
+        </div>
+        <div style="font-size:12px;color:#6B7280;line-height:1.5">
+            <b>🎯 Learning Objectives:</b> {data.get('learning_objectives','')}
+        </div>
+    </div>""", unsafe_allow_html=True)
+
+    TYPE_META = {
+        "MCQ":          ("🔵","#2563EB","Multiple Choice"),
+        "short_answer": ("📝","#059669","Short Answer"),
+        "long_answer":  ("📄","#7C3AED","Long Answer"),
+        "problem":      ("🔢","#E8472A","Problem"),
+    }
+
+    st.markdown(f"#### 📝 Questions ({len(qs)} total)")
+    for i, q in enumerate(qs):
+        t_icon, t_col, t_lbl = TYPE_META.get(q.get("type",""), ("❓","#666","Question"))
+        marks = q.get("marks",1)
+        marks_lbl = f"{marks} mark{'s' if marks!=1 else ''}"
+
+        with st.expander(
+            f"Q{i+1}. {q['question'][:72]}{'…' if len(q['question'])>72 else ''} [{marks_lbl}]"
+        ):
+            st.markdown(f"""
+            <span style="background:{t_col}18;color:{t_col};padding:3px 12px;
+                border-radius:99px;font-size:12px;font-weight:700;
+                display:inline-block;margin-bottom:10px">
+                {t_icon} {t_lbl} · {marks_lbl}
+            </span>
+            <div style="font-size:14px;font-weight:700;color:#1A1A2E;
+                line-height:1.55;margin-bottom:10px">{q['question']}</div>
+            """, unsafe_allow_html=True)
+
+            if q.get("options"):
+                for opt in q["options"]:
+                    st.markdown(f"""
+                    <div style="background:#F8F9FA;border-radius:8px;padding:7px 12px;
+                        margin-bottom:4px;font-size:13px;color:#374151">{opt}</div>
+                    """, unsafe_allow_html=True)
+
+            if show_answers:
+                r1, r2 = st.columns(2)
+                with r1:
                     st.markdown(f"""
                     <div style="background:#D1FAE5;border-radius:8px;padding:8px 12px;
-                        font-size:12px;color:#065F46;margin-top:6px">
-                        ✅ <b>Answer:</b> {q.get("answer", "")}
+                        margin-top:6px;font-size:12px;color:#065F46">
+                        ✅ <b>Answer:</b> {q.get('answer','')}
                     </div>""", unsafe_allow_html=True)
-                with col2:
+                with r2:
                     if q.get("hint"):
                         st.markdown(f"""
                         <div style="background:#FFF8E7;border-radius:8px;padding:8px 12px;
-                            font-size:12px;color:#92400E;margin-top:6px">
-                            💡 <b>Hint:</b> {q.get("hint", "")}
+                            margin-top:6px;font-size:12px;color:#92400E">
+                            💡 <b>Hint:</b> {q.get('hint','')}
                         </div>""", unsafe_allow_html=True)
+                if q.get("explanation"):
+                    st.markdown(f"""
+                    <div style="background:#F3F4FF;border-radius:8px;padding:8px 12px;
+                        margin-top:4px;font-size:12px;color:#3730A3">
+                        📖 <b>Explanation:</b> {q.get('explanation','')}
+                    </div>""", unsafe_allow_html=True)
 
-        if data.get("marking_guide"):
-            st.markdown(f"""
-            <div style="background:#FFF8E7;border:1.5px solid #F5CC4A;border-radius:12px;
-                padding:14px 16px;margin-top:14px">
-                <div style="font-size:13px;font-weight:800;color:#92400E;margin-bottom:6px">
-                    📖 Marking Guide
-                </div>
-                <div style="font-size:13px;color:#78350F;line-height:1.6">
-                    {data.get("marking_guide", "")}
-                </div>
-            </div>""", unsafe_allow_html=True)
+    if data.get("marking_guide"):
+        st.markdown(f"""
+        <div style="background:#FFF8E7;border:1.5px solid #F5CC4A;border-radius:12px;
+            padding:14px 16px;margin-top:14px">
+            <div style="font-size:13px;font-weight:800;color:#92400E;margin-bottom:6px">
+                📖 Marking Guide</div>
+            <div style="font-size:13px;color:#78350F;line-height:1.6">
+                {data.get('marking_guide','')}</div>
+        </div>""", unsafe_allow_html=True)
 
-        st.markdown("<div style=\"height:12px\"></div>", unsafe_allow_html=True)
+    if creator_view:
+        st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
         ba, bb = st.columns(2)
         with ba:
-            if st.button("➕ Create Another Homework", use_container_width=True, type="primary"):
-                st.session_state["hw_preview"] = None
+            if st.button("➕ Create Another", use_container_width=True,
+                         type="primary", key="hw_create_another"):
+                st.session_state["hw_preview_id"] = None
                 st.rerun()
         with bb:
-            if st.button("📂 Clear Preview", use_container_width=True):
-                st.session_state["hw_preview"] = None
+            if st.button("📂 Clear Preview", use_container_width=True, key="hw_clear_prev"):
+                st.session_state["hw_preview_id"] = None
                 st.rerun()
+
+
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -3550,170 +3851,260 @@ def page_admin():
 # ─────────────────────────────────────────────────────────────────
 def page_student_homework():
     u = st.session_state.user
-    st.markdown("<div class=\"section-header blue\">📋 My Homework</div>", unsafe_allow_html=True)
+    st.markdown("<div class=\"section-header\">📋 My Homework</div>", unsafe_allow_html=True)
 
     homework = load_json(HOMEWORK_FILE)
-    all_hw = sorted(homework.values(), key=lambda x: x.get("due_date",""), reverse=False)
+    all_hw   = list(homework.values())
+    grade    = u.get("grade","")
 
-    if not all_hw:
-        st.info("📭 No homework assignments have been posted yet. Check back soon!")
-        return
+    # Filter: active assignments matching student's grade (or all if no grade set)
+    active_hw = [
+        h for h in all_hw
+        if h.get("status","active") == "active"
+        and (not grade or h.get("grade") == grade)
+    ]
 
-    tab_pending, tab_done = st.tabs(["📝 Pending", "✅ Submitted"])
+    submitted_ids = {h["id"] for h in all_hw if u["email"] in h.get("submissions",{})}
+    pending  = [h for h in active_hw if h["id"] not in submitted_ids]
+    done_hw  = [h for h in all_hw    if u["email"] in h.get("submissions",{})]
 
+    # Summary bar
+    total_a = len(active_hw)
+    done_a  = len([h for h in active_hw if h["id"] in submitted_ids])
+    pct_a   = int(done_a/max(total_a,1)*100)
+    bar_col = "#059669" if pct_a>=70 else "#F59E0B" if pct_a>=40 else "#E8472A"
+
+    st.markdown(f"""
+    <div style="background:#fff;border-radius:14px;padding:14px 18px;
+        margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,.06)">
+        <div style="display:flex;justify-content:space-between;font-size:13px;
+            font-weight:700;color:#666;margin-bottom:8px">
+            <span>📊 Homework Progress</span>
+            <span style="color:{bar_col}">{done_a}/{total_a} completed ({pct_a}%)</span>
+        </div>
+        <div style="background:#F0F0F8;border-radius:99px;height:10px;overflow:hidden">
+            <div style="width:{pct_a}%;height:10px;border-radius:99px;
+                background:linear-gradient(90deg,{bar_col},{bar_col}88)"></div>
+        </div>
+    </div>""", unsafe_allow_html=True)
+
+    tab_pending, tab_done = st.tabs([
+        f"📝  Pending ({len(pending)})",
+        f"✅  Submitted ({len(done_hw)})"
+    ])
+
+    # ── PENDING TAB ─────────────────────────────────────────────
     with tab_pending:
-        pending = [
-            hw for hw in all_hw
-            if u["email"] not in hw.get("submissions", {})
-            and hw.get("status","active") == "active"
-        ]
         if not pending:
-            st.success("🎉 You're all caught up! No pending homework.")
-        for hw in pending:
+            st.success("🎉 All caught up! No pending homework.")
+        for hw in sorted(pending, key=lambda x: x.get("due_date",""), reverse=False):
             data      = hw.get("data", {})
             info      = SUBJECTS.get(hw.get("subject","Maths"), {"emoji":"📚","color":"#2563EB"})
             col_c     = info["color"]
             due       = hw.get("due_date","")
             days_left = (datetime.date.fromisoformat(due) - datetime.date.today()).days if due else 0
-            dl_color  = "#C0392B" if days_left <= 0 else "#E8770A" if days_left <= 2 else "#059669"
-            dl_label  = "Due Today!" if days_left == 0 else (f"⚠️ Overdue by {abs(days_left)}d" if days_left < 0 else f"Due in {days_left}d")
+            dl_color  = "#C0392B" if days_left<=0 else "#E8770A" if days_left<=2 else "#059669"
+            dl_label  = ("Due Today!" if days_left==0
+                         else f"⚠️ Overdue by {abs(days_left)}d" if days_left<0
+                         else f"Due in {days_left}d")
             hw_title  = data.get("title", hw.get("topic","Homework"))
+            questions = data.get("questions",[])
+            show_h    = hw.get("show_hints", True)
 
-            with st.expander(f"{info['emoji']} {hw_title} · {hw.get('grade','')} · {dl_label}"):
+            with st.expander(
+                f"{info['emoji']} {hw_title} · {hw.get('grade','')} "
+                f"· {hw.get('type','')} · {dl_label}"
+            ):
                 st.markdown(f"""
-                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
                     <span style="background:{col_c}18;color:{col_c};padding:3px 10px;
-                        border-radius:99px;font-size:12px;font-weight:700">{info["emoji"]} {hw["subject"]}</span>
+                        border-radius:99px;font-size:12px;font-weight:700">
+                        {info['emoji']} {hw.get('subject','')}</span>
                     <span style="background:{col_c}18;color:{col_c};padding:3px 10px;
-                        border-radius:99px;font-size:12px;font-weight:700">🎯 {hw.get("difficulty","")}</span>
+                        border-radius:99px;font-size:12px;font-weight:700">
+                        📝 {hw.get('type','')}</span>
+                    <span style="background:{col_c}18;color:{col_c};padding:3px 10px;
+                        border-radius:99px;font-size:12px;font-weight:700">
+                        🎯 {hw.get('difficulty','')}</span>
                     <span style="background:{dl_color}18;color:{dl_color};padding:3px 10px;
                         border-radius:99px;font-size:12px;font-weight:700">📅 {dl_label}</span>
+                    <span style="background:#FFF8E7;color:#92400E;padding:3px 10px;
+                        border-radius:99px;font-size:12px;font-weight:700">
+                        ⏱️ {data.get('estimated_time','')}</span>
                 </div>
-                <div style="font-size:13px;color:#374151;margin-bottom:8px">
-                    <b>📋 Instructions:</b> {data.get("instructions","")[:300]}
+                <div style="background:#F8FAFF;border-radius:10px;padding:10px 14px;
+                    font-size:13px;color:#374151;margin-bottom:10px;border-left:3px solid {col_c}">
+                    <b>📋 Instructions:</b> {data.get('instructions','')[:350]}
+                </div>
+                <div style="font-size:12px;color:#6B7280;margin-bottom:10px">
+                    <b>🎯 Learning Objectives:</b> {data.get('learning_objectives','')}
                 </div>""", unsafe_allow_html=True)
 
-                questions = data.get("questions", [])
                 if not questions:
                     st.warning("No questions found for this assignment.")
                     continue
 
-                st.markdown(f"**📝 Answer {len(questions)} Questions**")
+                st.markdown(f"**📝 Answer all {len(questions)} questions "
+                            f"({data.get('total_marks',0)} marks total)**")
+
+                TYPE_ICONS = {
+                    "MCQ":("🔵","#2563EB"),"short_answer":("📝","#059669"),
+                    "long_answer":("📄","#7C3AED"),"problem":("🔢","#E8472A"),
+                }
                 answers = {}
-                type_icons = {"MCQ":("🔵","#2563EB"),"short_answer":("📝","#059669"),
-                              "long_answer":("📄","#7C3AED"),"problem":("🔢","#E8472A")}
 
                 for qi, question in enumerate(questions):
                     q_type = question.get("type","MCQ")
-                    t_icon, t_color = type_icons.get(q_type, ("❓","#666"))
+                    t_icon, t_col = TYPE_ICONS.get(q_type, ("❓","#666"))
+                    marks_lbl = f"{question.get('marks',1)} mark(s)"
+
                     st.markdown(f"""
-                    <div style="background:#F8F9FA;border-radius:10px;padding:12px 14px;
-                        margin-bottom:8px;border-left:4px solid {t_color}">
-                        <span style="background:{t_color}18;color:{t_color};padding:2px 8px;
-                            border-radius:99px;font-size:11px;font-weight:700;margin-bottom:6px;display:inline-block">
-                            {t_icon} {q_type.replace("_"," ").title()} · {question.get("marks",1)} mark(s)
+                    <div style="background:#F8F9FA;border-radius:10px;
+                        padding:12px 14px;margin-bottom:4px;
+                        border-left:4px solid {t_col}">
+                        <span style="background:{t_col}18;color:{t_col};padding:2px 8px;
+                            border-radius:99px;font-size:11px;font-weight:700;
+                            display:inline-block;margin-bottom:6px">
+                            {t_icon} {q_type.replace('_',' ').title()} · {marks_lbl}
                         </span>
-                        <div style="font-size:14px;font-weight:700;color:#1A1A2E;margin-top:6px">
-                            Q{qi+1}. {question["question"]}
+                        <div style="font-size:14px;font-weight:700;color:#1A1A2E;
+                            margin-top:4px;line-height:1.5">
+                            Q{qi+1}. {question['question']}
                         </div>
                     </div>""", unsafe_allow_html=True)
 
-                    if question.get("hint"):
+                    if show_h and question.get("hint"):
                         with st.expander(f"💡 Hint for Q{qi+1}"):
                             st.info(question["hint"])
 
                     if q_type == "MCQ" and question.get("options"):
                         answers[qi] = st.radio(
-                            f"Your answer for Q{qi+1}",
+                            f"Answer Q{qi+1}",
                             question["options"],
+                            key=f"hw_ans_{hw['id']}_{qi}",
+                            label_visibility="collapsed"
+                        )
+                    elif q_type in ("short_answer",):
+                        answers[qi] = st.text_input(
+                            f"Answer Q{qi+1}",
+                            placeholder="Write your answer here…",
                             key=f"hw_ans_{hw['id']}_{qi}",
                             label_visibility="collapsed"
                         )
                     else:
                         answers[qi] = st.text_area(
-                            f"Your answer for Q{qi+1}",
-                            placeholder="Write your answer here...",
-                            height=80,
+                            f"Answer Q{qi+1}",
+                            placeholder="Write your detailed answer here…",
+                            height=100,
                             key=f"hw_ans_{hw['id']}_{qi}",
                             label_visibility="collapsed"
                         )
 
-                st.markdown("<div style=\"height:8px\"></div>", unsafe_allow_html=True)
-                if st.button(f"📤 Submit Homework", key=f"submit_hw_{hw['id']}", use_container_width=True, type="primary"):
+                st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+                if st.button(f"📤 Submit Homework",
+                             key=f"submit_hw_{hw['id']}",
+                             use_container_width=True, type="primary"):
                     score = 0
-                    total_marks = 0
+                    total_marks = sum(q.get("marks",1) for q in questions)
                     for qi, question in enumerate(questions):
-                        marks = question.get("marks", 1)
-                        total_marks += marks
                         if question.get("type") == "MCQ":
-                            if answers.get(qi,"") == question.get("answer",""):
-                                score += marks
+                            if answers.get(qi,"").strip() == question.get("answer","").strip():
+                                score += question.get("marks",1)
 
-                    score_pct = int((score / max(total_marks, 1)) * 100) if total_marks else 0
+                    score_pct = int(score/max(total_marks,1)*100)
 
                     hw_fresh = load_json(HOMEWORK_FILE)
                     if hw["id"] in hw_fresh:
-                        hw_fresh[hw["id"]].setdefault("submissions", {})
+                        hw_fresh[hw["id"]].setdefault("submissions",{})
                         hw_fresh[hw["id"]]["submissions"][u["email"]] = {
                             "student_name": u["name"],
-                            "answers":      {str(k): v for k, v in answers.items()},
+                            "answers":      {str(k):v for k,v in answers.items()},
                             "score":        score,
                             "total_marks":  total_marks,
                             "score_pct":    score_pct,
                             "submitted_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
                         }
                         save_json(HOMEWORK_FILE, hw_fresh)
+                        bump_stats(hw.get("subject","Maths"), hw.get("grade",""), score_pct>=60)
+                        check_badges(u["email"])
 
-                    grade_emoji = "🏆" if score_pct >= 80 else "👍" if score_pct >= 60 else "💪"
-                    st.success(f"{grade_emoji} Submitted! Your MCQ score: **{score}/{total_marks}** ({score_pct}%)")
+                    grade_emoji = "🏆" if score_pct>=80 else "👍" if score_pct>=60 else "💪"
+                    msg = (f"{grade_emoji} Submitted! MCQ score: **{score}/{total_marks}** ({score_pct}%)"
+                           if any(q.get("type")=="MCQ" for q in questions)
+                           else f"{grade_emoji} Homework submitted successfully!")
+                    st.success(msg)
+                    if hw.get("show_answers"):
+                        st.info("💡 Check the Submitted tab to review model answers.")
                     st.balloons()
                     time.sleep(1.5); st.rerun()
 
+    # ── SUBMITTED TAB ────────────────────────────────────────────
     with tab_done:
-        submitted = [
-            hw for hw in all_hw
-            if u["email"] in hw.get("submissions", {})
-        ]
-        if not submitted:
-            st.info("📭 You haven't submitted any homework yet.")
-        for hw in submitted:
-            data     = hw.get("data", {})
+        if not done_hw:
+            st.info("📭 No submitted homework yet.")
+        for hw in sorted(done_hw, key=lambda x:x.get("due_date",""), reverse=True):
+            data     = hw.get("data",{})
             sub      = hw["submissions"][u["email"]]
             info     = SUBJECTS.get(hw.get("subject","Maths"), {"emoji":"📚","color":"#2563EB"})
-            sp       = sub.get("score_pct", 0)
-            q_dot    = "🟢" if sp >= 80 else "🟡" if sp >= 60 else "🔴"
+            sp       = sub.get("score_pct",0)
+            dot      = "🟢" if sp>=80 else "🟡" if sp>=60 else "🔴"
             hw_title = data.get("title", hw.get("topic","Homework"))
+            show_ans = hw.get("show_answers", True)
 
-            with st.expander(f"{info['emoji']} {hw_title} · {q_dot} {sp}% · Submitted {sub.get('submitted_at','')[:10]}"):
+            with st.expander(
+                f"{info['emoji']} {hw_title} · {dot} {sp}% "
+                f"· Submitted {sub.get('submitted_at','')[:10]}"
+            ):
+                grade_lbl  = "🏆 Excellent" if sp>=80 else "👍 Good" if sp>=60 else "💪 Keep Practising"
+                grade_col  = "#065F46"      if sp>=80 else "#92400E" if sp>=60 else "#991B1B"
+                grade_bg   = "#D1FAE5"      if sp>=80 else "#FFF8E7" if sp>=60 else "#FEE2E2"
+
                 st.markdown(f"""
-                <div style="background:#F0FDF4;border-radius:12px;padding:14px 16px;margin-bottom:12px">
-                    <div style="font-size:15px;font-weight:900;color:#065F46;margin-bottom:6px">
-                        {q_dot} Score: {sub.get("score",0)}/{sub.get("total_marks",0)} ({sp}%)
+                <div style="background:{grade_bg};border-radius:12px;
+                    padding:14px 16px;margin-bottom:14px">
+                    <div style="font-size:16px;font-weight:900;color:{grade_col};margin-bottom:4px">
+                        {grade_lbl}
                     </div>
-                    <div style="font-size:12px;color:#6B7280">
-                        Submitted: {sub.get("submitted_at","")}
+                    <div style="font-size:13px;color:{grade_col}">
+                        Score: {sub.get('score',0)}/{sub.get('total_marks',0)} ({sp}%)
+                        · Submitted: {sub.get('submitted_at','')}
                     </div>
                 </div>""", unsafe_allow_html=True)
 
-                questions = data.get("questions", [])
-                student_answers = sub.get("answers", {})
-                for qi, question in enumerate(questions):
-                    student_ans = student_answers.get(str(qi), "—")
-                    correct_ans = question.get("answer","")
-                    is_mcq = question.get("type") == "MCQ"
-                    is_correct = (student_ans == correct_ans) if is_mcq else None
-                    bg = "#F0FDF4" if is_correct else ("#FFF1EE" if is_correct is False else "#F8F9FA")
-                    border_col = "#059669" if is_correct else "#E8472A" if is_correct is False else "#ccc"
-                    wrong_line = f"<div style=\"font-size:12px;color:#059669;margin-top:2px\">✅ Correct: <b>{correct_ans}</b></div>" if is_mcq and not is_correct else ""
-                    st.markdown(f"""
-                    <div style="background:{bg};border-radius:10px;padding:10px 14px;
-                        margin-bottom:6px;border-left:3px solid {border_col}">
-                        <div style="font-size:13px;font-weight:700;color:#1A1A2E">Q{qi+1}. {question["question"][:100]}</div>
-                        <div style="font-size:12px;color:#555;margin-top:4px">Your answer: <b>{student_ans}</b>
-                            {"✅" if is_correct else "❌" if is_correct is False else ""}
-                        </div>
-                        {wrong_line}
-                    </div>""", unsafe_allow_html=True)
+                if show_ans:
+                    questions       = data.get("questions",[])
+                    student_answers = sub.get("answers",{})
+                    st.markdown("#### 📋 Question Review")
+
+                    for qi, question in enumerate(questions):
+                        student_ans = student_answers.get(str(qi),"—")
+                        correct_ans = question.get("answer","")
+                        is_mcq      = question.get("type") == "MCQ"
+                        is_correct  = (student_ans.strip()==correct_ans.strip()) if is_mcq else None
+                        bg     = "#F0FDF4" if is_correct else "#FFF1EE" if is_correct is False else "#F8F9FA"
+                        b_col  = "#059669" if is_correct else "#E8472A" if is_correct is False else "#ccc"
+                        wrong  = (f"<div style='font-size:12px;color:#059669;margin-top:2px'>"
+                                  f"✅ Correct: <b>{correct_ans}</b></div>"
+                                  if is_mcq and not is_correct else "")
+                        expl   = question.get("explanation","")
+                        expl_html = (f"<div style='font-size:11px;color:#3730A3;margin-top:4px;"
+                                     f"padding:5px 8px;background:rgba(99,102,241,0.08);"
+                                     f"border-radius:6px'>📖 {expl}</div>" if expl else "")
+
+                        st.markdown(f"""
+                        <div style="background:{bg};border-radius:10px;padding:10px 14px;
+                            margin-bottom:6px;border-left:3px solid {b_col}">
+                            <div style="font-size:13px;font-weight:700;color:#1A1A2E">
+                                Q{qi+1}. {question['question'][:110]}</div>
+                            <div style="font-size:12px;color:#555;margin-top:4px">
+                                Your answer: <b>{student_ans}</b>
+                                {"✅" if is_correct else "❌" if is_correct is False else ""}
+                            </div>
+                            {wrong}{expl_html}
+                        </div>""", unsafe_allow_html=True)
+                else:
+                    st.info("Answers will be shown after the due date.")
+
 
 
 # ─────────────────────────────────────────────────────────────────

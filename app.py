@@ -1520,241 +1520,227 @@ def page_home():
                         else "Start your streak today!"))
     reminder   = last_date and last_date != today_str
 
-    # ── Inline SVG avatar — zero network, no external deps ────
-    _AVG = (
-        '<svg width="130" height="130" viewBox="0 0 130 130"'
-        ' xmlns="http://www.w3.org/2000/svg">'
-        "<defs>"
-        '<radialGradient id="abg" cx="50%" cy="50%" r="50%">'
-        '<stop offset="0%" stop-color="#2DF5A0" stop-opacity=".28"/>'
-        '<stop offset="100%" stop-color="#0A4F32" stop-opacity="0"/>'
-        "</radialGradient>"
-        '<linearGradient id="abody" x1="0" y1="0" x2="1" y2="1">'
-        '<stop offset="0%" stop-color="#155E3E"/>'
-        '<stop offset="100%" stop-color="#1C7C54"/>'
-        "</linearGradient>"
-        '<linearGradient id="aface" x1="0" y1="0" x2="0" y2="1">'
-        '<stop offset="0%" stop-color="#FDE68A"/>'
-        '<stop offset="100%" stop-color="#F59E0B"/>'
-        "</linearGradient>"
-        '<linearGradient id="ascreen" x1="0" y1="0" x2="0" y2="1">'
-        '<stop offset="0%" stop-color="#0F2A1A"/>'
-        '<stop offset="100%" stop-color="#1C7C54" stop-opacity=".6"/>'
-        "</linearGradient>"
-        "</defs>"
-        '<circle cx="65" cy="65" r="62" fill="url(#abg)"/>'
-        '<circle cx="65" cy="65" r="58" fill="none" stroke="#2DF5A0"'
-        ' stroke-width="1" stroke-dasharray="5 7" opacity=".4"/>'
-        '<rect x="32" y="84" width="66" height="32" rx="18" fill="url(#abody)"/>'
-        '<ellipse cx="65" cy="100" rx="30" ry="20" fill="url(#abody)"/>'
-        '<rect x="57" y="71" width="16" height="16" rx="7" fill="url(#aface)"/>'
-        '<ellipse cx="65" cy="60" rx="26" ry="26" fill="url(#aface)"/>'
-        '<path d="M39 50 Q65 26 91 50" fill="#155E3E" opacity=".9"/>'
-        '<ellipse cx="65" cy="34" rx="22" ry="12" fill="#155E3E" opacity=".8"/>'
-        '<ellipse cx="65" cy="34" rx="14" ry="7" fill="#1C7C54" opacity=".6"/>'
-        '<ellipse cx="56" cy="58" rx="4" ry="4.5" fill="#1A1D23"/>'
-        '<ellipse cx="74" cy="58" rx="4" ry="4.5" fill="#1A1D23"/>'
-        '<circle cx="57.2" cy="56.8" r="1.4" fill="#fff"/>'
-        '<circle cx="75.2" cy="56.8" r="1.4" fill="#fff"/>'
-        '<rect x="49" y="54" width="14" height="10" rx="5" fill="none"'
-        ' stroke="#1C7C54" stroke-width="2"/>'
-        '<rect x="67" y="54" width="14" height="10" rx="5" fill="none"'
-        ' stroke="#1C7C54" stroke-width="2"/>'
-        '<line x1="63" y1="59" x2="67" y2="59" stroke="#1C7C54" stroke-width="1.6"/>'
-        '<path d="M56 67 Q65 75 74 67" fill="none" stroke="#92400E"'
-        ' stroke-width="2" stroke-linecap="round"/>'
-        '<path d="M52 73 Q65 84 78 73" fill="#92400E" opacity=".35"/>'
-        '<rect x="78" y="80" width="30" height="20" rx="4" fill="#0F2A1A"'
-        ' stroke="#2DF5A0" stroke-width="1.2"/>'
-        '<rect x="80" y="82" width="26" height="14" rx="2" fill="url(#ascreen)"/>'
-        '<line x1="83" y1="86" x2="103" y2="86" stroke="#2DF5A0"'
-        ' stroke-width="1" opacity=".7"/>'
-        '<line x1="83" y1="89" x2="97" y2="89" stroke="#2DF5A0"'
-        ' stroke-width="1" opacity=".5"/>'
-        '<line x1="83" y1="92" x2="100" y2="92" stroke="#2DF5A0"'
-        ' stroke-width="1" opacity=".4"/>'
-        '<rect x="82" y="100" width="26" height="3" rx="1.5" fill="#1C7C54"'
-        ' opacity=".5"/>'
-        '<rect x="14" y="82" width="26" height="18" rx="6" fill="#0A2E1F"'
-        ' stroke="#2DF5A0" stroke-width="1.4"/>'
-        '<text x="27" y="94" font-size="8" font-weight="800" fill="#2DF5A0"'
-        ' text-anchor="middle" font-family="monospace">AI</text>'
-        '<circle cx="105" cy="52" r="4" fill="#2DF5A0" opacity=".8"/>'
-        '<circle cx="105" cy="52" r="7" fill="none" stroke="#2DF5A0"'
-        ' stroke-width="1" opacity=".3"/>'
-        "</svg>"
+    # Pre-baked base64 avatar SVG — no network, no f-string risk
+    _AV = (
+        "PHN2ZyB3aWR0aD0iMTMwIiBoZWlnaHQ9IjEzMCIgdmlld0JveD0iMCAwIDEzMCAxMzAiIHhtbG5z"
+        "PSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHJhZGlhbEdyYWRpZW50IGlkPSJh"
+        "YmciIGN4PSI1MCUiIGN5PSI1MCUiIHI9IjUwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xv"
+        "cj0iIzJERjVBMCIgc3RvcC1vcGFjaXR5PSIuMjgiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3At"
+        "Y29sb3I9IiMwQTRGMzIiIHN0b3Atb3BhY2l0eT0iMCIvPjwvcmFkaWFsR3JhZGllbnQ+PGxpbmVh"
+        "ckdyYWRpZW50IGlkPSJhYm9keSIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9m"
+        "ZnNldD0iMCUiIHN0b3AtY29sb3I9IiMxNTVFM0UiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3At"
+        "Y29sb3I9IiMxQzdDNTQiLz48L2xpbmVhckdyYWRpZW50PjxsaW5lYXJHcmFkaWVudCBpZD0iYWZh"
+        "Y2UiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNv"
+        "bG9yPSIjRkRFNjhBIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjRjU5RTBCIi8+"
+        "PC9saW5lYXJHcmFkaWVudD48bGluZWFyR3JhZGllbnQgaWQ9ImFzY3JlZW4iIHgxPSIwIiB5MT0i"
+        "MCIgeDI9IjAiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMEYyQTFBIi8+"
+        "PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMUM3QzU0IiBzdG9wLW9wYWNpdHk9Ii42"
+        "Ii8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PGNpcmNsZSBjeD0iNjUiIGN5PSI2NSIgcj0iNjIi"
+        "IGZpbGw9InVybCgjYWJnKSIvPjxjaXJjbGUgY3g9IjY1IiBjeT0iNjUiIHI9IjU4IiBmaWxsPSJu"
+        "b25lIiBzdHJva2U9IiMyREY1QTAiIHN0cm9rZS13aWR0aD0iMSIgc3Ryb2tlLWRhc2hhcnJheT0i"
+        "NSA3IiBvcGFjaXR5PSIuNCIvPjxyZWN0IHg9IjMyIiB5PSI4NCIgd2lkdGg9IjY2IiBoZWlnaHQ9"
+        "IjMyIiByeD0iMTgiIGZpbGw9InVybCgjYWJvZHkpIi8+PGVsbGlwc2UgY3g9IjY1IiBjeT0iMTAw"
+        "IiByeD0iMzAiIHJ5PSIyMCIgZmlsbD0idXJsKCNhYm9keSkiLz48cmVjdCB4PSI1NyIgeT0iNzEi"
+        "IHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgcng9IjciIGZpbGw9InVybCgjYWZhY2UpIi8+PGVsbGlw"
+        "c2UgY3g9IjY1IiBjeT0iNjAiIHJ4PSIyNiIgcnk9IjI2IiBmaWxsPSJ1cmwoI2FmYWNlKSIvPjxw"
+        "YXRoIGQ9Ik0zOSA1MCBRNjUgMjYgOTEgNTAiIGZpbGw9IiMxNTVFM0UiIG9wYWNpdHk9Ii45Ii8+"
+        "PGVsbGlwc2UgY3g9IjY1IiBjeT0iMzQiIHJ4PSIyMiIgcnk9IjEyIiBmaWxsPSIjMTU1RTNFIiBv"
+        "cGFjaXR5PSIuOCIvPjxlbGxpcHNlIGN4PSI2NSIgY3k9IjM0IiByeD0iMTQiIHJ5PSI3IiBmaWxs"
+        "PSIjMUM3QzU0IiBvcGFjaXR5PSIuNiIvPjxlbGxpcHNlIGN4PSI1NiIgY3k9IjU4IiByeD0iNCIg"
+        "cnk9IjQuNSIgZmlsbD0iIzFBMUQyMyIvPjxlbGxpcHNlIGN4PSI3NCIgY3k9IjU4IiByeD0iNCIg"
+        "cnk9IjQuNSIgZmlsbD0iIzFBMUQyMyIvPjxjaXJjbGUgY3g9IjU3LjIiIGN5PSI1Ni44IiByPSIx"
+        "LjQiIGZpbGw9IiNmZmYiLz48Y2lyY2xlIGN4PSI3NS4yIiBjeT0iNTYuOCIgcj0iMS40IiBmaWxs"
+        "PSIjZmZmIi8+PHJlY3QgeD0iNDkiIHk9IjU0IiB3aWR0aD0iMTQiIGhlaWdodD0iMTAiIHJ4PSI1"
+        "IiBmaWxsPSJub25lIiBzdHJva2U9IiMxQzdDNTQiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9"
+        "IjY3IiB5PSI1NCIgd2lkdGg9IjE0IiBoZWlnaHQ9IjEwIiByeD0iNSIgZmlsbD0ibm9uZSIgc3Ry"
+        "b2tlPSIjMUM3QzU0IiBzdHJva2Utd2lkdGg9IjIiLz48bGluZSB4MT0iNjMiIHkxPSI1OSIgeDI9"
+        "IjY3IiB5Mj0iNTkiIHN0cm9rZT0iIzFDN0M1NCIgc3Ryb2tlLXdpZHRoPSIxLjYiLz48cGF0aCBk"
+        "PSJNNTQ2NyBRNjUgNzUgNzQgNjciIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzkyNDAwRSIgc3Ryb2tl"
+        "LXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNNTIgNzMgUTY1IDg0"
+        "IDc4IDczIiBmaWxsPSIjOTI0MDBFIiBvcGFjaXR5PSIuMzUiLz48cmVjdCB4PSI3OCIgeT0iODAi"
+        "IHdpZHRoPSIzMCIgaGVpZ2h0PSIyMCIgcng9IjQiIGZpbGw9IiMwRjJBMUEiIHN0cm9rZT0iIzJE"
+        "RjVBMCIgc3Ryb2tlLXdpZHRoPSIxLjIiLz48cmVjdCB4PSI4MCIgeT0iODIiIHdpZHRoPSIyNiIg"
+        "aGVpZ2h0PSIxNCIgcng9IjIiIGZpbGw9InVybCgjYXNjcmVlbikiLz48bGluZSB4MT0iODMiIHkx"
+        "PSI4NiIgeDI9IjEwMyIgeTI9Ijg2IiBzdHJva2U9IiMyREY1QTAiIHN0cm9rZS13aWR0aD0iMSIg"
+        "b3BhY2l0eT0iLjciLz48bGluZSB4MT0iODMiIHkxPSI4OSIgeDI9Ijk3IiB5Mj0iODkiIHN0cm9r"
+        "ZT0iIzJERjVBMCIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIuNSIvPjxsaW5lIHgxPSI4MyIg"
+        "eTE9IjkyIiB4Mj0iMTAwIiB5Mj0iOTIiIHN0cm9rZT0iIzJERjVBMCIgc3Ryb2tlLXdpZHRoPSIx"
+        "IiBvcGFjaXR5PSIuNCIvPjxyZWN0IHg9IjgyIiB5PSIxMDAiIHdpZHRoPSIyNiIgaGVpZ2h0PSIz"
+        "IiByeD0iMS41IiBmaWxsPSIjMUM3QzU0IiBvcGFjaXR5PSIuNSIvPjxyZWN0IHg9IjE0IiB5PSI4"
+        "MiIgd2lkdGg9IjI2IiBoZWlnaHQ9IjE4IiByeD0iNiIgZmlsbD0iIzBBMkUxRiIgc3Ryb2tlPSIj"
+        "MkRGNUEwIiBzdHJva2Utd2lkdGg9IjEuNCI+PC9yZWN0Pjx0ZXh0IHg9IjI3IiB5PSI5NCIgZm9u"
+        "dC1zaXplPSI4IiBmb250LXdlaWdodD0iODAwIiBmaWxsPSIjMkRGNUEwIiB0ZXh0LWFuY2hvcj0i"
+        "bWlkZGxlIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIj5BSTwvdGV4dD48Y2lyY2xlIGN4PSIxMDUi"
+        "IGN5PSI1MiIgcj0iNCIgZmlsbD0iIzJERjVBMCIgb3BhY2l0eT0iLjgiLz48Y2lyY2xlIGN4PSIx"
+        "MDUiIGN5PSI1MiIgcj0iNyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMkRGNUEwIiBzdHJva2Utd2lk"
+        "dGg9IjEiIG9wYWNpdHk9Ii4zIi8+PC9zdmc+"
     )
-    _b64av = base64.b64encode(_AVG.encode()).decode()
 
-    # ── Subject strip data ─────────────────────────────────────
-    _SUBS = [
-        ("🔢", "Maths",     "#E8472A"),
-        ("⚡", "Physics",   "#1B4FD8"),
-        ("🧪", "Chemistry", "#7C3AED"),
-        ("🌿", "Biology",   "#059669"),
-        ("📖", "English",   "#D97706"),
-        ("💻", "CS",        "#0891B2"),
-        ("🖊️", "Urdu",      "#BE185D"),
+    # Subject chips — built in Python, no quoting hazard
+    _SDATA = [
+        ("🔢","Maths","#E8472A"),("⚡","Physics","#1B4FD8"),
+        ("🧪","Chemistry","#7C3AED"),("🌿","Biology","#059669"),
+        ("📖","English","#D97706"),("💻","CS","#0891B2"),
+        ("🖊️","Urdu","#BE185D"),
     ]
-    _sub_chips = "".join(
-        f'<span style="display:inline-flex;align-items:center;gap:5px;'
-        f'background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);'
-        f'border-radius:99px;padding:4px 11px;font-size:11px;'
-        f'font-weight:600;color:rgba(255,255,255,.85);white-space:nowrap;'
-        f'border-left:3px solid {c}">{e} {s}</span>'
-        for e, s, c in _SUBS
+    _chips = "".join(
+        '<span style="display:inline-flex;align-items:center;gap:5px;'
+        'background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);'
+        'border-radius:99px;padding:4px 11px;font-size:11px;font-weight:600;'
+        'color:rgba(255,255,255,.85);border-left:3px solid {c};white-space:nowrap">'
+        '{e} {s}</span>'.format(e=e, s=s, c=c)
+        for e, s, c in _SDATA
     )
 
-    st.markdown(f"""
-    <style>
-    @keyframes _zmFU {{
-        from {{ opacity:0; transform:translateY(10px); }}
-        to   {{ opacity:1; transform:translateY(0); }}
-    }}
-    .zm-bnr   {{ animation:_zmFU .4s ease both; }}
-    .zm-strip {{ animation:_zmFU .4s .18s ease both; opacity:0; }}
-    .zm-trust {{ animation:_zmFU .4s .26s ease both; opacity:0; }}
-    </style>
+    def _trust_tile(val, lbl, col):
+        return (
+            '<div style="background:#fff;border-radius:14px;padding:11px 8px;'
+            'text-align:center;border:1.5px solid #E4E8EE;'
+            'box-shadow:0 1px 5px rgba(0,0,0,.04)">'
+            '<div style="font-family:\'DM Serif Display\',serif;font-size:21px;'
+            'color:{col};line-height:1">{val}</div>'
+            '<div style="font-size:10px;color:#9BA3B0;font-weight:700;'
+            'text-transform:uppercase;letter-spacing:.5px;margin-top:3px">{lbl}</div>'
+            '</div>'
+        ).format(val=val, lbl=lbl, col=col)
 
-    <div class="zm-bnr" style="
-        background:linear-gradient(128deg,#081F14 0%,#0C3320 50%,#102B1C 100%);
-        border-radius:22px;padding:24px 26px 20px;margin-bottom:4px;
-        position:relative;overflow:hidden;
-        border:1px solid rgba(45,245,160,.16);
-        box-shadow:0 6px 36px rgba(8,20,12,.5),inset 0 1px 0 rgba(45,245,160,.1)">
+    _trust = (
+        _trust_tile(total,                        "Questions Solved", "#1C7C54") +
+        _trust_tile(stats.get("quizzes_done", 0), "Quizzes Taken",    "#1B4FD8") +
+        _trust_tile(7,                            "Subjects Available","#C9A84C")
+    )
 
-      <div style="position:absolute;top:-70px;right:-50px;width:220px;height:220px;
-          border-radius:50%;
-          background:radial-gradient(circle,rgba(45,245,160,.13) 0%,transparent 65%);
-          pointer-events:none"></div>
-      <div style="position:absolute;bottom:-60px;left:30px;width:180px;height:180px;
-          border-radius:50%;
-          background:radial-gradient(circle,rgba(201,168,76,.1) 0%,transparent 65%);
-          pointer-events:none"></div>
-      <div style="position:absolute;inset:0;
-          background-image:radial-gradient(rgba(45,245,160,.07) 1px,transparent 1px);
-          background-size:22px 22px;pointer-events:none;border-radius:22px"></div>
+    # Greeting pill + status pills use f-strings (safe: only {} vars, no HTML quotes)
+    _gpill = (
+        '<div style="display:inline-flex;align-items:center;gap:7px;'
+        'background:rgba(45,245,160,.10);border:1px solid rgba(45,245,160,.22);'
+        'border-radius:99px;padding:4px 13px;margin-bottom:14px">'
+        '<span style="width:7px;height:7px;border-radius:50%;display:inline-block;'
+        'background:#2DF5A0;box-shadow:0 0 7px rgba(45,245,160,.8)"></span>'
+        '<span style="font-size:11px;font-weight:700;color:#2DF5A0;'
+        'letter-spacing:.07em">{g}, {n}!</span>'
+        '</div>'
+    ).format(g=greet, n=first_name)
 
-      <div style="position:relative;z-index:2;
-          display:flex;align-items:center;
-          justify-content:space-between;gap:16px;flex-wrap:wrap">
+    _spills = (
+        '<div style="display:flex;gap:7px;flex-wrap:wrap">'
+        '<span style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.13);'
+        'border-radius:99px;padding:4px 12px;font-size:11px;font-weight:700;color:#fff">'
+        '📚 {gl}</span>'
+        '<span style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.13);'
+        'border-radius:99px;padding:4px 12px;font-size:11px;font-weight:700;color:#fff">'
+        '{st}</span>'
+        '<span style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.13);'
+        'border-radius:99px;padding:4px 12px;font-size:11px;font-weight:700;color:#fff">'
+        '⭐ {tot} Qs solved</span>'
+        '</div>'
+    ).format(gl=grade_lbl, st=streak_txt, tot=total)
 
-        <div style="flex:1;min-width:210px;max-width:460px">
-          <div style="display:inline-flex;align-items:center;gap:7px;
-              background:rgba(45,245,160,.1);border:1px solid rgba(45,245,160,.22);
-              border-radius:99px;padding:4px 13px;margin-bottom:14px">
-            <span style="width:7px;height:7px;border-radius:50%;display:inline-block;
-                background:#2DF5A0;box-shadow:0 0 7px rgba(45,245,160,.8)"></span>
-            <span style="font-size:11px;font-weight:700;color:#2DF5A0;
-                letter-spacing:.07em">{greet}, {first_name}!</span>
-          </div>
+    # Final single st.markdown — all pieces concatenated, no f-string inside HTML
+    st.markdown(
+        # ── CSS ──────────────────────────────────────────────────────
+        "<style>"
+        "@keyframes _zmFU{from{opacity:0;transform:translateY(10px)}"
+        "to{opacity:1;transform:translateY(0)}}"
+        ".zm-bnr{animation:_zmFU .4s ease both}"
+        ".zm-meta{animation:_zmFU .4s .14s ease both;opacity:0}"
+        ".zm-trust{animation:_zmFU .4s .24s ease both;opacity:0}"
+        "</style>"
 
-          <div style="font-family:'DM Serif Display',Georgia,serif;
-              font-size:clamp(21px,3.2vw,29px);color:#fff;
-              line-height:1.2;margin-bottom:9px;letter-spacing:-.01em">
-            Ask Anything.<br>
-            <span style="background:linear-gradient(90deg,#2DF5A0 0%,#C9A84C 100%);
-                -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-                background-clip:text">Learn Instantly.</span>
-          </div>
+        # ── card open ─────────────────────────────────────────────────
+        '<div class="zm-bnr" style="'
+        'background:linear-gradient(128deg,#081F14 0%,#0C3320 50%,#102B1C 100%);'
+        'border-radius:22px;padding:24px 26px 20px;margin-bottom:4px;'
+        'position:relative;overflow:hidden;'
+        'border:1px solid rgba(45,245,160,.16);'
+        'box-shadow:0 6px 36px rgba(8,20,12,.5),inset 0 1px 0 rgba(45,245,160,.1)">'
 
-          <div style="font-size:13px;color:rgba(255,255,255,.58);
-              line-height:1.7;margin-bottom:18px;max-width:360px">
-            Pakistan's smartest study companion.
-            <b style="color:rgba(255,255,255,.82)">Ustad AI</b> explains every
-            topic step-by-step — from Grade&nbsp;1 to&nbsp;A&nbsp;Level.
-          </div>
+        # blobs
+        '<div style="position:absolute;top:-70px;right:-50px;width:220px;height:220px;'
+        'border-radius:50%;background:radial-gradient(circle,rgba(45,245,160,.13),transparent 65%);'
+        'pointer-events:none"></div>'
+        '<div style="position:absolute;bottom:-60px;left:30px;width:180px;height:180px;'
+        'border-radius:50%;background:radial-gradient(circle,rgba(201,168,76,.10),transparent 65%);'
+        'pointer-events:none"></div>'
+        '<div style="position:absolute;inset:0;'
+        'background-image:radial-gradient(rgba(45,245,160,.07) 1px,transparent 1px);'
+        'background-size:22px 22px;pointer-events:none;border-radius:22px"></div>'
 
-          <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:4px">
-            <span style="background:rgba(255,255,255,.09);
-                border:1px solid rgba(255,255,255,.13);
-                border-radius:99px;padding:4px 12px;
-                font-size:11px;font-weight:700;color:#fff">📚 {grade_lbl}</span>
-            <span style="background:rgba(255,255,255,.09);
-                border:1px solid rgba(255,255,255,.13);
-                border-radius:99px;padding:4px 12px;
-                font-size:11px;font-weight:700;color:#fff">{streak_txt}</span>
-            <span style="background:rgba(255,255,255,.09);
-                border:1px solid rgba(255,255,255,.13);
-                border-radius:99px;padding:4px 12px;
-                font-size:11px;font-weight:700;color:#fff">⭐ {total} Qs solved</span>
-          </div>
-        </div>
+        # two-column flex
+        '<div style="position:relative;z-index:2;'
+        'display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">'
 
-        <div style="flex-shrink:0;display:flex;flex-direction:column;
-            align-items:center;gap:4px">
-          <img src="data:image/svg+xml;base64,{_b64av}"
-               width="130" height="130"
-               style="filter:drop-shadow(0 0 22px rgba(45,245,160,.4))"
-               alt="Ustad AI tutor"/>
-          <div style="font-size:10px;font-weight:700;
-              color:rgba(45,245,160,.6);letter-spacing:.1em;
-              text-transform:uppercase">Ustad AI</div>
-        </div>
-      </div>
+        # left text col
+        '<div style="flex:1;min-width:200px;max-width:460px">'
+        + _gpill +
+        '<div style="font-family:\'DM Serif Display\',Georgia,serif;'
+        'font-size:clamp(21px,3.2vw,29px);color:#fff;'
+        'line-height:1.2;margin-bottom:9px;letter-spacing:-.01em">'
+        'Ask Anything.<br>'
+        '<span style="background:linear-gradient(90deg,#2DF5A0,#C9A84C);'
+        '-webkit-background-clip:text;-webkit-text-fill-color:transparent;'
+        'background-clip:text">Learn Instantly.</span>'
+        '</div>'
+        '<div style="font-size:13px;color:rgba(255,255,255,.58);'
+        'line-height:1.7;margin-bottom:18px;max-width:360px">'
+        "Pakistan&#39;s smartest study companion.&nbsp;"
+        '<b style="color:rgba(255,255,255,.82)">Ustad AI</b>'
+        '&nbsp;explains every topic step-by-step &mdash; Grade&nbsp;1 to A&nbsp;Level.'
+        '</div>'
+        + _spills +
+        '</div>'  # close left col
 
-      <div class="zm-strip" style="
-          position:relative;z-index:2;
-          display:flex;gap:7px;flex-wrap:wrap;
-          align-items:center;margin-top:18px;padding-top:14px;
-          border-top:1px solid rgba(255,255,255,.07)">
-        <span style="font-size:10px;font-weight:700;
-            color:rgba(255,255,255,.35);
-            text-transform:uppercase;letter-spacing:.1em;
-            margin-right:2px">Subjects</span>
-        {_sub_chips}
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+        # right avatar col
+        '<div style="flex-shrink:0;display:flex;flex-direction:column;'
+        'align-items:center;gap:4px">'
+        '<img src="data:image/svg+xml;base64,' + _AV + '"'
+        ' width="130" height="130"'
+        ' style="filter:drop-shadow(0 0 22px rgba(45,245,160,.4))"'
+        ' alt="Ustad AI"/>'
+        '<div style="font-size:10px;font-weight:700;color:rgba(45,245,160,.6);'
+        'letter-spacing:.1em;text-transform:uppercase">Ustad AI</div>'
+        '</div>'
 
-    # ── CTA — real Streamlit button ────────────────────────────
-    _c1, _c2, _c3 = st.columns([1, 2, 1])
-    with _c2:
-        if st.button("🚀  Start Learning with Ustad",
-                     key="banner_cta", use_container_width=True, type="primary"):
+        '</div>'  # close two-col flex
+
+        # subject strip
+        '<div class="zm-meta" style="'
+        'position:relative;z-index:2;display:flex;gap:7px;flex-wrap:wrap;'
+        'align-items:center;margin-top:18px;padding-top:14px;'
+        'border-top:1px solid rgba(255,255,255,.07)">'
+        '<span style="font-size:10px;font-weight:700;color:rgba(255,255,255,.35);'
+        'text-transform:uppercase;letter-spacing:.1em;margin-right:2px">Subjects</span>'
+        + _chips +
+        '</div>'
+
+        '</div>',  # close card
+        unsafe_allow_html=True
+    )
+
+    # Real Streamlit CTA button
+    _bc1, _bc2, _bc3 = st.columns([1, 2, 1])
+    with _bc2:
+        if st.button(
+            "🚀  Start Learning with Ustad",
+            key="banner_cta", use_container_width=True, type="primary"
+        ):
             st.session_state.page = "chat"
             st.rerun()
 
-    # ── Trust indicators ───────────────────────────────────────
-    st.markdown(f"""
-    <div class="zm-trust" style="
-        display:grid;grid-template-columns:repeat(3,1fr);
-        gap:8px;margin:10px 0 16px">
-      <div style="background:#fff;border-radius:14px;padding:11px 8px;
-          text-align:center;border:1.5px solid #E4E8EE;
-          box-shadow:0 1px 5px rgba(0,0,0,0.04)">
-        <div style="font-family:'DM Serif Display',serif;font-size:21px;
-            color:#1C7C54;line-height:1">{total}</div>
-        <div style="font-size:10px;color:#9BA3B0;font-weight:700;
-            text-transform:uppercase;letter-spacing:.5px;margin-top:3px">
-          Questions Solved</div>
-      </div>
-      <div style="background:#fff;border-radius:14px;padding:11px 8px;
-          text-align:center;border:1.5px solid #E4E8EE;
-          box-shadow:0 1px 5px rgba(0,0,0,0.04)">
-        <div style="font-family:'DM Serif Display',serif;font-size:21px;
-            color:#1B4FD8;line-height:1">{stats.get('quizzes_done',0)}</div>
-        <div style="font-size:10px;color:#9BA3B0;font-weight:700;
-            text-transform:uppercase;letter-spacing:.5px;margin-top:3px">
-          Quizzes Taken</div>
-      </div>
-      <div style="background:#fff;border-radius:14px;padding:11px 8px;
-          text-align:center;border:1.5px solid #E4E8EE;
-          box-shadow:0 1px 5px rgba(0,0,0,0.04)">
-        <div style="font-family:'DM Serif Display',serif;font-size:21px;
-            color:#C9A84C;line-height:1">7</div>
-        <div style="font-size:10px;color:#9BA3B0;font-weight:700;
-            text-transform:uppercase;letter-spacing:.5px;margin-top:3px">
-          Subjects Available</div>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # Trust indicators
+    st.markdown(
+        '<div class="zm-trust" style="display:grid;grid-template-columns:repeat(3,1fr);'
+        'gap:8px;margin:10px 0 16px">'
+        + _trust +
+        '</div>',
+        unsafe_allow_html=True
+    )
 
     if reminder:
         st.markdown(
-            "<div style=\"background:#FFF9E6;border:1.5px solid #FBBF24;"
-            "border-radius:12px;padding:12px 16px;margin-bottom:16px;"
-            "font-size:14px;color:#92400E;font-weight:600\">"
+            '<div style="background:#FFF9E6;border:1.5px solid #FBBF24;'
+            'border-radius:12px;padding:12px 16px;margin-bottom:16px;'
+            'font-size:14px;color:#92400E;font-weight:600">'
             "⏰ You haven't studied today — even 10 minutes counts! 💪</div>",
             unsafe_allow_html=True
         )

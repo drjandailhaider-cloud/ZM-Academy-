@@ -6,40 +6,29 @@ import streamlit as st
 import json, hashlib, datetime, time, os, base64, random, io
 from anthropic import Anthropic
 
-# ── Text-to-Speech — OpenAI TTS with guaranteed autoplay ──
+# ── Text-to-Speech — OpenAI TTS, stored in session, played via st.audio ──
 def speak_text(text):
-    """Generate MP3 via OpenAI TTS, embed as base64 data-URI and autoplay."""
+    """Generate MP3 via OpenAI TTS and store bytes in session state for playback."""
     try:
         import openai
         oai_key = (st.secrets.get("OPENAI_API_KEY","") or
                    os.environ.get("OPENAI_API_KEY",""))
         if not oai_key:
             return
-        # Clean markdown
         clean = text
         for sym in ["**","*","##","#","```","__","_"]:
             clean = clean.replace(sym, "")
-        clean = clean.strip()[:600]
+        clean = clean.strip()[:500]
         if not clean:
             return
-        # Call OpenAI TTS
         c = openai.OpenAI(api_key=oai_key)
         r = c.audio.speech.create(
             model="tts-1", voice="onyx",
             input=clean, response_format="mp3"
         )
-        # Base64-encode the MP3 bytes
-        mp3_b64 = base64.b64encode(r.content).decode("ascii")
-        # Inject a hidden <audio> tag that autoplays — works on all browsers
-        # We use st.markdown; audio data-URI has no special chars to break HTML
-        audio_html = (
-            "<audio autoplay style='display:none'>"
-            "<source src='data:audio/mp3;base64," + mp3_b64 + "' type='audio/mp3'/>"
-            "</audio>"
-        )
-        st.markdown(audio_html, unsafe_allow_html=True)
+        st.session_state["_tts_audio"] = r.content
     except Exception:
-        pass
+        st.session_state["_tts_audio"] = None
 # ─────────────────────────────────────────────────────────────────
 # CAMBRIDGE + PAKISTAN NATIONAL CURRICULUM
 # Grades 1–10, O Level, A Level
@@ -1766,6 +1755,12 @@ def save_chat_session(sub, lvl):
 
 def page_chat():
     u = st.session_state.user
+
+    # ── Play TTS audio if ready (must be before any st.rerun) ──
+    if st.session_state.get("_tts_audio"):
+        audio_bytes = st.session_state.pop("_tts_audio")
+        st.audio(audio_bytes, format="audio/mp3")
+        st.session_state["_tts_audio"] = None
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # FIX: TWO-STATE PATTERN

@@ -1372,19 +1372,14 @@ def render_sidebar():
                 unsafe_allow_html=True
             )
 
-        section_label("📊  Dashboard")
         nav_btn("🏠", "Home",            "home")
         nav_btn("📚", "Syllabus",        "syllabus")
-        nav_btn("📈", "My Progress",     "progress")
-
-        section_label("🎓  Learning")
         nav_btn("💬", "Chat Tutor",      "chat")
         nav_btn("📝", "Practice Quiz",   "quiz")
         nav_btn("👥", "Friendz Quiz",    "friends")
         nav_btn("🎨", "Image Generator", "image")
 
         section_label("📋  Study")
-        nav_btn("📋", "Homework",        "my_homework")
         nav_btn("🕐", "Chat History",    "history")
         nav_btn("🏆", "Badges",          "badges")
 
@@ -1396,6 +1391,14 @@ def render_sidebar():
 
         section_label("👤  Account")
         nav_btn("👤", "Profile", "profile")
+
+        # ── My Progress — footer section ─────────────────────────
+        st.markdown(
+            "<div style=\"margin:10px 0 0;border-top:1px solid #E4E8EE;"
+            "padding-top:6px\"></div>",
+            unsafe_allow_html=True
+        )
+        nav_btn("📈", "My Progress", "progress")
 
         # Mini stats row
         st.markdown(

@@ -8,7 +8,7 @@ from anthropic import Anthropic
 
 # ── Text-to-Speech — OpenAI TTS, stored in session, played via st.audio ──
 def speak_text(text):
-    """Generate MP3 via OpenAI TTS and store bytes in session state for playback."""
+    """Generate MP3 via OpenAI TTS — stores base64 in session for next render."""
     try:
         import openai
         oai_key = (st.secrets.get("OPENAI_API_KEY","") or
@@ -18,7 +18,7 @@ def speak_text(text):
         clean = text
         for sym in ["**","*","##","#","```","__","_"]:
             clean = clean.replace(sym, "")
-        clean = clean.strip()[:500]
+        clean = " ".join(clean.split())[:500]
         if not clean:
             return
         c = openai.OpenAI(api_key=oai_key)
@@ -26,9 +26,10 @@ def speak_text(text):
             model="tts-1", voice="onyx",
             input=clean, response_format="mp3"
         )
-        st.session_state["_tts_audio"] = r.content
+        # Store as base64 string — survives rerun in session state
+        st.session_state["_tts_b64"] = base64.b64encode(r.content).decode("ascii")
     except Exception:
-        st.session_state["_tts_audio"] = None
+        pass
 # ─────────────────────────────────────────────────────────────────
 # CAMBRIDGE + PAKISTAN NATIONAL CURRICULUM
 # Grades 1–10, O Level, A Level
@@ -1756,11 +1757,12 @@ def save_chat_session(sub, lvl):
 def page_chat():
     u = st.session_state.user
 
-    # ── Play TTS audio if ready (must be before any st.rerun) ──
-    if st.session_state.get("_tts_audio"):
-        audio_bytes = st.session_state.pop("_tts_audio")
-        st.audio(audio_bytes, format="audio/mp3")
-        st.session_state["_tts_audio"] = None
+    # ── TTS: generate audio for pending reply, then play ─────
+    if st.session_state.get("_tts_pending"):
+        speak_text(st.session_state.pop("_tts_pending"))
+    if st.session_state.get("_tts_b64"):
+        raw = base64.b64decode(st.session_state.pop("_tts_b64"))
+        st.audio(raw, format="audio/mp3")
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # FIX: TWO-STATE PATTERN
@@ -2150,7 +2152,8 @@ def page_chat():
             "Kya sikhna chahte hain aaj? 📚"
         )
         st.session_state.chat_messages.append({"role":"assistant","content":opener})
-        speak_text(opener)
+        st.session_state["_tts_b64"] = None
+        st.session_state["_tts_pending"] = opener
         st.rerun()
 
     # Re-read active after potential commit
@@ -2231,7 +2234,7 @@ def page_chat():
                     else:
                         st.session_state.chat_messages.append(
                             {"role":"assistant","content":reply})
-                        speak_text(reply)
+                        st.session_state["_tts_pending"] = reply
                         bump_stats(sub)
                         save_chat_session(sub, lvl)
                     st.rerun()
@@ -2332,7 +2335,7 @@ def page_chat():
                 else:
                     st.session_state.chat_messages.append(
                         {"role":"assistant","content":reply})
-                    speak_text(reply)
+                    st.session_state["_tts_pending"] = reply
                     bump_stats(sub); save_chat_session(sub, lvl)
                 st.rerun()
 

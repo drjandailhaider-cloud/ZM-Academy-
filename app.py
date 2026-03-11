@@ -2582,57 +2582,187 @@ def page_quiz():
                 st.session_state.quiz = q; st.rerun()
         return
 
-    # Quiz setup
-    st.markdown("""
-    <div style="background:#EFF4FF;border-radius:14px;padding:14px 18px;
-        margin-bottom:18px;font-size:13px;color:#1B4FD8;border-left:4px solid #2563EB">
-        📝 <b>Custom Quiz Generator</b> — Enter any topic, pick your difficulty and number of questions!
-    </div>""", unsafe_allow_html=True)
+    # ─────────────────────────────────────────────────────────────
+    # INTERNAL SYLLABUS MAP  (backend only — never shown in UI)
+    # Keyed as QUIZ_SYLLABUS[subject][grade] = [topic, ...]
+    # ─────────────────────────────────────────────────────────────
+    QUIZ_SYLLABUS = {
+        "Maths": {
+            "Grade 1":  ["Counting to 100","Number names","Adding single digits","Subtracting single digits","2D shapes","Measuring length","Ordinal numbers"],
+            "Grade 2":  ["Place value: hundreds tens ones","Adding 2-digit numbers","Subtracting with borrowing","Times tables 2 5 10","Fractions: half quarter","Telling time","Comparing numbers"],
+            "Grade 3":  ["Times tables 2-10","Long multiplication","Place value to thousands","Equivalent fractions","Perimeter","Area by counting squares","Angles: right acute obtuse"],
+            "Grade 4":  ["Long multiplication 2-digit","HCF and LCM","Decimals","Algebra: simple equations","Area of triangles","Coordinates","Negative numbers"],
+            "Grade 5":  ["Ratio and proportion","Percentage of a quantity","Prime factorisation","Area of circles","Algebraic expressions","Probability","Statistics: mean median mode"],
+            "Grade 6":  ["Linear equations","Pythagoras theorem","Circle area and circumference","Standard form","Trigonometry basics","Scatter graphs","Simultaneous equations intro"],
+            "Grade 7":  ["Simultaneous equations","Quadratic expressions","Trigonometry: sin cos tan","Vectors","Cumulative frequency","Circle theorems","Rates of change"],
+            "Grade 8":  ["Quadratic formula","Circle theorems","3D trigonometry","Probability trees","Histograms","Vectors: addition and scalar","Algebraic fractions"],
+            "Grade 9":  ["Binomial expansion","Differentiation intro","Integration intro","Logarithms","Geometric sequences","Functions: domain and range","Further trigonometry"],
+            "Grade 10": ["Complex numbers","Matrices","Differential equations","Further statistics","Normal distribution","Coordinate geometry","Proof"],
+            "O Level":  ["Paper 1 arithmetic strategies","Algebra and equations","Geometry and mensuration","Vectors and transformations","Statistics and probability","Functions","Sets"],
+            "A Level":  ["Pure Maths: differentiation","Pure Maths: integration","Mechanics: kinematics","Statistics: probability distributions","Sequences and series","Coordinate geometry","Complex numbers"],
+        },
+        "Physics": {
+            "Grade 1":  ["Push and pull forces","Light sources","Loud and soft sounds","Magnetic and non-magnetic materials"],
+            "Grade 2":  ["Gravity pulls things down","Floating and sinking","Transparent and opaque","Shadows","Sound vibrations"],
+            "Grade 3":  ["Types of forces","Magnetic poles","Reflection of light","Colour spectrum","How sound travels"],
+            "Grade 4":  ["Simple circuits","Conductors and insulators","States of matter","Speed and distance","Electrical safety"],
+            "Grade 5":  ["Newton's 3 laws of motion","Gravity and weight","Electric circuits and components","Electromagnetic fields","The solar system"],
+            "Grade 6":  ["Speed distance time","Density","Pressure in fluids","Electromagnets","Conservation of energy","Sound wave properties","Reflection and refraction"],
+            "Grade 7":  ["Ohm's law","Waves: amplitude frequency wavelength","Electromagnetic spectrum","Upthrust and Archimedes","Momentum","Thermal energy transfer","Static electricity"],
+            "Grade 8":  ["Velocity-time graphs","Newton's three laws (extended)","Radioactivity: alpha beta gamma","Electromagnetic induction","Specific heat capacity","Gas laws","Satellites and orbits"],
+            "Grade 9":  ["Scalar and vector quantities","Work energy power","Kinetic theory of matter","Series and parallel circuits","Lenses and optics","Nuclear fission and fusion","Half-life calculations"],
+            "Grade 10": ["Capacitors","Particle physics","Medical imaging: X-rays MRI","Gravitational fields","SHM simple harmonic motion","Kirchhoff's laws","Semiconductor diodes"],
+            "O Level":  ["Measurement and SI units","Forces and dynamics","Thermal physics","Waves and optics","Electricity and magnetism","Nuclear physics","Practical skills"],
+            "A Level":  ["Quantum physics: photoelectric effect","Gravitational and electric fields","Oscillations and SHM","Nuclear physics","Astrophysics","Magnetic fields","AC circuits"],
+        },
+        "Chemistry": {
+            "Grade 1":  ["Names of common materials","Hard and soft materials","Natural and man-made materials"],
+            "Grade 2":  ["Solid liquid gas","Melting and freezing","Mixing materials"],
+            "Grade 3":  ["Types of rocks","States of matter particle theory","Dissolving and solutions","Filtering"],
+            "Grade 4":  ["Conductors and insulators","Reversible and irreversible changes","Mixtures and solutions","Separation techniques"],
+            "Grade 5":  ["Physical vs chemical change","Acids and bases pH scale","Burning and rusting","Elements and compounds"],
+            "Grade 6":  ["Periodic table introduction","Atoms and elements","Acids alkalis and indicators","Filtration distillation chromatography","Diffusion"],
+            "Grade 7":  ["Atomic structure: protons neutrons electrons","Chemical equations and balancing","Metals and non-metals","Displacement reactions","Exothermic and endothermic"],
+            "Grade 8":  ["Ionic bonding","Covalent bonding","Periodic table trends: Groups 1 7 0","Rates of reaction","Acids bases and salts","Electrolysis"],
+            "Grade 9":  ["Mole concept and stoichiometry","Organic chemistry: alkanes alkenes","Haber process","Electrolysis calculations","Redox reactions","Equilibrium and Le Chatelier","Transition metals"],
+            "Grade 10": ["Organic synthesis pathways","Enthalpy and Hess's law","Kinetics and activation energy","Quantitative electrolysis","Analytical chemistry: flame tests","Amino acids and proteins","Polymers"],
+            "O Level":  ["Atomic structure and bonding","Stoichiometry","Energetics","Kinetics","Equilibrium","Organic chemistry","Metals and reactivity series"],
+            "A Level":  ["Electrode potentials","Transition metal chemistry","Organic mechanisms","NMR spectroscopy","Thermodynamics","Acid-base equilibria","Polymerisation"],
+        },
+        "Biology": {
+            "Grade 1":  ["Animals and plants","Habitats","Basic food chains","Five senses","Caring for living things"],
+            "Grade 2":  ["Parts of a plant","Photosynthesis basics","Animal groups","Human body systems overview","Life cycles"],
+            "Grade 3":  ["MRS GREN life processes","Food webs producers consumers","Human health and disease","Ecosystems and adaptation"],
+            "Grade 4":  ["Plant and animal cells","Unicellular organisms","Pollination and seed dispersal","Carbon cycle"],
+            "Grade 5":  ["Circulatory system","Respiratory system","Nervous system","Genetics and variation","Natural selection"],
+            "Grade 6":  ["Cell organelles","Tissues organs organ systems","Photosynthesis equation","Digestive system in detail","Ecosystems: biotic abiotic factors"],
+            "Grade 7":  ["Aerobic and anaerobic respiration","Human reproductive system","DNA structure","Disease: bacteria viruses","Carbon and nitrogen cycles"],
+            "Grade 8":  ["Osmosis and diffusion","Active transport","Enzyme activity and denaturation","Immune system: antibodies phagocytes","Mitosis and meiosis","Mendelian inheritance"],
+            "Grade 9":  ["Gas exchange in lungs","Transport in plants: xylem phloem","Kidney structure and ultrafiltration","Reflex arc and nervous system","Homeostasis","Monohybrid and dihybrid crosses"],
+            "Grade 10": ["Sex-linked inheritance","Genetic engineering","Biotechnology: fermenters","Plant hormones: auxins","Ecology: energy flow trophic levels","Cloning techniques"],
+            "O Level":  ["Cell biology and transport","Nutrition and digestion","Respiration","Gas exchange","Excretion","Coordination","Reproduction","Genetics and evolution"],
+            "A Level":  ["Photosynthesis: light-dependent light-independent","Respiration: glycolysis Krebs oxidative phosphorylation","Gene expression","Immunology","Ecology and populations","Genetic technology"],
+        },
+        "English": {
+            "Grade 1":  ["Alphabet phonics","CVC words","Sight words","Simple sentences","Capital letters and full stops"],
+            "Grade 2":  ["Nouns and verbs","Adjectives","Simple and past tense","Punctuation","Short comprehension"],
+            "Grade 3":  ["Parts of speech","Conjunctions and prepositions","Paragraph writing","Simile and metaphor","Skimming and scanning"],
+            "Grade 4":  ["Active and passive voice","Direct and indirect speech","Essay structure","Fact and opinion","Literary devices"],
+            "Grade 5":  ["Complex sentences","Relative clauses","Argumentative writing","Synonyms and antonyms","Formal and informal register"],
+            "Grade 6":  ["Comprehension: inference and deduction","Narrative writing techniques","Formal letter writing","Author's viewpoint","Figurative language"],
+            "Grade 7":  ["Analysing language choices","Descriptive writing: sensory detail","Persuasive writing: rhetorical devices","Comparing texts","Dramatic techniques"],
+            "Grade 8":  ["Poetry analysis: form structure language","Short story: narrative voice","Analytical writing with quotations","Tone and register","Argumentative essays"],
+            "Grade 9":  ["IGCSE comprehension: explicit implicit","Summary writing","Directed writing","Descriptive and narrative techniques","Persuasive writing for audience"],
+            "Grade 10": ["Evaluating writer's craft","Unseen poetry analysis","Original composition commentary","Extended metaphor","Comparison of texts for purpose"],
+            "O Level":  ["Comprehension and summary","Directed writing","Argumentative essays","Descriptive writing","Language analysis"],
+            "A Level":  ["Language variation: regional social","Language change over time","Discourse analysis","Original writing and commentary","Critical analysis of unseen texts"],
+        },
+        "Computer Science": {
+            "Grade 1":  ["Parts of a computer","Using a mouse","Basic keyboard skills","Computer care and safety"],
+            "Grade 2":  ["Opening and closing programs","Drawing with Paint","Saving files","Printing documents"],
+            "Grade 3":  ["Word processing basics","Internet safety","Searching online","Scratch: sequences and events"],
+            "Grade 4":  ["Algorithms and flowcharts","Scratch: loops and conditionals","Spreadsheet formulas","Debugging programs"],
+            "Grade 5":  ["Binary numbers introduction","Hardware vs software","Variables in Scratch","Networks: LAN WAN","Digital citizenship"],
+            "Grade 6":  ["Python: print input variables","if elif else statements","For and while loops","Data types: int str float","Network hardware and protocols"],
+            "Grade 7":  ["Binary denary hexadecimal conversion","Python lists and functions","String methods","Cybersecurity: malware phishing firewalls","Storage units: bit byte KB MB GB"],
+            "Grade 8":  ["SQL: SELECT WHERE","Classes and objects OOP","File handling in Python","Exception handling try except","Software development lifecycle"],
+            "Grade 9":  ["CPU fetch-execute cycle","Data compression: lossless lossy","Image representation: pixels colour depth","Sorting algorithms: bubble merge","Boolean logic and truth tables","Network topologies and protocols"],
+            "Grade 10": ["Recursion in Python","Binary search and linear search","Big O complexity introduction","OOP: inheritance polymorphism","Relational databases: primary foreign keys","HTML CSS JavaScript basics"],
+            "O Level":  ["Data representation","Network communication","Hardware and software","Security and privacy","Algorithm design and pseudocode","Python programming","SQL databases"],
+            "A Level":  ["Processor architecture and instruction sets","Boolean algebra and logic gates","ADTs: stack queue linked list tree graph","Graph traversal BFS DFS","Functional and declarative programming","Compiler and interpreter theory"],
+        },
+        "Urdu": {
+            "Grade 1":  ["حروفِ تہجی","حروف کی آوازیں","آسان الفاظ","تصویروں کے نام"],
+            "Grade 2":  ["اسم مذکر مؤنث","واحد جمع","فعل","سادہ جملے"],
+            "Grade 3":  ["اسم کی اقسام","ضمیر","صفت","زمانہ حال ماضی مستقبل","کہاوتیں"],
+            "Grade 4":  ["مرکب جملے","فاعل مفعول","محاورے","مضمون نویسی","رسمی خط"],
+            "Grade 5":  ["علامہ اقبالؒ کی نظمیں","حمد و نعت","افسانہ","تراکیب اضافی توصیفی"],
+            "Grade 6":  ["نثری اقتباس کی تشریح","نظم کی تشریح","قواعد: فعل لازم متعدی","خلاصہ نویسی","درخواست"],
+            "Grade 7":  ["غزل کا تجزیہ","ادبی اصناف","محاورے ضرب الامثال","رسمی خط","تقریر"],
+            "Grade 8":  ["کلاسیکی غزل: میرؔ غالبؔ","صنعتِ تشبیہ استعارہ","علمِ عروض بحریں","تنقیدی مضمون","خبر نویسی"],
+            "Grade 9":  ["نثری اصناف کا تجزیہ","علامہ اقبالؒ: بانگِ درا","میرؔ اور غالبؔ کا کلام","مضمون نویسی","قواعد کا اطلاق"],
+            "Grade 10": ["اردو ادب کی تاریخ جدید دور","کلیاتِ اقبال منتخب کلام","ادبی تحریکیں","تنقید کے اصول","ترجمہ"],
+            "O Level":  ["Passage comprehension in Urdu","Summary writing","Directed writing","Essay writing","Formal letters"],
+            "A Level":  ["Classical poetry detailed study","Modern prose analysis","Translation Urdu to English","Language variation in Pakistan","Literary criticism"],
+        },
+    }
 
-    st.markdown("#### 🔧 Quiz Settings")
-    c1, c2 = st.columns(2)
+    # ─────────────────────────────────────────────────────────────
+    # QUIZ SETUP — compact single-row controls
+    # ─────────────────────────────────────────────────────────────
+    # Row 1: four selectors side by side
+    c1, c2, c3, c4 = st.columns(4)
     with c1:
-        quiz_sub = st.selectbox("📚 Subject", list(SUBJECTS.keys()), key="quiz_sub")
+        quiz_sub = st.selectbox("Subject", list(SUBJECTS.keys()), key="quiz_sub",
+                                label_visibility="visible")
     with c2:
-        lvl_idx  = get_level_index(u.get("grade","Grade 6"))
-        quiz_lvl = st.selectbox("🏫 Grade", LEVELS, index=lvl_idx, key="quiz_lvl")
+        lvl_idx  = get_level_index(u.get("grade", "Grade 6"))
+        quiz_lvl = st.selectbox("Grade", LEVELS, index=lvl_idx, key="quiz_lvl",
+                                label_visibility="visible")
+    with c3:
+        difficulty = st.selectbox("Difficulty", ["Easy", "Medium", "Hard"],
+                                  index=1, key="quiz_diff",
+                                  label_visibility="visible")
+    with c4:
+        num_qs = st.selectbox("Questions", [5, 10, 15, 20],
+                              index=0, key="quiz_num",
+                              label_visibility="visible")
 
-    quiz_topic = st.text_input(
-        "✏️ Topic (optional — leave blank for general quiz)",
-        placeholder="e.g. Photosynthesis, Quadratic equations, World War II, Pythagoras...",
-        key="quiz_topic_input"
+    # Row 2: topic selector built from internal syllabus map
+    syllabus_topics = QUIZ_SYLLABUS.get(quiz_sub, {}).get(quiz_lvl, [])
+    topic_options   = ["— General (all topics) —"] + syllabus_topics + ["✏️ Custom topic…"]
+
+    st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+    selected_option = st.selectbox(
+        "Topic",
+        topic_options,
+        key="quiz_topic_select",
+        label_visibility="visible",
     )
 
-    c3, c4 = st.columns(2)
-    with c3:
-        difficulty = st.selectbox("🎯 Difficulty Level", ["Easy","Medium","Hard"], index=1, key="quiz_diff")
-    with c4:
-        num_qs = st.selectbox("🔢 Number of Questions", [5,10,15,20], index=0, key="quiz_num")
+    # Custom entry box appears only when user picks the last option
+    quiz_topic = ""
+    if selected_option == "✏️ Custom topic…":
+        quiz_topic = st.text_input(
+            "Enter your topic",
+            placeholder="e.g. Projectile motion, Shakespearean sonnet, Binary trees…",
+            key="quiz_custom_topic",
+            label_visibility="collapsed",
+        )
+    elif selected_option == "— General (all topics) —":
+        quiz_topic = ""
+    else:
+        quiz_topic = selected_option
 
+    # Difficulty hint strip (compact, no large header)
     diff_info = {
-        "Easy":   ("🟢","Straightforward recall questions. Perfect for revision."),
-        "Medium": ("🟡","Mixed conceptual and application questions."),
-        "Hard":   ("🔴","Challenging analytical and higher-order thinking questions."),
+        "Easy":   ("🟢", "Recall & recognition — perfect for quick revision."),
+        "Medium": ("🟡", "Conceptual understanding & application questions."),
+        "Hard":   ("🔴", "Analysis, evaluation & higher-order thinking."),
     }
     d_icon, d_text = diff_info[difficulty]
-    st.markdown(f"""
-    <div style="background:#F8F9FA;border-radius:10px;padding:10px 14px;
-        font-size:12px;color:#555;margin-bottom:14px">
-        {d_icon} <b>{difficulty}:</b> {d_text}
-    </div>""", unsafe_allow_html=True)
+    st.markdown(
+        f"<div style='background:#F8F9FA;border-radius:8px;padding:7px 12px;"
+        f"font-size:12px;color:#555;margin:6px 0 10px'>"
+        f"{d_icon} <b>{difficulty}:</b> {d_text}</div>",
+        unsafe_allow_html=True,
+    )
 
     if st.button("🚀 Generate Quiz", use_container_width=True, type="primary", key="gen_quiz_btn"):
-        topic_str  = quiz_topic.strip() if quiz_topic.strip() else f"{quiz_sub} general topics"
+        topic_str   = quiz_topic.strip() if quiz_topic.strip() else f"{quiz_sub} general topics"
         quiz_tokens = max(1200, num_qs * 220 + 300)
         with st.spinner(f"✨ Generating {num_qs} {difficulty} questions on '{topic_str}'..."):
             raw = call_ai(
-                [{"role":"user","content":
+                [{"role": "user", "content":
                   f"Create exactly {num_qs} {difficulty}-level multiple choice questions "
                   f"about '{topic_str}' for {quiz_lvl} {quiz_sub} students in Pakistan. "
                   f"Easy=basic recall, Medium=understanding+application, Hard=analysis+evaluation. "
                   f"Return ONLY raw JSON: "
-                  f"{{\"questions\":[{{\"q\":\"question text\",\"options\":[\"A. option\",\"B. option\",\"C. option\",\"D. option\"],\"answer\":\"A. option\",\"explanation\":\"why\"}}]}}"}],
-                "Quiz generator. Return ONLY valid raw JSON. No backticks. No markdown.", quiz_tokens
+                  f"{{\"questions\":[{{\"q\":\"question text\","
+                  f"\"options\":[\"A. option\",\"B. option\",\"C. option\",\"D. option\"],"
+                  f"\"answer\":\"A. option\",\"explanation\":\"why\"}}]}}"}],
+                "Quiz generator. Return ONLY valid raw JSON. No backticks. No markdown.",
+                quiz_tokens,
             )
         if raw.startswith("__API_KEY_MISSING__"):
             st.error("⚠️ API key not configured. Add ANTHROPIC_API_KEY or CLAUDE_API_KEY in Streamlit Secrets.")
@@ -2650,15 +2780,15 @@ def page_quiz():
                 if j0 >= 0 and j1 > j0:
                     clean = clean[j0:j1]
                 data = json.loads(clean)
-                qs = data.get("questions", [])
+                qs   = data.get("questions", [])
                 if not qs:
                     st.error("⚠️ AI returned no questions. Try a different topic.")
                 else:
                     st.session_state.quiz = {
                         "questions": qs[:num_qs],
-                        "current":0, "score":0, "answers":[], "done":False,
-                        "sub":quiz_sub, "lvl":quiz_lvl,
-                        "topic":topic_str, "difficulty":difficulty
+                        "current": 0, "score": 0, "answers": [], "done": False,
+                        "sub": quiz_sub, "lvl": quiz_lvl,
+                        "topic": topic_str, "difficulty": difficulty,
                     }
                     st.rerun()
             except Exception as _qe:

@@ -6,28 +6,59 @@ import streamlit as st
 import json, hashlib, datetime, time, os, base64, random, io
 from anthropic import Anthropic
 
-# ── Text-to-Speech — OpenAI TTS, stored in session, played via st.audio ──
+# ══════════════════════════════════════════════════════════════
+# TTS ENGINE — OpenAI neural voice (onyx), cached, toggleable
+# ══════════════════════════════════════════════════════════════
+def _clean_for_tts(text):
+    """Strip markdown and normalise text for clean speech."""
+    import re
+    t = text
+    for sym in ["**","*","###","##","#","```","__","_","---"]:
+        t = t.replace(sym, "")
+    # Remove URLs
+    t = re.sub(r"http\S+", "", t)
+    # Collapse whitespace
+    t = " ".join(t.split())
+    return t[:700]   # cap to keep latency low
+
 def speak_text(text):
-    """Generate MP3 via OpenAI TTS — stores base64 in session for next render."""
+    """
+    Generate MP3 via OpenAI TTS and cache it in session state.
+    Skips generation if:
+      - voice is toggled OFF
+      - same text was already spoken (cache hit)
+      - OpenAI key missing
+    """
+    # Voice toggle gate
+    if not st.session_state.get("_voice_on", True):
+        return
+
+    clean = _clean_for_tts(text)
+    if not clean:
+        return
+
+    # Cache hit — don't regenerate same text
+    if st.session_state.get("_tts_last_text") == clean:
+        return   # audio already in _tts_b64 from last time
+
     try:
         import openai
         oai_key = (st.secrets.get("OPENAI_API_KEY","") or
                    os.environ.get("OPENAI_API_KEY",""))
         if not oai_key:
-            return
-        clean = text
-        for sym in ["**","*","##","#","```","__","_"]:
-            clean = clean.replace(sym, "")
-        clean = " ".join(clean.split())[:500]
-        if not clean:
+            st.session_state["_tts_b64"] = None
             return
         c = openai.OpenAI(api_key=oai_key)
         r = c.audio.speech.create(
-            model="tts-1", voice="onyx",
-            input=clean, response_format="mp3"
+            model="tts-1",       # fastest — low latency
+            voice="onyx",        # deep natural male teacher voice
+            input=clean,
+            response_format="mp3"
         )
-        # Store as base64 string — survives rerun in session state
-        st.session_state["_tts_b64"] = base64.b64encode(r.content).decode("ascii")
+        st.session_state["_tts_b64"]        = base64.b64encode(r.content).decode("ascii")
+        st.session_state["_tts_last_text"]  = clean
+    except Exception:
+        st.session_state["_tts_b64"] = None   # fallback: text only, no crash
     except Exception:
         pass
 # ─────────────────────────────────────────────────────────────────
@@ -1757,12 +1788,48 @@ def save_chat_session(sub, lvl):
 def page_chat():
     u = st.session_state.user
 
-    # ── TTS: generate audio for pending reply, then play ─────
+    # ══════════════════════════════════════════════════════════
+    # TTS PLAYER — runs at top of every render
+    # Req 5,6,7,8,9,10,12,13
+    # ══════════════════════════════════════════════════════════
+    # Initialise voice toggle (ON by default)
+    if "_voice_on" not in st.session_state:
+        st.session_state["_voice_on"] = True
+
+    # Step A: if a new reply is pending, generate its audio now
     if st.session_state.get("_tts_pending"):
-        speak_text(st.session_state.pop("_tts_pending"))
-    if st.session_state.get("_tts_b64"):
-        raw = base64.b64decode(st.session_state.pop("_tts_b64"))
+        pending_txt = st.session_state.pop("_tts_pending")
+        with st.spinner("🎙️ Ustad is speaking..."):
+            speak_text(pending_txt)
+
+    # Step B: if audio is ready, render the player + autoplay HTML
+    if st.session_state.get("_tts_b64") and st.session_state.get("_voice_on", True):
+        mp3_b64 = st.session_state["_tts_b64"]   # keep — don't pop, so no re-gen on scroll
+        # Native Streamlit audio widget (visible, mobile-compatible)
+        raw = base64.b64decode(mp3_b64)
         st.audio(raw, format="audio/mp3")
+        # Autoplay via hidden HTML audio tag (fires once per new b64)
+        autoplay_key = st.session_state.get("_tts_autoplay_key","")
+        new_key      = mp3_b64[-16:]   # last 16 chars as unique fingerprint
+        if autoplay_key != new_key:
+            st.session_state["_tts_autoplay_key"] = new_key
+            st.markdown(
+                "<audio autoplay style='display:none'>"
+                "<source src='data:audio/mp3;base64," + mp3_b64 + "' type='audio/mp3'/>"
+                "</audio>",
+                unsafe_allow_html=True
+            )
+
+    # Voice toggle button — top right of chat
+    vcol1, vcol2 = st.columns([8, 1])
+    with vcol2:
+        v_icon = "🔊" if st.session_state.get("_voice_on", True) else "🔇"
+        v_label = f"{v_icon}"
+        if st.button(v_label, key="voice_toggle_btn",
+                     help="Toggle Ustad voice ON / OFF",
+                     use_container_width=True):
+            st.session_state["_voice_on"] = not st.session_state.get("_voice_on", True)
+            st.rerun()
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # FIX: TWO-STATE PATTERN

@@ -2351,57 +2351,59 @@ def page_chat():
     # ── 🔊 Web Speech — use st.components.v1.html so <script> actually runs ──
     # st.markdown strips all <script> tags; components.v1.html renders in an
     # iframe where scripts execute normally and postMessage lets it reach parent.
-    # Encode preview as JSON so ANY characters are safe inside JS
+    # ── 🔊 Voice button via components.html (scripts run here, not in st.markdown) ──
     import json, streamlit.components.v1 as components
-    safe_text_js = json.dumps(preview)   # produces a quoted, escaped JS string literal
-
-    components.html(
-        """<!DOCTYPE html><html><head><style>
-        body{margin:0;padding:4px 0;background:transparent;font-family:sans-serif}
-        #sb{display:inline-flex;align-items:center;gap:6px;
-            background:linear-gradient(135deg,#1C7C54,#25A870);
-            color:#fff;border:none;border-radius:99px;
-            padding:7px 18px;font-size:13px;font-weight:700;
-            cursor:pointer;box-shadow:0 3px 12px rgba(28,124,84,.35);
-            transition:all .15s;letter-spacing:.3px}
-        #sb:hover{transform:translateY(-1px);box-shadow:0 5px 18px rgba(28,124,84,.45)}
-        #st{margin-top:4px;font-size:11px;color:#888}
-        </style></head><body>
-        <button id="sb" onclick="go()">🔊 Hear Ustad</button>
-        <div id="st"></div>
-        <script>
-        var TXT=""" + safe_text_js + """;
-        var busy=false;
-        function go(){
-          var syn=window.speechSynthesis;
-          if(!syn){document.getElementById('st').textContent='Not supported';return;}
-          if(busy){syn.cancel();busy=false;document.getElementById('sb').textContent='🔊 Hear Ustad';document.getElementById('st').textContent='';return;}
-          syn.cancel();
-          var u=new SpeechSynthesisUtterance(TXT);
-          u.rate=0.9;u.pitch=0.82;u.volume=1.0;u.lang='en-US';
-          function pv(){
-            var vv=syn.getVoices();
-            return vv.find(function(v){return /david|james|daniel|mark|guy/i.test(v.name)&&/en/i.test(v.lang);})
-                ||vv.find(function(v){return /en-US/i.test(v.lang);})
-                ||vv.find(function(v){return /en/i.test(v.lang);})
-                ||(vv.length?vv[0]:null);
-          }
-          function speak(){
-            var v=pv(); if(v) u.voice=v;
-            busy=true;
-            document.getElementById('sb').textContent='⏹ Stop';
-            document.getElementById('st').textContent='🎙️ Speaking…';
-            u.onend=function(){busy=false;document.getElementById('sb').textContent='🔊 Hear Ustad';document.getElementById('st').textContent='✓ Done';setTimeout(function(){document.getElementById('st').textContent='';},2000);};
-            u.onerror=function(e){busy=false;document.getElementById('sb').textContent='🔊 Hear Ustad';document.getElementById('st').textContent='Error: '+e.error;};
-            syn.speak(u);
-          }
-          if(syn.getVoices().length===0){syn.onvoiceschanged=function(){speak();};}
-          else{speak();}
-        }
-        setInterval(function(){if(window.speechSynthesis.speaking){window.speechSynthesis.pause();window.speechSynthesis.resume();}},10000);
-        </script></body></html>""",
-        height=58
+    # json.dumps handles ALL special chars: quotes, emoji, Urdu, curly braces, etc.
+    txt_literal = json.dumps(str(preview))
+    voice_html = (
+        "<!DOCTYPE html><html><head><style>"
+        "body{margin:0;padding:4px 0;background:transparent;font-family:sans-serif}"
+        "#sb{display:inline-flex;align-items:center;gap:6px;"
+        "background:linear-gradient(135deg,#1C7C54,#25A870);"
+        "color:#fff;border:none;border-radius:99px;"
+        "padding:7px 18px;font-size:13px;font-weight:700;"
+        "cursor:pointer;box-shadow:0 3px 12px rgba(28,124,84,.35);"
+        "transition:all .15s;letter-spacing:.3px}"
+        "#sb:hover{transform:translateY(-1px)}"
+        "#st{margin-top:4px;font-size:11px;color:#888}"
+        "</style></head><body>"
+        "<button id='sb' onclick='go()'>&#128266; Hear Ustad</button>"
+        "<div id='st'></div>"
+        "<script>"
+        "var TXT=" + txt_literal + ";"
+        "var busy=false;"
+        "function go(){"
+        "var syn=window.speechSynthesis;"
+        "if(!syn){document.getElementById('st').textContent='Not supported';return;}"
+        "if(busy){syn.cancel();busy=false;"
+        "document.getElementById('sb').textContent='Hear Ustad';"
+        "document.getElementById('st').textContent='';return;}"
+        "syn.cancel();"
+        "var u=new SpeechSynthesisUtterance(TXT);"
+        "u.rate=0.9;u.pitch=0.82;u.volume=1.0;u.lang='en-US';"
+        "function pv(){var vv=syn.getVoices();"
+        "return vv.find(function(v){return /david|james|daniel|mark|guy/i.test(v.name)&&/en/i.test(v.lang);})"
+        "||vv.find(function(v){return /en-US/i.test(v.lang);})"
+        "||vv.find(function(v){return /en/i.test(v.lang);})"
+        "||(vv.length?vv[0]:null);}"
+        "function speak(){var v=pv();if(v)u.voice=v;"
+        "busy=true;document.getElementById('sb').textContent='Stop';"
+        "document.getElementById('st').textContent='Speaking...';"
+        "u.onend=function(){busy=false;"
+        "document.getElementById('sb').textContent='Hear Ustad';"
+        "document.getElementById('st').textContent='Done';"
+        "setTimeout(function(){document.getElementById('st').textContent='';},2000);};"
+        "u.onerror=function(e){busy=false;"
+        "document.getElementById('sb').textContent='Hear Ustad';"
+        "document.getElementById('st').textContent='Error:'+e.error;};"
+        "syn.speak(u);}"
+        "if(syn.getVoices().length===0){syn.onvoiceschanged=function(){speak();};}else{speak();}"
+        "}"
+        "setInterval(function(){if(window.speechSynthesis.speaking){"
+        "window.speechSynthesis.pause();window.speechSynthesis.resume();}},10000);"
+        "</script></body></html>"
     )
+    components.html(voice_html, height=58)
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # SELECTION ROW — dropdowns update PENDING only

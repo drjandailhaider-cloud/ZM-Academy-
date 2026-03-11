@@ -1728,350 +1728,351 @@ def save_chat_session(sub, lvl):
     save_json(HISTORY_FILE, hist)
 
 
+
 def page_chat():
     u   = st.session_state.user
     sub = st.session_state.get("subject", "Maths")
 
-    # ── Ustad header ──────────────────────────────────────────
+    # ── Scoped CSS (chat page only) ───────────────────────────
     st.markdown("""
     <style>
-    /* ── Ustad AI Chat Page ─────────────────────────────── */
-    .ustad-header {
-        background: linear-gradient(135deg, #1A1D23 0%, #1C3A2A 50%, #0F2D1E 100%);
-        border-radius: 18px;
-        padding: 20px 24px;
-        margin-bottom: 16px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        border: 1px solid rgba(28,124,84,0.3);
-        box-shadow: 0 4px 24px rgba(0,0,0,0.15);
-        position: relative;
-        overflow: hidden;
-    }
-    .ustad-header::after {
-        content: '';
-        position: absolute;
-        top: -40px; right: -40px;
-        width: 120px; height: 120px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(28,124,84,0.25), transparent 70%);
-    }
-    .ustad-avatar {
-        width: 56px; height: 56px;
-        border-radius: 16px;
-        background: linear-gradient(135deg, #1C7C54, #25A870);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 28px;
-        flex-shrink: 0;
-        box-shadow: 0 4px 14px rgba(28,124,84,0.4);
-        border: 2px solid rgba(255,255,255,0.1);
-    }
-    .ustad-name {
-        font-family: 'DM Serif Display', serif;
-        font-size: 22px;
-        color: #fff;
-        line-height: 1.1;
-    }
-    .ustad-status {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-top: 4px;
-    }
-    .ustad-dot {
-        width: 7px; height: 7px;
-        border-radius: 50%;
-        background: #34C77B;
-        box-shadow: 0 0 6px #34C77B;
-        animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.4; }
-    }
-    .ustad-status-text {
-        font-size: 12px;
-        color: rgba(255,255,255,0.6);
-        font-weight: 600;
-    }
-    .ai-badge {
-        margin-left: auto;
-        background: rgba(28,124,84,0.25);
-        border: 1px solid rgba(28,124,84,0.5);
-        border-radius: 99px;
-        padding: 5px 12px;
-        font-size: 11px;
-        font-weight: 800;
-        color: #34C77B;
-        letter-spacing: 0.5px;
-        flex-shrink: 0;
-    }
-
-    /* ── Subject pill selector ───────────────────────────── */
-    .subj-pills {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-bottom: 14px;
-    }
-    .subj-pill {
-        padding: 7px 16px;
-        border-radius: 99px;
-        font-size: 12px;
-        font-weight: 700;
-        cursor: pointer;
-        border: 2px solid #E4E8EE;
-        background: #fff;
-        color: #5A6070;
-        transition: all 0.15s;
-        white-space: nowrap;
-    }
-    .subj-pill.active {
-        border-color: #1C7C54;
-        background: #EBF7F1;
-        color: #1C7C54;
-    }
-
-    /* ── Chat messages ───────────────────────────────────── */
-    .chat-wrap {
-        background: #fff;
-        border: 1.5px solid #E4E8EE;
-        border-radius: 18px;
-        padding: 20px 18px;
-        margin-bottom: 12px;
-        min-height: 120px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-    }
-    .ustad-msg {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 16px;
-        align-items: flex-start;
-    }
-    .ustad-msg-avatar {
-        width: 34px; height: 34px;
-        border-radius: 10px;
-        background: linear-gradient(135deg, #1C7C54, #25A870);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 16px;
-        flex-shrink: 0;
-        margin-top: 2px;
-    }
-    .ustad-msg-bubble {
-        background: #F5F7FA;
-        border: 1.5px solid #E4E8EE;
-        border-radius: 4px 16px 16px 16px;
-        padding: 12px 16px;
-        font-size: 14px;
-        line-height: 1.75;
-        color: #1A1D23;
-        max-width: 88%;
-        white-space: pre-wrap;
-    }
-    .user-msg {
-        display: flex;
-        justify-content: flex-end;
-        margin-bottom: 16px;
-    }
-    .user-msg-bubble {
-        background: #1C7C54;
-        color: #fff;
-        border-radius: 16px 4px 16px 16px;
-        padding: 12px 16px;
-        font-size: 14px;
-        line-height: 1.65;
-        max-width: 78%;
-        white-space: pre-wrap;
-    }
-    .msg-time {
-        font-size: 10px;
-        color: #9BA3B0;
-        margin-top: 4px;
-        font-weight: 500;
-    }
-
-    /* ── Empty state ─────────────────────────────────────── */
-    .ustad-empty {
-        text-align: center;
-        padding: 32px 24px;
-    }
-    .ustad-empty-icon {
-        font-size: 52px;
-        margin-bottom: 12px;
-    }
-    .ustad-empty-title {
-        font-family: 'DM Serif Display', serif;
-        font-size: 20px;
-        color: #1A1D23;
-        margin-bottom: 8px;
-    }
-    .ustad-empty-sub {
-        font-size: 13px;
-        color: #9BA3B0;
-        line-height: 1.6;
-    }
-
-    /* ── Quick prompts ───────────────────────────────────── */
-    .quick-label {
-        font-size: 10px;
-        font-weight: 800;
-        color: #9BA3B0;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-bottom: 8px;
-    }
-
-    /* ── Input area ──────────────────────────────────────── */
-    .input-wrap {
-        background: #fff;
-        border: 2px solid #E4E8EE;
+    /* ── Compact AI status bar ──────────────────────────────── */
+    .ustad-statusbar {
+        height: 70px;
+        background: linear-gradient(90deg,#1A1D23 0%,#1C3A2A 60%,#0F2D1E 100%);
         border-radius: 14px;
-        padding: 4px 4px 4px 16px;
-        display: flex;
-        align-items: flex-end;
-        gap: 8px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-        transition: border-color 0.15s;
-    }
-    .input-wrap:focus-within {
-        border-color: #1C7C54;
-        box-shadow: 0 0 0 3px rgba(28,124,84,0.08);
-    }
-    .daily-limit-bar {
-        background: #F0FDF4;
-        border: 1.5px solid #D1FAE5;
-        border-radius: 10px;
-        padding: 8px 14px;
-        font-size: 12px;
-        color: #065F46;
-        font-weight: 600;
+        padding: 0 20px;
+        margin-bottom: 10px;
         display: flex;
         align-items: center;
-        gap: 8px;
-        margin-top: 8px;
+        gap: 12px;
+        border: 1px solid rgba(28,124,84,0.35);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+        overflow: hidden;
+        position: relative;
     }
+    .ustad-statusbar::before {
+        content: "";
+        position: absolute;
+        right: -30px; top: -30px;
+        width: 100px; height: 100px;
+        border-radius: 50%;
+        background: radial-gradient(circle,rgba(28,124,84,0.18),transparent 70%);
+    }
+    .sb-avatar {
+        width: 40px; height: 40px;
+        border-radius: 11px;
+        background: linear-gradient(135deg,#1C7C54,#25A870);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 20px; flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(28,124,84,0.4);
+    }
+    .sb-name {
+        font-family: "DM Serif Display",serif;
+        font-size: 16px; color: #fff; line-height: 1.1;
+    }
+    .sb-status {
+        display: flex; align-items: center; gap: 5px; margin-top: 2px;
+    }
+    .sb-dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: #34C77B; box-shadow: 0 0 5px #34C77B;
+        animation: sbpulse 2s infinite;
+    }
+    @keyframes sbpulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+    .sb-status-txt { font-size: 11px; color: rgba(255,255,255,.55); font-weight:600; }
+    .sb-badge {
+        margin-left: auto; flex-shrink: 0;
+        background: rgba(28,124,84,0.22);
+        border: 1px solid rgba(52,199,123,0.4);
+        border-radius: 99px; padding: 4px 11px;
+        font-size: 10px; font-weight:800;
+        color: #34C77B; letter-spacing:.4px;
+    }
+
+    /* ── Topic cards (quick prompts) ────────────────────────── */
+    .topic-cards-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+    .topic-card {
+        background: #fff;
+        border: 1.5px solid #E4E8EE;
+        border-radius: 12px;
+        padding: 9px 14px;
+        font-size: 12px; font-weight:700; color:#374151;
+        cursor: pointer; flex:1; min-width:140px;
+        display:flex; align-items:center; gap:8px;
+        transition: all .15s ease;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .topic-card:hover {
+        border-color:#1C7C54; color:#1C7C54;
+        background:#F0FDF4; transform:translateY(-1px);
+        box-shadow:0 4px 12px rgba(28,124,84,0.1);
+    }
+    .topic-icon { font-size:16px; flex-shrink:0; }
+    .topic-txt  { line-height:1.3; }
+
+    /* ── Chat bubble window ──────────────────────────────────── */
+    .chat-window {
+        background: #FAFBFC;
+        border: 1.5px solid #E4E8EE;
+        border-radius: 16px;
+        padding: 16px 14px;
+        margin-bottom: 8px;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+    }
+    /* Ustad message */
+    .ai-row { display:flex; gap:9px; margin-bottom:12px; align-items:flex-start; }
+    .ai-ava  {
+        width:30px; height:30px; border-radius:9px; flex-shrink:0; margin-top:1px;
+        background:linear-gradient(135deg,#1C7C54,#25A870);
+        display:flex;align-items:center;justify-content:center;font-size:14px;
+    }
+    .ai-bubble {
+        background:#fff; border:1.5px solid #E4E8EE;
+        border-radius:4px 14px 14px 14px;
+        padding:10px 14px; font-size:13.5px; line-height:1.75;
+        color:#1A1D23; max-width:87%;
+        box-shadow:0 1px 4px rgba(0,0,0,0.04);
+    }
+    /* User message */
+    .user-row { display:flex; justify-content:flex-end; margin-bottom:12px; }
+    .user-bubble {
+        background:#1C7C54; color:#fff;
+        border-radius:14px 4px 14px 14px;
+        padding:10px 14px; font-size:13.5px; line-height:1.65;
+        max-width:75%;
+    }
+    /* Image message */
+    .img-row { display:flex; gap:9px; margin-bottom:12px; align-items:flex-start; }
+    .img-bubble {
+        background:#EBF7F1; border:1.5px solid #C8EAD8;
+        border-radius:4px 14px 14px 14px;
+        padding:10px 14px; font-size:13.5px; line-height:1.75;
+        color:#1A1D23; max-width:87%;
+    }
+
+    /* ── Empty state ─────────────────────────────────────────── */
+    .chat-empty { text-align:center; padding:28px 20px; }
+    .chat-empty-icon { font-size:46px; margin-bottom:10px; }
+    .chat-empty-title { font-family:"DM Serif Display",serif; font-size:19px; color:#1A1D23; margin-bottom:6px; }
+    .chat-empty-sub   { font-size:12.5px; color:#9BA3B0; line-height:1.6; }
+
+    /* ── Daily limit bar ─────────────────────────────────────── */
+    .dlimit {
+        background:#F0FDF4; border:1.5px solid #D1FAE5;
+        border-radius:10px; padding:7px 13px;
+        font-size:11.5px; color:#065F46; font-weight:600;
+        display:flex; align-items:center; gap:8px; margin-top:6px;
+    }
+
+    /* ── Upload section ──────────────────────────────────────── */
+    .upload-strip {
+        background: linear-gradient(135deg,#1A1D23,#243040);
+        border-radius: 13px;
+        padding: 13px 18px;
+        margin-bottom: 10px;
+        border: 1px solid rgba(28,124,84,0.25);
+        display: flex; align-items: center; gap: 14px;
+    }
+    .upload-icon { font-size: 26px; flex-shrink:0; }
+    .upload-title { font-size:13px; font-weight:800; color:#fff; }
+    .upload-sub   { font-size:11px; color:rgba(255,255,255,0.45); margin-top:1px; }
     </style>
     """, unsafe_allow_html=True)
 
-    # Ustad header card
+    # ── 1. Compact AI status bar (70 px) ──────────────────────
     lvl_idx = get_level_index(u.get("grade","Grade 6"))
-
     st.markdown(
-        "<div class=\"ustad-header\">"
-        "<div class=\"ustad-avatar\">🎓</div>"
-        "<div>"
-        "<div class=\"ustad-name\">Ustad — Your AI Tutor</div>"
-        "<div class=\"ustad-status\">"
-        "<div class=\"ustad-dot\"></div>"
-        "<span class=\"ustad-status-text\">Online · Ready to help you learn anything</span>"
+        "<div class=\"ustad-statusbar\">"
+        "<div class=\"sb-avatar\">🎓</div>"
+        "<div><div class=\"sb-name\">Ustad — AI Tutor</div>"
+        "<div class=\"sb-status\"><div class=\"sb-dot\"></div>"
+        "<span class=\"sb-status-txt\">Online · Answers any question instantly</span>"
         "</div></div>"
-        "<div class=\"ai-badge\">✦ AI Powered</div>"
+        "<div class=\"sb-badge\">✦ AI POWERED</div>"
         "</div>",
         unsafe_allow_html=True
     )
 
-    # ── Controls row: subject + grade + new chat ──────────────
+    # ── 2. Subject + Grade + Start Learning ───────────────────
     cc1, cc2, cc3 = st.columns([2, 2, 1])
     with cc1:
-        sub = st.selectbox(
-            "Subject", list(SUBJECTS.keys()),
+        sub = st.selectbox("Subject", list(SUBJECTS.keys()),
             index=list(SUBJECTS.keys()).index(st.session_state.get("subject","Maths")),
-            label_visibility="collapsed",
-            key="chat_sub_select"
-        )
+            label_visibility="collapsed", key="chat_sub_select")
     with cc2:
-        lvl = st.selectbox(
-            "Grade", LEVELS, index=lvl_idx,
-            label_visibility="collapsed",
-            key="chat_lvl_select"
-        )
+        lvl = st.selectbox("Grade", LEVELS, index=lvl_idx,
+            label_visibility="collapsed", key="chat_lvl_select")
     with cc3:
-        if st.button("🆕 New Chat", use_container_width=True, key="new_chat_btn"):
-            st.session_state.chat_messages = []
-            st.session_state.session_id    = None
-            st.rerun()
+        start_clicked = st.button("▶ Start", use_container_width=True,
+                                  type="primary", key="start_learning_btn")
     st.session_state.subject = sub
 
-    # ── Chat message window ───────────────────────────────────
-    msgs = st.session_state.get("chat_messages", [])
+    if start_clicked:
+        st.session_state.chat_messages = []
+        st.session_state.session_id    = None
+        first = u["name"].split()[0]
+        opener = (f"Assalam-o-Alaikum {first}! I am your {sub} tutor for {lvl}. "
+                  f"What would you like to learn today?")
+        st.session_state.chat_messages.append({"role":"assistant","content":opener})
+        st.rerun()
 
+    # ── 3. Chat message window ────────────────────────────────
+    msgs = st.session_state.get("chat_messages", [])
     if not msgs:
-        # Empty / welcome state
         first = u["name"].split()[0]
         st.markdown(
-            "<div class=\"chat-wrap\">"
-            "<div class=\"ustad-empty\">"
-            "<div class=\"ustad-empty-icon\">🎓</div>"
-            f"<div class=\"ustad-empty-title\">Assalam-o-Alaikum, {first}!</div>"
-            "<div class=\"ustad-empty-sub\">"
-            f"I'm Ustad, your personal AI tutor.<br>"
-            f"Ask me <b>anything</b> about {sub}, or any other subject!<br><br>"
-            "Try one of the questions below to get started 👇"
+            "<div class=\"chat-window\"><div class=\"chat-empty\">"
+            "<div class=\"chat-empty-icon\">🎓</div>"
+            f"<div class=\"chat-empty-title\">Assalam-o-Alaikum, {first}!</div>"
+            "<div class=\"chat-empty-sub\">"
+            f"I'm Ustad — ask me <b>anything</b> about {sub} or any subject.<br>"
+            "Click a topic card below, upload a homework photo, or type your question."
             "</div></div></div>",
             unsafe_allow_html=True
         )
     else:
-        # Render messages
-        bubble_html = "<div class=\"chat-wrap\">"
+        win = "<div class=\"chat-window\">"
         for m in msgs:
             safe = (m["content"]
-                    .replace("&","&amp;")
-                    .replace("<","&lt;")
-                    .replace(">","&gt;")
-                    .replace("\n","<br>"))
+                    .replace("&","&amp;").replace("<","&lt;")
+                    .replace(">","&gt;").replace("\n","<br>"))
+            tag  = m.get("tag","")
             if m["role"] == "user":
-                bubble_html += (
-                    "<div class=\"user-msg\">"
-                    f"<div class=\"user-msg-bubble\">{safe}</div>"
+                win += f"<div class=\"user-row\"><div class=\"user-bubble\">{safe}</div></div>"
+            elif tag == "image":
+                win += (
+                    "<div class=\"img-row\">"
+                    "<div class=\"ai-ava\">🎓</div>"
+                    f"<div class=\"img-bubble\">📸 <b>Image Analysis</b><br><br>{safe}</div>"
                     "</div>"
                 )
             else:
-                bubble_html += (
-                    "<div class=\"ustad-msg\">"
-                    "<div class=\"ustad-msg-avatar\">🎓</div>"
-                    f"<div class=\"ustad-msg-bubble\">{safe}</div>"
+                win += (
+                    "<div class=\"ai-row\">"
+                    "<div class=\"ai-ava\">🎓</div>"
+                    f"<div class=\"ai-bubble\">{safe}</div>"
                     "</div>"
                 )
-        bubble_html += "</div>"
-        st.markdown(bubble_html, unsafe_allow_html=True)
+        win += "</div>"
+        st.markdown(win, unsafe_allow_html=True)
 
-    # ── Quick prompts ─────────────────────────────────────────
-    st.markdown("<div class=\"quick-label\">⚡ Quick Questions</div>", unsafe_allow_html=True)
+    # ── 4. Topic cards (quick prompts as cards) ───────────────
     prompts = QUICK_PROMPTS.get(sub, [])
-    qcols   = st.columns(len(prompts)) if prompts else []
-    for i, (qcol, p) in enumerate(zip(qcols, prompts)):
-        with qcol:
-            if st.button(p, key=f"qp_{i}_{sub}", use_container_width=True):
-                st.session_state.chat_messages.append({"role":"user","content":p})
-                with st.spinner("Ustad is thinking… 🤔"):
-                    reply = call_ai(st.session_state.chat_messages, build_system(u, sub, lvl))
-                if reply.startswith("__"):
-                    st.error("⚠️ Could not reach Ustad. Please check your API key in Streamlit secrets.")
-                else:
-                    st.session_state.chat_messages.append({"role":"assistant","content":reply})
-                    bump_stats(sub)
-                    save_chat_session(sub, lvl)
-                st.rerun()
+    CARD_ICONS = ["📐","⚡","🧮","💡","📖","🔬","✏️","🌍"]
+    if prompts:
+        st.markdown("<div style=\"font-size:10px;font-weight:800;color:#9BA3B0;"
+                    "text-transform:uppercase;letter-spacing:1px;margin-bottom:6px\">"
+                    "⚡ Topic Cards — tap to ask</div>", unsafe_allow_html=True)
+        card_cols = st.columns(len(prompts))
+        for i, (col, p) in enumerate(zip(card_cols, prompts)):
+            icon = CARD_ICONS[i % len(CARD_ICONS)]
+            with col:
+                if st.button(f"{icon} {p}", key=f"tc_{i}_{sub}", use_container_width=True):
+                    st.session_state.chat_messages.append({"role":"user","content":p})
+                    with st.spinner("Ustad is thinking… 🤔"):
+                        reply = call_ai(st.session_state.chat_messages,
+                                        build_system(u, sub, lvl))
+                    if reply.startswith("__"):
+                        st.session_state.chat_messages.pop()
+                        st.error("⚠️ Could not reach Ustad — check API key.")
+                    else:
+                        st.session_state.chat_messages.append(
+                            {"role":"assistant","content":reply})
+                        bump_stats(sub); save_chat_session(sub, lvl)
+                    st.rerun()
 
-    # ── Ask input form ────────────────────────────────────────
-    st.markdown("<div style=\"height:4px\"></div>", unsafe_allow_html=True)
-    with st.form("chat_form", clear_on_submit=True):
-        ph  = "یہاں سوال لکھیں..." if sub == "Urdu" else f"Type any question — {sub}, Maths, Science, English, anything…"
-        txt = st.text_area(
-            "Ask Ustad",
-            placeholder=ph,
-            height=80,
-            label_visibility="collapsed",
-            key="chat_input_area"
+    # ── 5. Upload homework image ──────────────────────────────
+    with st.expander("📸  Upload Homework Image — let Ustad solve it", expanded=False):
+        st.markdown(
+            "<div class=\"upload-strip\">"
+            "<div class=\"upload-icon\">📷</div>"
+            "<div><div class=\"upload-title\">Photo Homework Solver</div>"
+            "<div class=\"upload-sub\">Take a photo of any question — Ustad reads, solves and explains step by step.</div>"
+            "</div></div>",
+            unsafe_allow_html=True
         )
-        btn_c1, btn_c2, btn_c3 = st.columns([3, 1, 1])
-        with btn_c1:
-            send = st.form_submit_button("📤  Send to Ustad", use_container_width=True, type="primary")
-        with btn_c2:
-            clear = st.form_submit_button("🗑️  Clear", use_container_width=True)
-        with btn_c3:
-            st.form_submit_button("📚  Syllabus", use_container_width=True, disabled=True)
+        hw_img = st.file_uploader(
+            "Upload homework photo (JPG/PNG)",
+            type=["jpg","jpeg","png"],
+            key="hw_img_upload",
+            label_visibility="collapsed"
+        )
+        img_col1, img_col2 = st.columns([3,1])
+        with img_col1:
+            extra_note = st.text_input(
+                "Extra note (optional)",
+                placeholder="e.g. This is a Maths question for Grade 8…",
+                key="hw_img_note",
+                label_visibility="collapsed"
+            )
+        with img_col2:
+            solve_btn = st.button("🔍 Solve It", key="hw_solve_btn",
+                                  use_container_width=True, type="primary")
+
+        if hw_img and solve_btn:
+            img_bytes  = hw_img.read()
+            img_b64    = base64.standard_b64encode(img_bytes).decode("utf-8")
+            media_type = "image/jpeg" if hw_img.type in ("image/jpg","image/jpeg") else "image/png"
+
+            note_txt = f" Additional context: {extra_note}" if extra_note.strip() else ""
+            prompt   = (
+                "Please look at this homework image carefully."
+                + note_txt
+                + "\n\n1. State the question(s) you can see.\n"
+                "2. Solve each question fully with clear step-by-step working.\n"
+                "3. Give a short explanation of the method used.\n"
+                "Be encouraging and suitable for a school student."
+            )
+
+            # Show the uploaded image in the chat as a user turn label
+            st.session_state.chat_messages.append({
+                "role":"user",
+                "content": f"📸 [Uploaded homework image]{' — '+extra_note if extra_note.strip() else ''}"
+            })
+
+            vision_msgs = [{
+                "role": "user",
+                "content": [
+                    {"type":"image","source":{
+                        "type":"base64","media_type": media_type,"data": img_b64}},
+                    {"type":"text","text": prompt}
+                ]
+            }]
+
+            with st.spinner("🔍 Ustad is reading your homework…"):
+                try:
+                    r = client.messages.create(
+                        model="claude-haiku-4-5-20251001",
+                        max_tokens=1500,
+                        system=build_system(u, sub, lvl),
+                        messages=vision_msgs
+                    )
+                    img_reply = r.content[0].text if r.content else "__EMPTY_RESPONSE__"
+                except Exception as e:
+                    img_reply = f"__API_ERROR__: {e}"
+
+            if img_reply.startswith("__"):
+                st.session_state.chat_messages.pop()
+                st.error(f"⚠️ Could not analyse image: {img_reply}")
+            else:
+                st.session_state.chat_messages.append(
+                    {"role":"assistant","content":img_reply,"tag":"image"})
+                bump_stats(sub); save_chat_session(sub, lvl)
+            st.rerun()
+
+    # ── 6. Text input form ────────────────────────────────────
+    with st.form("chat_form", clear_on_submit=True):
+        ph = ("یہاں سوال لکھیں — Ustad آپ کی مدد کرے گا…"
+              if sub == "Urdu"
+              else f"Ask Ustad anything — {sub}, history, science, Maths, English… any subject!")
+        txt = st.text_area("Ask Ustad", placeholder=ph, height=72,
+                           label_visibility="collapsed", key="chat_input_area")
+        fc1, fc2 = st.columns([4, 1])
+        with fc1:
+            send  = st.form_submit_button("📤  Ask Ustad", use_container_width=True, type="primary")
+        with fc2:
+            clear = st.form_submit_button("🗑️ Clear", use_container_width=True)
 
         if clear:
             st.session_state.chat_messages = []
@@ -2079,46 +2080,40 @@ def page_chat():
             st.rerun()
 
         if send and txt.strip():
-            # Check daily limit
             _ok, used, limit = check_daily_limit(u)
             if not _ok:
-                st.error(f"⏰ You've reached today's limit of {limit} questions. Come back tomorrow — or upgrade to Pro for unlimited!")
+                st.error(f"⏰ Daily limit of {limit} questions reached. Come back tomorrow or upgrade to Pro!")
             else:
                 st.session_state.chat_messages.append({"role":"user","content":txt.strip()})
                 with st.spinner("🎓 Ustad is thinking…"):
-                    reply = call_ai(st.session_state.chat_messages, build_system(u, sub, lvl))
+                    reply = call_ai(st.session_state.chat_messages,
+                                    build_system(u, sub, lvl))
                 if reply.startswith("__"):
                     st.session_state.chat_messages.pop()
                     if "API_KEY_MISSING" in reply:
-                        st.error("🔑 API key not configured. Add ANTHROPIC_API_KEY or CLAUDE_API_KEY to Streamlit secrets.")
+                        st.error("🔑 API key missing — add ANTHROPIC_API_KEY to Streamlit secrets.")
                     else:
                         st.error(f"⚠️ Ustad couldn't respond: {reply}")
                 else:
                     st.session_state.chat_messages.append({"role":"assistant","content":reply})
-                    bump_stats(sub)
-                    save_chat_session(sub, lvl)
+                    bump_stats(sub); save_chat_session(sub, lvl)
                 st.rerun()
 
-    # ── Daily limit indicator ─────────────────────────────────
+    # ── 7. Daily limit bar ────────────────────────────────────
     _ok, used, limit = check_daily_limit(u)
     left  = max(0, limit - used)
-    pct   = int((used / max(limit,1)) * 100)
-    bar_color = "#1C7C54" if pct < 70 else "#D97706" if pct < 90 else "#DC3545"
+    pct   = int(used / max(limit,1) * 100)
+    bc    = "#1C7C54" if pct < 70 else "#D97706" if pct < 90 else "#DC3545"
     st.markdown(
-        "<div class=\"daily-limit-bar\">"
-        f"<span>💬</span>"
-        "<div style=\"flex:1\">"
-        "<div style=\"display:flex;justify-content:space-between;margin-bottom:4px\">"
-        f"<span style=\"font-weight:700\">Daily Questions: {used}/{limit}</span>"
-        f"<span style=\"color:#9BA3B0\">{left} left today</span>"
-        "</div>"
-        "<div style=\"background:#D1FAE5;border-radius:99px;height:5px;overflow:hidden\">"
-        f"<div style=\"width:{pct}%;height:5px;border-radius:99px;background:{bar_color};transition:width .4s\"></div>"
-        "</div></div>"
-        "</div>",
+        "<div class=\"dlimit\"><span>💬</span><div style=\"flex:1\">"
+        "<div style=\"display:flex;justify-content:space-between;margin-bottom:3px\">"
+        f"<span>Daily questions: <b>{used}/{limit}</b></span>"
+        f"<span style=\"color:#9BA3B0\">{left} left today</span></div>"
+        "<div style=\"background:#D1FAE5;border-radius:99px;height:4px;overflow:hidden\">"
+        f"<div style=\"width:{pct}%;height:4px;border-radius:99px;background:{bc}\"></div>"
+        "</div></div></div>",
         unsafe_allow_html=True
     )
-
 
 
 # ─────────────────────────────────────────────────────────────────

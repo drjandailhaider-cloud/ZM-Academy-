@@ -2351,114 +2351,57 @@ def page_chat():
     # ── 🔊 Web Speech — use st.components.v1.html so <script> actually runs ──
     # st.markdown strips all <script> tags; components.v1.html renders in an
     # iframe where scripts execute normally and postMessage lets it reach parent.
-    safe_preview = (preview
-                    .replace("\\", "\\\\")
-                    .replace("`", "'")
-                    .replace("\n", " ")
-                    .replace('"', "'"))
+    # Encode preview as JSON so ANY characters are safe inside JS
+    import json, streamlit.components.v1 as components
+    safe_text_js = json.dumps(preview)   # produces a quoted, escaped JS string literal
 
-    import streamlit.components.v1 as components
-    components.html(f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-    <style>
-      body {{ margin:0; padding:0; background:transparent; font-family:sans-serif; }}
-      #speakBtn {{
-        display:inline-flex; align-items:center; gap:6px;
-        background:linear-gradient(135deg,#1C7C54,#25A870);
-        color:#fff; border:none; border-radius:99px;
-        padding:8px 20px; font-size:13px; font-weight:700;
-        cursor:pointer; box-shadow:0 3px 12px rgba(28,124,84,0.35);
-        transition:all .15s; letter-spacing:.3px;
-      }}
-      #speakBtn:hover {{ transform:translateY(-1px); box-shadow:0 5px 18px rgba(28,124,84,0.45); }}
-      #speakBtn:active {{ transform:translateY(0); }}
-      #status {{ margin-top:5px; font-size:11px; color:#888; }}
-    </style>
-    </head>
-    <body>
-      <button id="speakBtn" onclick="ustadSpeak()">🔊 Hear Ustad</button>
-      <div id="status"></div>
-    <script>
-      var TEXT = `{safe_preview}`;
-      var speaking = false;
-
-      function ustadSpeak() {{
-        var synth = window.speechSynthesis;
-        if (!synth) {{ document.getElementById('status').textContent='Not supported'; return; }}
-
-        if (speaking) {{
-          synth.cancel();
-          speaking = false;
-          document.getElementById('speakBtn').textContent = '🔊 Hear Ustad';
-          document.getElementById('status').textContent = '';
-          return;
-        }}
-
-        synth.cancel();
-        var utter = new SpeechSynthesisUtterance(TEXT);
-        utter.rate   = 0.9;
-        utter.pitch  = 0.8;
-        utter.volume = 1.0;
-        utter.lang   = 'en-US';
-
-        // Pick best male voice
-        function pickVoice() {{
-          var voices = synth.getVoices();
-          return voices.find(v => /david|james|daniel|mark|guy|male/i.test(v.name) && /en/i.test(v.lang))
-              || voices.find(v => /en-US/i.test(v.lang) && v.name.match(/^[A-Z]/))
-              || voices.find(v => /en/i.test(v.lang))
-              || (voices.length ? voices[0] : null);
-        }}
-
-        var v = pickVoice();
-        if (!v && synth.getVoices().length === 0) {{
-          // Voices not loaded yet — wait
-          synth.onvoiceschanged = function() {{
-            var v2 = pickVoice();
-            if (v2) utter.voice = v2;
-            doSpeak(utter);
-          }};
-        }} else {{
-          if (v) utter.voice = v;
-          doSpeak(utter);
-        }}
-      }}
-
-      function doSpeak(utter) {{
-        var btn = document.getElementById('speakBtn');
-        var sta = document.getElementById('status');
-        speaking = true;
-        btn.textContent = '⏹ Stop';
-        sta.textContent = '🎙️ Ustad is speaking…';
-
-        utter.onend = function() {{
-          speaking = false;
-          btn.textContent = '🔊 Hear Ustad';
-          sta.textContent = '✓ Done';
-          setTimeout(function(){{ sta.textContent=''; }}, 2000);
-        }};
-        utter.onerror = function(e) {{
-          speaking = false;
-          btn.textContent = '🔊 Hear Ustad';
-          sta.textContent = '⚠ Error: ' + e.error;
-        }};
-
-        window.speechSynthesis.speak(utter);
-      }}
-
-      // Chrome bug fix: speech stops after ~15s unless we do this
-      var resumeTimer = setInterval(function() {{
-        if (window.speechSynthesis.speaking) {{
-          window.speechSynthesis.pause();
-          window.speechSynthesis.resume();
-        }}
-      }}, 10000);
-    </script>
-    </body>
-    </html>
-    """, height=60)
+    components.html(
+        """<!DOCTYPE html><html><head><style>
+        body{margin:0;padding:4px 0;background:transparent;font-family:sans-serif}
+        #sb{display:inline-flex;align-items:center;gap:6px;
+            background:linear-gradient(135deg,#1C7C54,#25A870);
+            color:#fff;border:none;border-radius:99px;
+            padding:7px 18px;font-size:13px;font-weight:700;
+            cursor:pointer;box-shadow:0 3px 12px rgba(28,124,84,.35);
+            transition:all .15s;letter-spacing:.3px}
+        #sb:hover{transform:translateY(-1px);box-shadow:0 5px 18px rgba(28,124,84,.45)}
+        #st{margin-top:4px;font-size:11px;color:#888}
+        </style></head><body>
+        <button id="sb" onclick="go()">🔊 Hear Ustad</button>
+        <div id="st"></div>
+        <script>
+        var TXT=""" + safe_text_js + """;
+        var busy=false;
+        function go(){
+          var syn=window.speechSynthesis;
+          if(!syn){document.getElementById('st').textContent='Not supported';return;}
+          if(busy){syn.cancel();busy=false;document.getElementById('sb').textContent='🔊 Hear Ustad';document.getElementById('st').textContent='';return;}
+          syn.cancel();
+          var u=new SpeechSynthesisUtterance(TXT);
+          u.rate=0.9;u.pitch=0.82;u.volume=1.0;u.lang='en-US';
+          function pv(){
+            var vv=syn.getVoices();
+            return vv.find(function(v){return /david|james|daniel|mark|guy/i.test(v.name)&&/en/i.test(v.lang);})
+                ||vv.find(function(v){return /en-US/i.test(v.lang);})
+                ||vv.find(function(v){return /en/i.test(v.lang);})
+                ||(vv.length?vv[0]:null);
+          }
+          function speak(){
+            var v=pv(); if(v) u.voice=v;
+            busy=true;
+            document.getElementById('sb').textContent='⏹ Stop';
+            document.getElementById('st').textContent='🎙️ Speaking…';
+            u.onend=function(){busy=false;document.getElementById('sb').textContent='🔊 Hear Ustad';document.getElementById('st').textContent='✓ Done';setTimeout(function(){document.getElementById('st').textContent='';},2000);};
+            u.onerror=function(e){busy=false;document.getElementById('sb').textContent='🔊 Hear Ustad';document.getElementById('st').textContent='Error: '+e.error;};
+            syn.speak(u);
+          }
+          if(syn.getVoices().length===0){syn.onvoiceschanged=function(){speak();};}
+          else{speak();}
+        }
+        setInterval(function(){if(window.speechSynthesis.speaking){window.speechSynthesis.pause();window.speechSynthesis.resume();}},10000);
+        </script></body></html>""",
+        height=58
+    )
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # SELECTION ROW — dropdowns update PENDING only

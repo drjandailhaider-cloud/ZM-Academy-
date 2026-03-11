@@ -3372,9 +3372,9 @@ def page_image():
 # SYLLABUS
 # ─────────────────────────────────────────────────────────────────
 def page_syllabus():
-    # ─────────────────────────────────────────────────────────────
-    # HELPERS (local, page-scoped)
-    # ─────────────────────────────────────────────────────────────
+    # ══════════════════════════════════════════════════════════════
+    # LOCAL HELPERS
+    # ══════════════════════════════════════════════════════════════
     SUBJ_KEY_MAP = {
         "Mathematics": "Maths", "Maths": "Maths",
         "Physics": "Physics", "Chemistry": "Chemistry",
@@ -3385,81 +3385,108 @@ def page_syllabus():
     }
 
     def _save_user(eu):
-        """Persist updated user record and refresh session state."""
         users = load_json(USERS_FILE)
         users[eu["email"]] = eu
         save_json(USERS_FILE, users)
         st.session_state.user = eu
 
     def _ensure_fields(u):
-        """Back-fill fields that may be absent in older user records."""
         dirty = False
         if "studied_topics" not in u:
             u["studied_topics"] = {}; dirty = True
         if "topic_dates" not in u:
-            # topic_dates[syl_key] = {"Unit::Topic": "YYYY-MM-DD", ...}
             u["topic_dates"] = {}; dirty = True
         if dirty:
             _save_user(u)
         return u
 
-    def _pace_topics_per_day(u, syl_key):
-        """
-        Return estimated topics-per-day based on historical activity.
-        Uses the dates each topic was first marked done for the current
-        subject+grade key.  Falls back to 2 topics/day if no history.
-        """
-        topic_dates = u.get("topic_dates", {}).get(syl_key, {})
-        if not topic_dates:
-            return 2.0  # default assumption
-        dates_used = sorted(set(topic_dates.values()))
-        if len(dates_used) < 2:
-            # Only 1 active day — use that day's count
-            return max(1.0, len(topic_dates))
+    def _pace_per_day(u, syl_key):
+        td = u.get("topic_dates", {}).get(syl_key, {})
+        if not td:
+            return 2.0
+        dates = sorted(set(td.values()))
+        if len(dates) < 2:
+            return max(1.0, float(len(td)))
         try:
-            d0 = datetime.date.fromisoformat(dates_used[0])
-            d1 = datetime.date.fromisoformat(dates_used[-1])
-            span = max(1, (d1 - d0).days)
-            return max(0.5, len(topic_dates) / span)
+            span = max(1, (datetime.date.fromisoformat(dates[-1])
+                          - datetime.date.fromisoformat(dates[0])).days)
+            return max(0.5, len(td) / span)
         except Exception:
             return 2.0
 
-    def _days_to_finish(remaining_count, pace):
-        if pace <= 0 or remaining_count <= 0:
-            return 0
-        return max(1, round(remaining_count / pace))
+    def _toggle_done(u, syl_key, topic_key):
+        """Toggle a topic's completion state; returns updated user object."""
+        users    = load_json(USERS_FILE)
+        eu       = _ensure_fields(users.get(u["email"], u))
+        st_map   = eu.get("studied_topics", {})
+        tlist    = list(st_map.get(syl_key, []))
+        td_map   = eu.get("topic_dates", {})
+        td_syl   = dict(td_map.get(syl_key, {}))
+        today    = datetime.date.today().isoformat()
+        if topic_key in tlist:
+            tlist.remove(topic_key)
+            td_syl.pop(topic_key, None)
+        else:
+            tlist.append(topic_key)
+            td_syl[topic_key] = today
+        st_map[syl_key]      = tlist
+        td_map[syl_key]      = td_syl
+        eu["studied_topics"] = st_map
+        eu["topic_dates"]    = td_map
+        eu, new_b = check_badges(eu)
+        _save_user(eu)
+        for b in new_b:
+            st.toast(f"🏆 Badge: {b['icon']} {b['name']}!", icon="🎉")
+        return eu
 
-    # ─────────────────────────────────────────────────────────────
-    # SELECTOR ROW  — Curriculum | Grade | Subject in one row
-    # ─────────────────────────────────────────────────────────────
-    u = st.session_state.user
-    u = _ensure_fields(u)
+    # ══════════════════════════════════════════════════════════════
+    # SESSION STATE KEYS for this page
+    #   syl_view        : "list" | "detail"
+    #   syl_topic_idx   : int  — flat index into all_topics list
+    #   syl_detail_content : str | None  — cached AI explanation
+    #   syl_detail_for  : str | None  — topic_key the content belongs to
+    # ══════════════════════════════════════════════════════════════
+    for _k, _v in [("syl_view", "list"), ("syl_topic_idx", 0),
+                   ("syl_detail_content", None), ("syl_detail_for", None)]:
+        if _k not in st.session_state:
+            st.session_state[_k] = _v
 
-    st.markdown("<div class=\"section-header blue\">📚 My Syllabus</div>", unsafe_allow_html=True)
+    # ══════════════════════════════════════════════════════════════
+    # SELECTOR ROW  ── Curriculum | Grade | Subject
+    # ══════════════════════════════════════════════════════════════
+    u = _ensure_fields(st.session_state.user)
 
     sc1, sc2, sc3 = st.columns(3)
     with sc1:
-        curriculum = st.selectbox("Curriculum", ["Cambridge (Pakistan)"], key="syl_curr",
-                                  label_visibility="visible")
+        curriculum = st.selectbox("Curriculum", ["Cambridge (Pakistan)"],
+                                  key="syl_curr", label_visibility="visible")
     with sc2:
-        default_grade     = normalise_level(u.get("grade", "Grade 8"))
-        default_grade_idx = get_level_index(default_grade)
-        sel_grade = st.selectbox("Grade", LEVELS, index=default_grade_idx,
+        def_grade     = normalise_level(u.get("grade", "Grade 8"))
+        def_grade_idx = get_level_index(def_grade)
+        sel_grade = st.selectbox("Grade", LEVELS, index=def_grade_idx,
                                  key="syl_grade_sel", label_visibility="visible")
     with sc3:
-        available_subjects = CAMBRIDGE_SUBJECTS.get(sel_grade, list(SUBJECTS.keys()))
-        sel_sub = st.selectbox("Subject", available_subjects,
+        avail_subs = CAMBRIDGE_SUBJECTS.get(sel_grade, list(SUBJECTS.keys()))
+        sel_sub = st.selectbox("Subject", avail_subs,
                                key="syl_sub_sel", label_visibility="visible")
 
     st.session_state.syl_subject = sel_sub
 
-    # Persist grade change to user record
+    # Persist grade change
     if sel_grade != normalise_level(u.get("grade", "")):
-        users_tmp = load_json(USERS_FILE)
-        if u["email"] in users_tmp:
-            users_tmp[u["email"]]["grade"] = sel_grade
-            save_json(USERS_FILE, users_tmp)
+        _tmp = load_json(USERS_FILE)
+        if u["email"] in _tmp:
+            _tmp[u["email"]]["grade"] = sel_grade
+            save_json(USERS_FILE, _tmp)
             st.session_state.user["grade"] = sel_grade
+
+    # When selectors change, reset to list view
+    _sel_sig = f"{sel_grade}|{sel_sub}"
+    if st.session_state.get("_syl_sel_sig") != _sel_sig:
+        st.session_state["_syl_sel_sig"] = _sel_sig
+        st.session_state.syl_view        = "list"
+        st.session_state.syl_detail_content = None
+        st.session_state.syl_detail_for     = None
 
     # ── Subject metadata ──────────────────────────────────────────
     subj_key  = SUBJ_KEY_MAP.get(sel_sub, "Maths")
@@ -3467,357 +3494,289 @@ def page_syllabus():
     sub_color = info["color"]
     sub_emoji = info["emoji"]
 
-    # ── Load syllabus units ───────────────────────────────────────
+    # ── Load units ────────────────────────────────────────────────
     curr = CAMBRIDGE_CURRICULUM.get(subj_key, {}).get(sel_grade, {})
     if not curr:
-        for alias_old, alias_new in _LEVEL_ALIAS.items():
-            if alias_new == sel_grade:
-                curr = CAMBRIDGE_CURRICULUM.get(subj_key, {}).get(alias_old, {})
-                if curr:
-                    break
+        for _ao, _an in _LEVEL_ALIAS.items():
+            if _an == sel_grade:
+                curr = CAMBRIDGE_CURRICULUM.get(subj_key, {}).get(_ao, {})
+                if curr: break
 
     board = curr.get("board", "Cambridge / Pakistan National Curriculum")
     units = curr.get("units", [])
 
     if not units:
-        st.info(f"📋 No pre-loaded syllabus for **{sel_sub} — {sel_grade}**. Ask Ustad to explore topics!")
-        if st.button(f"💬 Ask Ustad about {sel_sub} {sel_grade}", use_container_width=True, type="primary"):
+        st.info(f"📋 No pre-loaded syllabus for **{sel_sub} — {sel_grade}**.")
+        if st.button(f"💬 Ask Ustad about {sel_sub} {sel_grade}",
+                     use_container_width=True, type="primary"):
             st.session_state.subject = subj_key
-            st.session_state.chat_messages = [{
-                "role": "user",
-                "content": (f"Give me a full overview of the {sel_sub} syllabus for {sel_grade} "
-                            f"in Pakistan. List all main units and topics I need to study.")
-            }]
-            st.session_state.page = "chat"
-            st.rerun()
+            st.session_state.chat_messages = [{"role": "user", "content":
+                f"Give me a full overview of the {sel_sub} syllabus for {sel_grade} "
+                f"in Pakistan. List all main units and topics."}]
+            st.session_state.page = "chat"; st.rerun()
         return
 
-    # ─────────────────────────────────────────────────────────────
-    # COVERAGE CALCULATIONS
-    # ─────────────────────────────────────────────────────────────
-    syl_key      = f"{subj_key}_{sel_grade}"
-    studied_map  = u.get("studied_topics", {})
-    done_topics  = studied_map.get(syl_key, [])          # list of "Unit::Topic" strings
-    all_topic_keys = [f"{un['unit']}::{t}" for un in units for t in un["topics"]]
-    total_topics   = len(all_topic_keys)
-    done_set       = set(done_topics)
-    done_count     = len([tk for tk in all_topic_keys if tk in done_set])
-    remaining_keys = [tk for tk in all_topic_keys if tk not in done_set]
-    remaining_count = len(remaining_keys)
-    pct = int((done_count / max(total_topics, 1)) * 100)
+    # ── Flat topic list: [{unit_name, topic, topic_key, unit_idx, topic_idx_in_unit}]
+    all_topics = []
+    for ui, unit in enumerate(units):
+        for ti, topic in enumerate(unit["topics"]):
+            all_topics.append({
+                "unit_name":       unit["unit"],
+                "topic":           topic,
+                "topic_key":       f"{unit['unit']}::{topic}",
+                "unit_idx":        ui,
+                "topic_idx_local": ti,
+            })
 
-    # Pace + estimated completion
-    pace      = _pace_topics_per_day(u, syl_key)
-    days_left = _days_to_finish(remaining_count, pace)
-    finish_date = (datetime.date.today() + datetime.timedelta(days=days_left)).strftime("%d %b %Y")
+    # ── Coverage stats ────────────────────────────────────────────
+    syl_key     = f"{subj_key}_{sel_grade}"
+    done_set    = set(u.get("studied_topics", {}).get(syl_key, []))
+    total       = len(all_topics)
+    done_count  = sum(1 for t in all_topics if t["topic_key"] in done_set)
+    remaining   = total - done_count
+    pct         = int(done_count / max(total, 1) * 100)
+    pace        = _pace_per_day(u, syl_key)
+    days_left   = max(1, round(remaining / pace)) if remaining > 0 else 0
+    finish_str  = (datetime.date.today() + datetime.timedelta(days=days_left)).strftime("%d %b %Y") \
+                   if days_left > 0 else "Done!"
+    pace_str    = f"{pace:.1f} topics/day" if pace != int(pace) else f"{int(pace)} topics/day"
+    pace_src    = "📈 your history" if u.get("topic_dates", {}).get(syl_key) else "📌 default"
 
-    # ─────────────────────────────────────────────────────────────
-    # ANALYTICS DASHBOARD  (compact, 3 metric cards + progress bar)
-    # ─────────────────────────────────────────────────────────────
-    pct_bar_color = (
-        "#059669" if pct >= 80 else
-        "#F59E0B" if pct >= 40 else
-        sub_color
-    )
+    pbar_color  = "#059669" if pct >= 80 else "#F59E0B" if pct >= 40 else sub_color
+    eta_label   = "🏆 Done!" if days_left == 0 else (f"{days_left}d left")
 
-    if days_left == 0 and remaining_count == 0:
-        eta_label = "🏆 Complete!"
-        eta_sub   = "All topics covered"
-    elif days_left == 1:
-        eta_label = "1 day"
-        eta_sub   = f"Est. finish: {finish_date}"
-    else:
-        eta_label = f"{days_left} days"
-        eta_sub   = f"Est. finish: {finish_date}"
-
-    pace_display = f"{pace:.1f} topics/day" if pace != int(pace) else f"{int(pace)} topics/day"
-    pace_note    = "📈 from your history" if u.get("topic_dates", {}).get(syl_key) else "📌 default pace"
-
+    # ── Compact progress strip ────────────────────────────────────
     st.markdown(f"""
-    <div style="background:#fff;border-radius:16px;padding:18px 20px;
-        box-shadow:0 2px 12px rgba(0,0,0,0.07);margin:10px 0 4px">
-        <div style="display:flex;justify-content:space-between;align-items:center;
-            font-size:13px;font-weight:700;color:#555;margin-bottom:8px">
-            <span>{sub_emoji} {sel_sub} &nbsp;·&nbsp; {sel_grade} &nbsp;·&nbsp;
-                <span style="color:#888;font-weight:500">{curriculum}</span>
-            </span>
-            <span style="color:{pct_bar_color};font-size:15px">{pct}% Covered</span>
-        </div>
-        <div style="background:#F3F4F6;border-radius:8px;height:10px;overflow:hidden;margin-bottom:14px">
-            <div style="width:{pct}%;background:{pct_bar_color};height:10px;
-                border-radius:8px;transition:width .4s ease"></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-            <div style="background:{sub_color}0f;border-radius:12px;padding:12px 14px;
-                border:1px solid {sub_color}2a;text-align:center">
-                <div style="font-size:22px;font-weight:900;color:{sub_color}">{done_count}</div>
-                <div style="font-size:11px;color:#666;margin-top:2px">Topics Completed</div>
-                <div style="font-size:10px;color:#aaa">out of {total_topics}</div>
+    <div style="background:#fff;border-radius:12px;padding:12px 16px;
+        box-shadow:0 1px 8px rgba(0,0,0,0.06);margin:6px 0 10px;
+        display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <div style="font-size:20px">{sub_emoji}</div>
+        <div style="flex:1;min-width:160px">
+            <div style="display:flex;justify-content:space-between;
+                font-size:12px;font-weight:700;color:#555;margin-bottom:4px">
+                <span>{sel_sub} · {sel_grade}</span>
+                <span style="color:{pbar_color}">{pct}% covered</span>
             </div>
-            <div style="background:#FFF7ED;border-radius:12px;padding:12px 14px;
-                border:1px solid #FED7AA;text-align:center">
-                <div style="font-size:22px;font-weight:900;color:#EA580C">{remaining_count}</div>
-                <div style="font-size:11px;color:#666;margin-top:2px">Topics Remaining</div>
-                <div style="font-size:10px;color:#aaa">&nbsp;</div>
+            <div style="background:#F3F4F6;border-radius:6px;height:7px;overflow:hidden">
+                <div style="width:{pct}%;background:{pbar_color};
+                    height:7px;border-radius:6px"></div>
             </div>
-            <div style="background:#F0FDF4;border-radius:12px;padding:12px 14px;
-                border:1px solid #BBF7D0;text-align:center">
-                <div style="font-size:22px;font-weight:900;color:#059669">{eta_label}</div>
-                <div style="font-size:11px;color:#666;margin-top:2px">Est. to Finish</div>
-                <div style="font-size:10px;color:#aaa">{pace_display} · {pace_note}</div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <div style="background:{sub_color}0f;border:1px solid {sub_color}2a;
+                border-radius:8px;padding:5px 12px;text-align:center;min-width:60px">
+                <div style="font-size:16px;font-weight:900;color:{sub_color}">{done_count}</div>
+                <div style="font-size:10px;color:#888">done</div>
+            </div>
+            <div style="background:#FFF7ED;border:1px solid #FED7AA;
+                border-radius:8px;padding:5px 12px;text-align:center;min-width:60px">
+                <div style="font-size:16px;font-weight:900;color:#EA580C">{remaining}</div>
+                <div style="font-size:10px;color:#888">left</div>
+            </div>
+            <div style="background:#F0FDF4;border:1px solid #BBF7D0;
+                border-radius:8px;padding:5px 12px;text-align:center;min-width:60px">
+                <div style="font-size:14px;font-weight:900;color:#059669">{eta_label}</div>
+                <div style="font-size:10px;color:#888">{pace_str}</div>
             </div>
         </div>
     </div>""", unsafe_allow_html=True)
 
-    # ─────────────────────────────────────────────────────────────
-    # COMPLETED / REMAINING TOPIC SUMMARY  (two columns, compact)
-    # ─────────────────────────────────────────────────────────────
-    if done_count > 0 or remaining_count > 0:
-        st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
-        sumcol1, sumcol2 = st.columns(2)
+    # ══════════════════════════════════════════════════════════════
+    # VIEW: TOPIC DETAIL
+    # ══════════════════════════════════════════════════════════════
+    if st.session_state.syl_view == "detail":
+        idx     = st.session_state.syl_topic_idx
+        idx     = max(0, min(idx, total - 1))
+        t_info  = all_topics[idx]
+        t_key   = t_info["topic_key"]
+        t_name  = t_info["topic"]
+        u_name  = t_info["unit_name"]
+        is_done = t_key in done_set
 
-        # Completed list
-        with sumcol1:
-            done_flat = [tk.split("::", 1)[1] for tk in all_topic_keys if tk in done_set]
-            if done_flat:
-                chips = "".join(
-                    f"<span style='display:inline-block;background:#D1FAE5;color:#065F46;"
-                    f"border-radius:20px;padding:3px 10px;font-size:11px;margin:2px 3px 2px 0;"
-                    f"font-weight:600'>✅ {t}</span>"
-                    for t in done_flat
-                )
-                st.markdown(
-                    f"<div style='background:#F0FDF4;border-radius:12px;padding:12px 14px;"
-                    f"border:1px solid #BBF7D0'>"
-                    f"<div style='font-size:12px;font-weight:700;color:#059669;margin-bottom:7px'>"
-                    f"✅ Completed ({done_count})</div>{chips}</div>",
-                    unsafe_allow_html=True
-                )
-            else:
-                st.markdown(
-                    "<div style='background:#F0FDF4;border-radius:12px;padding:12px 14px;"
-                    "border:1px solid #BBF7D0;font-size:12px;color:#666'>"
-                    "No topics completed yet — mark topics below!</div>",
-                    unsafe_allow_html=True
-                )
+        # ── Navigation bar ────────────────────────────────────────
+        nav1, nav2, nav3 = st.columns([2, 4, 2])
+        with nav1:
+            if st.button("◀ Back", key="syl_back", use_container_width=True):
+                st.session_state.syl_view = "list"
+                st.rerun()
+        with nav2:
+            st.markdown(
+                f"<div style='text-align:center;font-size:12px;color:#888;"
+                f"padding:6px 0'>{idx+1} / {total} &nbsp;·&nbsp; {u_name}</div>",
+                unsafe_allow_html=True
+            )
+        with nav3:
+            next_disabled = (idx >= total - 1)
+            if st.button("Next ▶", key="syl_next", use_container_width=True,
+                         disabled=next_disabled):
+                st.session_state.syl_topic_idx    = idx + 1
+                st.session_state.syl_detail_content = None
+                st.session_state.syl_detail_for     = None
+                st.rerun()
 
-        # Remaining list
-        with sumcol2:
-            rem_flat = [tk.split("::", 1)[1] for tk in all_topic_keys if tk not in done_set]
-            if rem_flat:
-                chips = "".join(
-                    f"<span style='display:inline-block;background:#FFF7ED;color:#92400E;"
-                    f"border-radius:20px;padding:3px 10px;font-size:11px;margin:2px 3px 2px 0;"
-                    f"font-weight:500'>📖 {t}</span>"
-                    for t in rem_flat
-                )
-                st.markdown(
-                    f"<div style='background:#FFF7ED;border-radius:12px;padding:12px 14px;"
-                    f"border:1px solid #FED7AA'>"
-                    f"<div style='font-size:12px;font-weight:700;color:#EA580C;margin-bottom:7px'>"
-                    f"📖 Remaining ({remaining_count})</div>{chips}</div>",
-                    unsafe_allow_html=True
-                )
-            else:
-                st.markdown(
-                    "<div style='background:#FFF7ED;border-radius:12px;padding:12px 14px;"
-                    "border:1px solid #FED7AA;font-size:12px;color:#666'>"
-                    "🏆 All topics completed! Great work!</div>",
-                    unsafe_allow_html=True
-                )
+        # ── Topic header ──────────────────────────────────────────
+        done_bg  = "#F0FDF4" if is_done else "#fff"
+        done_bdr = "#6EE7B7" if is_done else f"{sub_color}44"
+        st.markdown(f"""
+        <div style="background:{done_bg};border:2px solid {done_bdr};
+            border-radius:14px;padding:14px 18px;margin:6px 0 12px">
+            <div style="font-size:11px;font-weight:600;color:{sub_color};
+                text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">
+                {u_name}
+            </div>
+            <div style="font-size:17px;font-weight:800;color:#1A1A2E;line-height:1.35">
+                {'✅ ' if is_done else '📖 '}{t_name}
+            </div>
+        </div>""", unsafe_allow_html=True)
 
-    st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+        # ── Action row ────────────────────────────────────────────
+        a1, a2, a3 = st.columns(3)
+        with a1:
+            done_lbl = "✅ Mark Undone" if is_done else "✓ Mark Complete"
+            if st.button(done_lbl, key="syl_mark", use_container_width=True,
+                         type="primary" if not is_done else "secondary"):
+                u = _toggle_done(u, syl_key, t_key)
+                done_set = set(u.get("studied_topics", {}).get(syl_key, []))
+                st.rerun()
+        with a2:
+            if st.button("💬 Ask Ustad", key="syl_ask_detail", use_container_width=True):
+                st.session_state.subject = subj_key
+                st.session_state.level   = sel_grade
+                st.session_state.chat_messages = [{"role": "user",
+                    "content": f"Explain this topic from my {sel_grade} {sel_sub} "
+                               f"syllabus in detail: {t_name}"}]
+                st.session_state.session_id = None
+                st.session_state.page = "chat"; st.rerun()
+        with a3:
+            load_lbl = "🔄 Reload" if st.session_state.syl_detail_for == t_key else "📖 Load Notes"
+            if st.button(load_lbl, key="syl_load_notes", use_container_width=True):
+                st.session_state.syl_detail_content = None  # force reload
+                st.session_state.syl_detail_for     = None
 
-    # ─────────────────────────────────────────────────────────────
-    # UNIT ACCORDIONS — topic marking, ask, quiz, summary, diagram
-    # ─────────────────────────────────────────────────────────────
+        # ── Load AI explanation (cached per topic_key) ────────────
+        if st.session_state.syl_detail_for != t_key:
+            with st.spinner(f"📖 Loading notes for '{t_name}'…"):
+                raw_exp = call_ai(
+                    [{"role": "user", "content":
+                      f"Explain '{t_name}' from {sel_grade} {sel_sub} ({board}) in Pakistan. "
+                      f"Structure your response as:\n"
+                      f"**Overview** (2-3 sentences)\n"
+                      f"**Key Concepts** (bullet points)\n"
+                      f"**Examples / Worked Problems** (at least 1 concrete example)\n"
+                      f"**Important Facts to Remember** (bullet points)\n"
+                      f"Keep it concise, exam-focused, and suitable for a student."}],
+                    f"You are an expert {sel_sub} teacher for {sel_grade} in Pakistan. "
+                    f"Explain clearly and concisely. Use markdown.", 900
+                )
+            st.session_state.syl_detail_content = raw_exp
+            st.session_state.syl_detail_for     = t_key
+
+        content = st.session_state.syl_detail_content or ""
+        if content.startswith("__API_KEY_MISSING__"):
+            st.warning("⚠️ Add ANTHROPIC_API_KEY to Streamlit secrets to load notes.")
+        elif content.startswith(("__EMPTY_RESPONSE__", "__API_ERROR__:")):
+            st.warning(f"⚠️ Could not load notes: {content}")
+        else:
+            st.markdown(
+                f"<div style='background:#FAFAFA;border-radius:12px;"
+                f"padding:16px 18px;border:1px solid #E5E7EB;"
+                f"font-size:14px;line-height:1.75;color:#1A1A2E;margin-top:4px'>"
+                f"{content}</div>",
+                unsafe_allow_html=True
+            )
+
+        # ── Bottom navigation ─────────────────────────────────────
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+        bn1, bn2, bn3 = st.columns([2, 4, 2])
+        with bn1:
+            if idx > 0:
+                if st.button("◀ Prev Topic", key="syl_prev_bot", use_container_width=True):
+                    st.session_state.syl_topic_idx      = idx - 1
+                    st.session_state.syl_detail_content = None
+                    st.session_state.syl_detail_for     = None
+                    st.rerun()
+        with bn3:
+            if idx < total - 1:
+                if st.button("Next Topic ▶", key="syl_next_bot", use_container_width=True,
+                             type="primary"):
+                    st.session_state.syl_topic_idx      = idx + 1
+                    st.session_state.syl_detail_content = None
+                    st.session_state.syl_detail_for     = None
+                    st.rerun()
+
+        return  # ← don't render list view below
+
+    # ══════════════════════════════════════════════════════════════
+    # VIEW: TOPIC LIST  (default)
+    # ══════════════════════════════════════════════════════════════
     for ui, unit in enumerate(units):
-        unit_topic_keys = [f"{unit['unit']}::{t}" for t in unit["topics"]]
-        unit_done_count = len([tk for tk in unit_topic_keys if tk in done_set])
-        unit_pct  = int((unit_done_count / max(len(unit["topics"]), 1)) * 100)
-        unit_icon = "✅" if unit_pct == 100 else "🔵" if unit_pct > 0 else "⚪"
+        unit_tkeys      = [f"{unit['unit']}::{t}" for t in unit["topics"]]
+        unit_done       = sum(1 for tk in unit_tkeys if tk in done_set)
+        unit_total      = len(unit["topics"])
+        unit_pct        = int(unit_done / max(unit_total, 1) * 100)
+        unit_icon       = "✅" if unit_pct == 100 else "🔵" if unit_pct > 0 else "⚪"
 
         with st.expander(
-            f"{unit_icon}  Unit {ui+1}: {unit['unit']}  ({unit_pct}% done)",
+            f"{unit_icon}  Unit {ui+1}: {unit['unit']}  ({unit_done}/{unit_total})",
             expanded=(ui == 0)
         ):
-            # Unit mini-progress bar
+            # Unit progress bar
             st.markdown(
-                f"<div style='background:#F3F4F6;border-radius:6px;height:6px;"
-                f"overflow:hidden;margin-bottom:12px'>"
-                f"<div style='width:{unit_pct}%;background:{sub_color};height:6px;"
-                f"border-radius:6px'></div></div>",
+                f"<div style='background:#F3F4F6;border-radius:4px;height:5px;"
+                f"overflow:hidden;margin-bottom:10px'>"
+                f"<div style='width:{unit_pct}%;background:{sub_color};"
+                f"height:5px;border-radius:4px'></div></div>",
                 unsafe_allow_html=True
             )
 
-            # Topic chips
-            chip_parts = []
-            for t in unit["topics"]:
-                tk   = f"{unit['unit']}::{t}"
-                done = tk in done_set
-                chip_parts.append(
-                    f"<span style='display:inline-block;background:"
-                    f"{'#D1FAE5' if done else sub_color+'18'};"
-                    f"color:{'#065F46' if done else sub_color};"
-                    f"border:1px solid {'#6EE7B7' if done else sub_color+'44'};"
-                    f"border-radius:20px;padding:3px 10px;font-size:11px;"
-                    f"margin:2px 3px 2px 0;font-weight:{'600' if done else '400'}'>"
-                    f"{'✅ ' if done else ''}{t}</span>"
-                )
-            st.markdown(
-                f"<div style='margin-bottom:12px'>{''.join(chip_parts)}</div>",
-                unsafe_allow_html=True
-            )
-
-            # Per-topic rows: topic name | Ask | Mark Done
-            for topic in unit["topics"]:
+            # Topic rows — each is a clickable module card
+            for ti, topic in enumerate(unit["topics"]):
                 topic_key = f"{unit['unit']}::{topic}"
                 is_done   = topic_key in done_set
-                tc1, tc2, tc3 = st.columns([3, 1, 1])
-                with tc1:
+
+                # Compute flat index
+                flat_idx = next(
+                    i for i, t in enumerate(all_topics)
+                    if t["topic_key"] == topic_key
+                )
+
+                row_bg  = "#F0FDF4" if is_done else "#fff"
+                row_bdr = "#6EE7B7" if is_done else "#E5E7EB"
+                lbl_col = "#059669" if is_done else "#1A1A2E"
+                num_bg  = sub_color if not is_done else "#059669"
+
+                # Module card row: number badge | topic name | Open button | Mark button
+                mc1, mc2, mc3 = st.columns([5, 1, 1])
+                with mc1:
                     st.markdown(
-                        f"<div style='padding:6px 0;font-size:14px;"
-                        f"color:{'#059669' if is_done else '#1A1A2E'};"
-                        f"font-weight:{'700' if is_done else '400'}'>"
-                        f"{'✅' if is_done else '📖'} {topic}</div>",
+                        f"<div style='background:{row_bg};border:1px solid {row_bdr};"
+                        f"border-radius:10px;padding:8px 12px;display:flex;"
+                        f"align-items:center;gap:10px;cursor:pointer'>"
+                        f"<div style='background:{num_bg};color:#fff;border-radius:6px;"
+                        f"width:24px;height:24px;display:flex;align-items:center;"
+                        f"justify-content:center;font-size:11px;font-weight:700;"
+                        f"flex-shrink:0'>{flat_idx+1}</div>"
+                        f"<div style='font-size:13px;font-weight:{'700' if is_done else '500'};"
+                        f"color:{lbl_col};line-height:1.3'>"
+                        f"{'✅ ' if is_done else ''}{topic}"
+                        f"</div></div>",
                         unsafe_allow_html=True
                     )
-                with tc2:
-                    if st.button("💬 Ask", key=f"ask_{ui}_{topic[:18]}", use_container_width=True):
-                        st.session_state.subject = subj_key
-                        st.session_state.level   = sel_grade
-                        st.session_state.chat_messages = [{
-                            "role": "user",
-                            "content": f"Explain this topic from my {sel_grade} {sel_sub} syllabus: {topic}"
-                        }]
-                        st.session_state.session_id = None
-                        st.session_state.page = "chat"
+                with mc2:
+                    if st.button("Open", key=f"open_{ui}_{ti}",
+                                 use_container_width=True, type="primary"):
+                        st.session_state.syl_view           = "detail"
+                        st.session_state.syl_topic_idx      = flat_idx
+                        st.session_state.syl_detail_content = None
+                        st.session_state.syl_detail_for     = None
                         st.rerun()
-                with tc3:
-                    btn_lbl = "✅ Done" if is_done else "Mark ✓"
-                    if st.button(btn_lbl, key=f"done_{ui}_{topic[:18]}", use_container_width=True):
-                        # Load fresh user record
-                        users  = load_json(USERS_FILE)
-                        eu     = users.get(u["email"], u)
-                        eu     = _ensure_fields(eu)
-                        st_map = eu.get("studied_topics", {})
-                        tlist  = list(st_map.get(syl_key, []))
-
-                        # Toggle completion
-                        today_iso = datetime.date.today().isoformat()
-                        td_map    = eu.get("topic_dates", {})
-                        td_syl    = dict(td_map.get(syl_key, {}))
-
-                        if topic_key in tlist:
-                            tlist.remove(topic_key)
-                            td_syl.pop(topic_key, None)
-                        else:
-                            tlist.append(topic_key)
-                            td_syl[topic_key] = today_iso  # record date for pace calc
-
-                        st_map[syl_key]     = tlist
-                        td_map[syl_key]     = td_syl
-                        eu["studied_topics"] = st_map
-                        eu["topic_dates"]    = td_map
-
-                        eu, new_b = check_badges(eu)
-                        _save_user(eu)
-                        for b in new_b:
-                            st.toast(f"🏆 Badge: {b['icon']} {b['name']}!", icon="🎉")
+                with mc3:
+                    mk_lbl = "✅" if is_done else "✓"
+                    if st.button(mk_lbl, key=f"mk_{ui}_{ti}", use_container_width=True,
+                                 help="Mark complete / incomplete"):
+                        u = _toggle_done(u, syl_key, topic_key)
+                        done_set = set(u.get("studied_topics", {}).get(syl_key, []))
                         st.rerun()
-
-            # Unit action buttons
-            ba, bb, bc = st.columns(3)
-            with ba:
-                if st.button(f"📝 Quiz Unit {ui+1}", key=f"qunit_{ui}", use_container_width=True):
-                    topics_str = ", ".join(unit["topics"])
-                    with st.spinner("Generating unit quiz..."):
-                        raw = call_ai(
-                            [{"role": "user", "content":
-                              f"Create 5 MCQ questions for unit '{unit['unit']}' covering: {topics_str}. "
-                              f"For {sel_grade} {sel_sub} students. "
-                              f"Return ONLY raw JSON: "
-                              f"{{\"questions\":[{{\"q\":\"...\",\"options\":[\"A.\",\"B.\",\"C.\",\"D.\"],"
-                              f"\"answer\":\"A.\",\"explanation\":\"...\"}}]}}"}],
-                            "Quiz generator. Return ONLY valid raw JSON.", 1600
-                        )
-                    if raw.startswith("__API_KEY_MISSING__"):
-                        st.error("⚠️ API key not configured.")
-                    elif raw.startswith(("__EMPTY_RESPONSE__", "__API_ERROR__:")):
-                        st.error(f"⚠️ AI error: {raw}")
-                    else:
-                        try:
-                            clean = raw.strip()
-                            for fence in ["```json", "```"]:
-                                clean = clean.replace(fence, "")
-                            clean = clean.strip()
-                            j0 = clean.find("{"); j1 = clean.rfind("}") + 1
-                            if j0 >= 0 and j1 > j0:
-                                clean = clean[j0:j1]
-                            data = json.loads(clean)
-                            qs   = data.get("questions", [])
-                            if not qs:
-                                st.error("⚠️ No questions returned. Try again.")
-                            else:
-                                st.session_state.quiz = {
-                                    "questions": qs, "current": 0, "score": 0,
-                                    "answers": [], "done": False,
-                                    "sub": subj_key, "lvl": sel_grade,
-                                    "topic": unit["unit"], "difficulty": "Medium"
-                                }
-                                st.session_state.page = "quiz"
-                                st.rerun()
-                        except Exception as _qe2:
-                            st.error(f"⚠️ Parse error: {_qe2}")
-                            with st.expander("Debug"):
-                                st.code(raw[:500])
-            with bb:
-                if st.button("🎨 Diagram", key=f"imgunit_{ui}", use_container_width=True):
-                    st.session_state.page = "image"
-                    st.rerun()
-            with bc:
-                if st.button("📖 Summary", key=f"sumunit_{ui}", use_container_width=True):
-                    topics_str = ", ".join(unit["topics"])
-                    with st.spinner("Generating summary..."):
-                        summary = call_ai(
-                            [{"role": "user", "content":
-                              f"Give a clear revision summary of '{unit['unit']}' for "
-                              f"{sel_grade} {sel_sub} ({board}). "
-                              f"Cover: {topics_str}. "
-                              f"Use bullet points, include key formulas, max 300 words."}],
-                            f"You are a {sel_sub} teacher. Clear revision summaries.", 800
-                        )
-                    st.markdown(
-                        f"<div style='background:#F8F9FA;border-left:4px solid {sub_color};"
-                        f"border-radius:0 12px 12px 0;padding:14px 16px;margin-top:10px;"
-                        f"font-size:13px;line-height:1.7;white-space:pre-wrap;color:#1A1A2E'>"
-                        f"{summary}</div>",
-                        unsafe_allow_html=True
-                    )
-
-    # ─────────────────────────────────────────────────────────────
-    # DOWNLOAD SYLLABUS
-    # ─────────────────────────────────────────────────────────────
-    st.markdown("---")
-    syllabus_text = f"{sel_sub} — {sel_grade}\nBoard: {board}\n\n"
-    for ui, unit in enumerate(units):
-        syllabus_text += f"Unit {ui+1}: {unit['unit']}\n"
-        for t in unit["topics"]:
-            tk   = f"{unit['unit']}::{t}"
-            mark = "✅" if tk in done_set else "  "
-            syllabus_text += f"  {mark} {t}\n"
-        syllabus_text += "\n"
-    syllabus_text += f"\nProgress: {done_count}/{total_topics} topics ({pct}%)\n"
-    syllabus_text += f"Est. completion: {days_left} days at {pace_display}\n"
-    b64dl = base64.b64encode(syllabus_text.encode()).decode()
-    st.markdown(
-        f"<a href='data:text/plain;base64,{b64dl}' "
-        f"download='{sel_sub}_{sel_grade}_syllabus.txt' "
-        f"style='display:inline-block;padding:10px 20px;background:{sub_color};color:#fff;"
-        f"border-radius:12px;font-weight:700;font-size:14px;text-decoration:none;"
-        f"margin-top:8px'>⬇️ Download Syllabus</a>",
-        unsafe_allow_html=True
-    )
 
 
 # ─────────────────────────────────────────────────────────────────

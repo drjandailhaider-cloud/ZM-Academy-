@@ -1732,148 +1732,173 @@ def save_chat_session(sub, lvl):
 def page_chat():
     u = st.session_state.user
 
-    # ── Persist subject + level in session state properly ─────
-    # This ensures Start button picks up the CURRENT selectbox values
-    if "chat_sub" not in st.session_state:
-        st.session_state.chat_sub = st.session_state.get("subject", "Maths")
-    if "chat_lvl" not in st.session_state:
-        st.session_state.chat_lvl = u.get("grade", "Grade 6")
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # FIX: TWO-STATE PATTERN
+    # "pending"  = what the dropdowns currently show (changes live)
+    # "active"   = what the chat is actually using (only changes on Start)
+    # Topic cards use ACTIVE state so they never fire on dropdown change
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    if "pending_sub" not in st.session_state:
+        st.session_state.pending_sub = st.session_state.get("subject", "Maths")
+    if "pending_lvl" not in st.session_state:
+        lvl_raw = u.get("grade", "Grade 6")
+        st.session_state.pending_lvl = lvl_raw if lvl_raw in LEVELS else "Grade 6"
+    if "active_sub" not in st.session_state:
+        st.session_state.active_sub = st.session_state.pending_sub
+    if "active_lvl" not in st.session_state:
+        st.session_state.active_lvl = st.session_state.pending_lvl
+
+    # Convenience aliases
+    sub = st.session_state.active_sub   # used for chat + topic cards
+    lvl = st.session_state.active_lvl
 
     # ── Grade-aware topic cards ───────────────────────────────
     GRADE_TOPICS = {
-        # Junior (1-3): very simple, fun
-        "Grade 1":  {"Maths":["Count to 100 🔢","Add small numbers ➕","Shapes around us 🔷","Long and short 📏"],
-                     "English":["ABC letters 🔤","Simple words 🐱","Colours in English 🌈","My family 👨‍👩‍👦"],
-                     "Urdu":["الف ب پ ت","میرا نام","جانور","رنگ"]},
-        "Grade 2":  {"Maths":["Tables of 2 and 5 ✖️","Adding 2-digit numbers","Fractions: half & quarter 🍕","Time: clock reading 🕐"],
-                     "English":["Nouns and verbs","Simple sentences","Plurals","Days and months"],
+        "Grade 1":  {"Maths":["Count to 100","Add small numbers","Shapes around us","Long and short"],
+                     "English":["ABC letters","Simple words","Colours","My family"],
+                     "Urdu":["الف ب پ","میرا نام","جانور","رنگ"]},
+        "Grade 2":  {"Maths":["Tables of 2 and 5","Adding 2-digit numbers","Half & quarter","Reading a clock"],
+                     "English":["Nouns and verbs","Simple sentences","Plurals","Days & months"],
                      "Urdu":["حروف تہجی","سادہ جملے","گنتی","موسم"]},
-        "Grade 3":  {"Maths":["Times tables 2-10 ✖️","Place value: hundreds","Perimeter of shapes","Fractions: equal parts"],
-                     "English":["Past tense","Adjectives","Writing a sentence","Capital letters & full stops"],
-                     "Physics":["Push and pull forces","Hot and cold","Light and shadows","Magnets"]},
-        # Middle (4-6)
-        "Grade 4":  {"Maths":["Long multiplication","HCF and LCM","Angles: acute & obtuse","Decimals"],
-                     "Physics":["States of matter","Simple machines","Food chains","Sound waves"],
-                     "English":["Essay structure","Synonyms & antonyms","Tenses review","Punctuation"]},
-        "Grade 5":  {"Maths":["Ratio & proportion","Percentage of quantity","Area of triangles","Prime numbers"],
+        "Grade 3":  {"Maths":["Times tables 2-10","Place value: hundreds","Perimeter","Equal fractions"],
+                     "Physics":["Push & pull forces","Hot and cold","Light & shadows","Magnets"],
+                     "English":["Past tense","Adjectives","Punctuation","Capital letters"]},
+        "Grade 4":  {"Maths":["Long multiplication","HCF and LCM","Angles","Decimals"],
+                     "Physics":["States of matter","Simple machines","Food chains","Sound"],
+                     "English":["Essay structure","Synonyms","Tenses","Comprehension"]},
+        "Grade 5":  {"Maths":["Ratio & proportion","Percentage","Area of triangles","Prime numbers"],
                      "Physics":["Newton's 3 laws","Photosynthesis","Digestive system","Electric circuits"],
-                     "Chemistry":["Elements vs compounds","Mixtures & solutions","Physical & chemical change","States of matter"],
-                     "English":["Comprehension skills","Formal vs informal writing","Clauses","Metaphor & simile"]},
-        "Grade 6":  {"Maths":["Linear equations","Standard form","Pythagoras theorem","Circle area & circumference"],
+                     "Chemistry":["Elements vs compounds","Mixtures","Physical & chemical change","States of matter"],
+                     "English":["Formal writing","Clauses","Metaphor & simile","Comprehension"]},
+        "Grade 6":  {"Maths":["Linear equations","Pythagoras theorem","Circle area","Standard form"],
                      "Physics":["Speed, distance, time","Density","Pressure","Electromagnets"],
-                     "Chemistry":["Periodic table basics","Atomic structure","Acids & bases","Chemical equations"],
-                     "Biology":["Cell structure","Photosynthesis in depth","Respiration","Digestive system"]},
-        # Senior (7-9)
-        "Grade 7":  {"Maths":["Simultaneous equations","Quadratic expressions","Trigonometry intro","Statistics: mean, median, mode"],
+                     "Chemistry":["Periodic table","Atomic structure","Acids & bases","Chemical equations"],
+                     "Biology":["Cell structure","Photosynthesis","Respiration","Digestive system"]},
+        "Grade 7":  {"Maths":["Simultaneous equations","Quadratics intro","Trigonometry","Statistics"],
                      "Physics":["Waves & frequency","Ohm's Law","Thermal energy","Momentum"],
-                     "Chemistry":["Bonding: ionic & covalent","Reactions & equations","Metals & non-metals","Rates of reaction"],
-                     "Biology":["DNA and genetics","Nervous system","Hormones","Ecosystems & food webs"]},
+                     "Chemistry":["Ionic & covalent bonding","Reactions","Metals","Rates of reaction"],
+                     "Biology":["DNA & genetics","Nervous system","Hormones","Ecosystems"]},
         "Grade 8":  {"Maths":["Quadratic formula","Circle theorems","Vectors","Probability trees"],
-                     "Physics":["Nuclear physics intro","Electromagnetic spectrum","Radioactivity","Motor effect"],
-                     "Chemistry":["Organic chemistry intro","Electrolysis","Reversible reactions","Industrial processes"],
-                     "Biology":["Evolution & natural selection","Homeostasis","Biotechnology","Disease & immunity"]},
-        "Grade 9":  {"Maths":["Binomial expansion","Differentiation intro","Integration intro","Logarithms"],
+                     "Physics":["Nuclear physics","Electromagnetic spectrum","Radioactivity","Motor effect"],
+                     "Chemistry":["Organic chemistry","Electrolysis","Reversible reactions","Industrial processes"],
+                     "Biology":["Evolution","Homeostasis","Biotechnology","Disease & immunity"]},
+        "Grade 9":  {"Maths":["Binomial expansion","Differentiation","Integration","Logarithms"],
                      "Physics":["Relativity intro","Quantum concepts","Astrophysics","Medical physics"],
                      "Chemistry":["Equilibrium constants","Electrochemistry","Transition metals","Spectroscopy"],
                      "Biology":["Respiration in detail","Photosynthesis biochemistry","Genetic engineering","Ecology"]},
         "Grade 10": {"Maths":["Complex numbers","Matrices","Further statistics","Differential equations"],
-                     "Physics":["A Level mechanics","Capacitors","Nuclear reactions","Medical imaging"],
-                     "Chemistry":["Organic synthesis","Kinetics & thermodynamics","Acids: Ka & Kw","Polymer chemistry"],
+                     "Physics":["Capacitors","Nuclear reactions","Medical imaging","A Level mechanics"],
+                     "Chemistry":["Organic synthesis","Kinetics","Acids: Ka & Kw","Polymer chemistry"],
                      "Biology":["Protein synthesis","Immunology","Cloning","Population genetics"]},
-        "O Level":  {"Maths":["IGCSE Paper 1 tips","IGCSE Paper 2 strategies","Vectors & transformations","Statistics & probability"],
-                     "Physics":["Exam technique","Forces & motion","Electricity & magnetism","Thermal physics"],
-                     "Chemistry":["Organic chemistry","Metals & reactivity","Acids, bases, salts","Quantitative chemistry"],
-                     "Biology":["Cell biology","Transport in plants","Human health & disease","Genetics & evolution"]},
+        "O Level":  {"Maths":["Paper 1 strategies","Paper 2 techniques","Vectors & transformations","Statistics"],
+                     "Physics":["Forces & motion","Electricity","Thermal physics","Exam technique"],
+                     "Chemistry":["Organic chemistry","Metals & reactivity","Acids & salts","Quantitative chemistry"],
+                     "Biology":["Cell biology","Transport in plants","Human health","Genetics & evolution"]},
         "A Level":  {"Maths":["Pure Maths P1","Mechanics M1","Statistics S1","Further Pure"],
                      "Physics":["Particle physics","Quantum mechanics","Gravitational fields","Medical physics"],
                      "Chemistry":["Organic mechanisms","Thermodynamics","Electrode potentials","NMR & spectra"],
-                     "Biology":["Protein synthesis","Gene expression","Immune system","Ecology & populations"]},
+                     "Biology":["Protein synthesis","Gene expression","Immune system","Ecology"]},
     }
+    TCARD_ICONS = {"Maths":"📐","Physics":"⚡","Chemistry":"🧪","Biology":"🌿",
+                   "English":"📖","Computer Science":"💻","Urdu":"🖊️"}
 
-    def get_topics(sub, lvl):
-        """Return 4 grade+subject-aware topic cards, fallback to QUICK_PROMPTS."""
-        grade_sub = GRADE_TOPICS.get(lvl, {})
-        topics    = grade_sub.get(sub, [])
+    def get_topics(s, l):
+        topics = GRADE_TOPICS.get(l, {}).get(s, [])
         if not topics:
-            topics = QUICK_PROMPTS.get(sub, [])
+            topics = QUICK_PROMPTS.get(s, [])
         return topics[:4]
 
-    # ── CSS ────────────────────────────────────────────────────
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # CSS
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     st.markdown("""
     <style>
-    /* ─── Banner ────────────────────────────────────────────── */
+    /* ── Banner ─────────────────────────────────────────────── */
     .ustad-banner {
-        height: 90px;
-        background: linear-gradient(110deg,#0D1F18 0%,#1A3328 45%,#0A5C38 100%);
-        border-radius: 16px;
-        padding: 0 22px 0 0;
-        margin-bottom: 10px;
-        display: flex;
-        align-items: center;
-        gap: 0;
-        border: 1px solid rgba(52,199,123,0.25);
-        box-shadow: 0 3px 18px rgba(0,0,0,0.2);
-        overflow: hidden;
-        position: relative;
+        height: 110px;
+        background: linear-gradient(110deg,#0D1F18 0%,#1A3328 50%,#0A5C38 100%);
+        border-radius: 16px; margin-bottom: 10px;
+        display: flex; align-items: stretch;
+        border: 1px solid rgba(52,199,123,0.2);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        overflow: hidden; position: relative;
     }
-    .ustad-banner::after {
-        content: "";
-        position: absolute; right: -20px; top: -30px;
-        width: 130px; height: 130px; border-radius: 50%;
-        background: radial-gradient(circle,rgba(52,199,123,0.12),transparent 70%);
+    .banner-glow {
+        position:absolute; right:-40px; top:-40px;
+        width:180px; height:180px; border-radius:50%;
+        background: radial-gradient(circle,rgba(52,199,123,0.15),transparent 70%);
+        pointer-events:none;
     }
-    /* SVG face column */
-    .ustad-face-col {
-        width: 90px; height: 90px;
-        flex-shrink: 0;
+    /* Avatar column */
+    .banner-avatar-col {
+        width: 110px; flex-shrink: 0;
         display: flex; align-items: flex-end; justify-content: center;
+        padding-bottom: 0; overflow: hidden;
         position: relative;
     }
-    /* Text column */
-    .ustad-info { flex: 1; padding-left: 4px; position: relative; z-index: 1; }
-    .ustad-name-txt {
-        font-family: "DM Serif Display", serif;
-        font-size: 17px; color: #fff; line-height: 1.1; font-weight: 400;
+    /* Speech bubble */
+    .banner-speech {
+        flex: 1; display: flex; align-items: center;
+        padding: 0 18px 0 14px; position: relative; z-index: 1;
     }
-    .ustad-tagline { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; font-weight: 500; }
-    .ustad-online {
-        display: flex; align-items: center; gap: 5px; margin-top: 5px;
+    .speech-bubble {
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 4px 14px 14px 14px;
+        padding: 10px 15px; position: relative;
+        max-width: 320px;
     }
-    .ustad-dot {
+    .speech-bubble::before {
+        content: "";
+        position: absolute; left: -9px; top: 14px;
+        border: 5px solid transparent;
+        border-right-color: rgba(255,255,255,0.12);
+    }
+    .speech-name {
+        font-family: "DM Serif Display",serif;
+        font-size: 14px; color: #fff; line-height: 1.1; margin-bottom: 3px;
+    }
+    .speech-text {
+        font-size: 11.5px; color: rgba(255,255,255,0.65); line-height: 1.5;
+        font-style: italic;
+    }
+    .speech-meta {
+        display: flex; align-items: center; gap: 5px; margin-top: 6px;
+    }
+    .speech-dot {
         width: 6px; height: 6px; border-radius: 50%;
         background: #34C77B; box-shadow: 0 0 5px #34C77B;
-        animation: udpulse 2s infinite;
+        animation: spulse 2s infinite;
     }
-    @keyframes udpulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-    .ustad-online-txt { font-size: 10.5px; color: rgba(255,255,255,.55); font-weight: 600; }
+    @keyframes spulse { 0%,100%{opacity:1} 50%{opacity:.25} }
+    .speech-online { font-size: 10px; color: rgba(255,255,255,.45); font-weight:600; }
+    /* AI chip */
     .ai-chip {
-        flex-shrink: 0;
+        position:absolute; top:10px; right:14px; z-index:2;
         background: rgba(52,199,123,0.15);
         border: 1px solid rgba(52,199,123,0.35);
-        border-radius: 99px; padding: 5px 13px;
-        font-size: 10px; font-weight: 800; color: #34C77B;
-        letter-spacing: .5px; position: relative; z-index: 1;
+        border-radius:99px; padding:4px 11px;
+        font-size:9.5px; font-weight:800; color:#34C77B; letter-spacing:.5px;
     }
 
-    /* ─── Topic cards ────────────────────────────────────────── */
-    .tcard-section-lbl {
+    /* ── Selection row pill ──────────────────────────────────── */
+    .sel-row-label {
         font-size: 10px; font-weight: 800; color: #9BA3B0;
-        text-transform: uppercase; letter-spacing: 1.1px; margin-bottom: 7px;
+        text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;
     }
-    /* ─── Chat window ────────────────────────────────────────── */
+
+    /* ── Chat window ─────────────────────────────────────────── */
     .chat-window {
-        background: #FAFBFC;
-        border: 1.5px solid #E4E8EE; border-radius: 16px;
-        padding: 14px 12px; margin-bottom: 8px;
+        background: #FAFBFC; border: 1.5px solid #E4E8EE;
+        border-radius: 16px; padding: 14px 12px; margin-bottom: 8px;
         box-shadow: 0 1px 6px rgba(0,0,0,0.04);
     }
     .ai-row  { display:flex; gap:9px; margin-bottom:12px; align-items:flex-start; }
-    .ai-ava  { width:30px;height:30px;border-radius:9px;flex-shrink:0;margin-top:1px;
-               background:linear-gradient(135deg,#1C7C54,#25A870);
-               display:flex;align-items:center;justify-content:center;font-size:14px; }
+    .ai-ava  { width:32px;height:32px;border-radius:10px;flex-shrink:0;margin-top:1px;
+               overflow:hidden;border:2px solid rgba(28,124,84,0.3); }
     .ai-bubble { background:#fff;border:1.5px solid #E4E8EE;
                  border-radius:4px 14px 14px 14px;
-                 padding:10px 14px;font-size:13.5px;line-height:1.75;
+                 padding:11px 15px;font-size:13.5px;line-height:1.8;
                  color:#1A1D23;max-width:88%; }
     .user-row   { display:flex;justify-content:flex-end;margin-bottom:12px; }
     .user-bubble{ background:#1C7C54;color:#fff;border-radius:14px 4px 14px 14px;
@@ -1888,135 +1913,262 @@ def page_chat():
     .chat-empty-title { font-family:"DM Serif Display",serif;font-size:18px;color:#1A1D23;margin-bottom:5px; }
     .chat-empty-sub   { font-size:12.5px;color:#9BA3B0;line-height:1.6; }
 
-    /* ─── Upload strip ───────────────────────────────────────── */
+    /* ── Topic cards ─────────────────────────────────────────── */
+    .tcard-lbl { font-size:10px;font-weight:800;color:#9BA3B0;
+                 text-transform:uppercase;letter-spacing:1px;margin-bottom:6px; }
+
+    /* ── Upload strip ────────────────────────────────────────── */
     .upload-strip {
         background: linear-gradient(135deg,#1A1D23,#243040);
-        border-radius: 12px; padding: 12px 16px; margin-bottom: 8px;
+        border-radius: 12px; padding: 12px 16px; margin-bottom:8px;
         border: 1px solid rgba(28,124,84,0.25);
-        display: flex; align-items: center; gap: 12px;
+        display:flex; align-items:center; gap:12px;
     }
-    .upload-title { font-size:13px;font-weight:800;color:#fff; }
-    .upload-sub   { font-size:11px;color:rgba(255,255,255,0.4);margin-top:1px; }
+    .upload-title{font-size:13px;font-weight:800;color:#fff;}
+    .upload-sub  {font-size:11px;color:rgba(255,255,255,0.4);margin-top:1px;}
 
-    /* ─── Daily limit ────────────────────────────────────────── */
-    .dlimit {
-        background:#F0FDF4;border:1.5px solid #D1FAE5;border-radius:10px;
-        padding:7px 13px;font-size:11.5px;color:#065F46;font-weight:600;
-        display:flex;align-items:center;gap:8px;margin-top:6px;
-    }
+    /* ── Daily limit ─────────────────────────────────────────── */
+    .dlimit{background:#F0FDF4;border:1.5px solid #D1FAE5;border-radius:10px;
+            padding:7px 13px;font-size:11.5px;color:#065F46;font-weight:600;
+            display:flex;align-items:center;gap:8px;margin-top:6px;}
     </style>
     """, unsafe_allow_html=True)
 
-    # ── Banner with illustrated Ustad SVG face ─────────────────
-    ustad_svg = """
-    <svg width="72" height="90" viewBox="0 0 72 90" xmlns="http://www.w3.org/2000/svg">
-      <!-- Body / torso -->
-      <rect x="14" y="58" width="44" height="32" rx="8" fill="#2D5A3D"/>
-      <!-- Collar / shirt -->
-      <polygon points="36,58 26,70 36,65 46,70" fill="#fff" opacity="0.9"/>
-      <!-- Neck -->
-      <rect x="29" y="50" width="14" height="12" rx="4" fill="#C8916A"/>
-      <!-- Head -->
-      <ellipse cx="36" cy="38" rx="19" ry="22" fill="#D4956A"/>
-      <!-- Hair — white/grey professor style -->
-      <ellipse cx="36" cy="18" rx="19" ry="10" fill="#E8E4DF"/>
-      <ellipse cx="17" cy="30" rx="7" ry="11" fill="#E8E4DF"/>
-      <ellipse cx="55" cy="30" rx="7" ry="11" fill="#E8E4DF"/>
-      <!-- Forehead highlight -->
-      <ellipse cx="36" cy="22" rx="12" ry="6" fill="#DFAA82" opacity="0.5"/>
-      <!-- Eyes -->
-      <ellipse cx="27" cy="36" rx="3.5" ry="4" fill="#fff"/>
-      <ellipse cx="45" cy="36" rx="3.5" ry="4" fill="#fff"/>
-      <ellipse cx="27" cy="37" rx="2" ry="2.5" fill="#3A2010"/>
-      <ellipse cx="45" cy="37" rx="2" ry="2.5" fill="#3A2010"/>
-      <circle cx="27.8" cy="36.2" r=".8" fill="#fff"/>
-      <circle cx="45.8" cy="36.2" r=".8" fill="#fff"/>
-      <!-- Eyebrows — bushy professor -->
-      <path d="M22 31 Q27 28 32 31" stroke="#888" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-      <path d="M40 31 Q45 28 50 31" stroke="#888" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-      <!-- Nose -->
-      <path d="M34 39 Q33 44 35 45 Q37 45 38 44 Q40 43 38 39" fill="#C0784A" opacity="0.7"/>
-      <!-- Moustache -->
-      <path d="M27 48 Q32 51 36 49 Q40 51 45 48" stroke="#888" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-      <!-- Beard / chin shading -->
-      <ellipse cx="36" cy="54" rx="12" ry="6" fill="#C0784A" opacity="0.25"/>
-      <!-- Glasses -->
-      <rect x="21" y="32" width="12" height="9" rx="3" stroke="#4A3728" stroke-width="1.5" fill="none"/>
-      <rect x="39" y="32" width="12" height="9" rx="3" stroke="#4A3728" stroke-width="1.5" fill="none"/>
-      <line x1="33" y1="36" x2="39" y2="36" stroke="#4A3728" stroke-width="1.5"/>
-      <!-- Tie -->
-      <polygon points="33,65 36,58 39,65 36,78" fill="#C9A84C" opacity="0.9"/>
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # HUMAN TEACHER AVATAR — detailed SVG illustration
+    # Shows in banner + as chat avatar next to every Ustad reply
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    USTAD_SVG_BANNER = """<svg width="100" height="110" viewBox="0 0 100 110"
+        xmlns="http://www.w3.org/2000/svg">
+      <!-- shadow under feet -->
+      <ellipse cx="50" cy="107" rx="28" ry="4" fill="rgba(0,0,0,0.18)"/>
+      <!-- ── BODY ── -->
+      <!-- Blazer / jacket -->
+      <path d="M18 75 Q15 110 20 110 L80 110 Q85 110 82 75
+               Q72 68 62 70 L50 76 L38 70 Q28 68 18 75Z"
+            fill="#1E3A2F"/>
+      <!-- shirt collar white -->
+      <polygon points="50,70 42,80 50,76 58,80" fill="#F5F0E8"/>
+      <!-- tie gold -->
+      <polygon points="47,74 50,70 53,74 51,90 49,90" fill="#C9A84C"/>
+      <!-- lapels -->
+      <path d="M38 70 Q30 72 25 80 L35 82 Z" fill="#163026"/>
+      <path d="M62 70 Q70 72 75 80 L65 82 Z" fill="#163026"/>
+      <!-- pocket square -->
+      <rect x="22" y="80" width="8" height="5" rx="1" fill="#C9A84C" opacity="0.6"/>
+      <!-- ── NECK ── -->
+      <rect x="42" y="60" width="16" height="14" rx="5"
+            fill="#C68642"/>
+      <!-- ── HEAD ── -->
+      <!-- Face base -->
+      <ellipse cx="50" cy="42" rx="22" ry="26" fill="#D4956A"/>
+      <!-- Face shading (cheeks, jaw) -->
+      <ellipse cx="50" cy="50" rx="16" ry="16" fill="#C8845E" opacity="0.25"/>
+      <!-- ── HAIR — dark short professional ── -->
+      <!-- main hair top -->
+      <path d="M28 36 Q28 10 50 12 Q72 10 72 36
+               Q68 24 50 22 Q32 24 28 36Z"
+            fill="#2C1A0E"/>
+      <!-- side burns -->
+      <rect x="27" y="34" width="5" height="14" rx="2" fill="#2C1A0E"/>
+      <rect x="68" y="34" width="5" height="14" rx="2" fill="#2C1A0E"/>
+      <!-- subtle hair line -->
+      <path d="M30 30 Q50 20 70 30" stroke="#1A0E06" stroke-width="1.5"
+            fill="none" opacity="0.4"/>
+      <!-- ── EARS ── -->
+      <ellipse cx="28" cy="44" rx="4.5" ry="6" fill="#C68642"/>
+      <ellipse cx="72" cy="44" rx="4.5" ry="6" fill="#C68642"/>
+      <ellipse cx="28" cy="44" rx="2.5" ry="3.5" fill="#B8744E"/>
+      <ellipse cx="72" cy="44" rx="2.5" ry="3.5" fill="#B8744E"/>
+      <!-- ── EYES ── -->
+      <!-- eye whites -->
+      <ellipse cx="39" cy="41" rx="5" ry="5.5" fill="#fff"/>
+      <ellipse cx="61" cy="41" rx="5" ry="5.5" fill="#fff"/>
+      <!-- irises -->
+      <ellipse cx="39" cy="42" rx="3" ry="3.5" fill="#5C3A1E"/>
+      <ellipse cx="61" cy="42" rx="3" ry="3.5" fill="#5C3A1E"/>
+      <!-- pupils -->
+      <ellipse cx="39" cy="42.5" rx="1.6" ry="2" fill="#1A0A00"/>
+      <ellipse cx="61" cy="42.5" rx="1.6" ry="2" fill="#1A0A00"/>
+      <!-- eye shine -->
+      <circle cx="40" cy="41.2" r="1" fill="#fff"/>
+      <circle cx="62" cy="41.2" r="1" fill="#fff"/>
+      <!-- upper eyelid line -->
+      <path d="M34 39 Q39 36 44 39" stroke="#2C1A0E" stroke-width="1.2"
+            fill="none" stroke-linecap="round"/>
+      <path d="M56 39 Q61 36 66 39" stroke="#2C1A0E" stroke-width="1.2"
+            fill="none" stroke-linecap="round"/>
+      <!-- ── EYEBROWS — strong, educator look ── -->
+      <path d="M33 35 Q39 31 45 34" stroke="#2C1A0E" stroke-width="2.5"
+            fill="none" stroke-linecap="round"/>
+      <path d="M55 34 Q61 31 67 35" stroke="#2C1A0E" stroke-width="2.5"
+            fill="none" stroke-linecap="round"/>
+      <!-- ── NOSE ── -->
+      <path d="M47 44 Q46 52 48 54 Q50 55.5 52 54 Q54 52 53 44"
+            fill="#C0784A" opacity="0.5"/>
+      <ellipse cx="46" cy="53" rx="3" ry="2" fill="#B8694A" opacity="0.35"/>
+      <ellipse cx="54" cy="53" rx="3" ry="2" fill="#B8694A" opacity="0.35"/>
+      <!-- ── MOUTH — slight smile ── -->
+      <path d="M40 60 Q50 67 60 60" stroke="#9A5030" stroke-width="2"
+            fill="none" stroke-linecap="round"/>
+      <!-- lower lip -->
+      <path d="M43 62 Q50 66 57 62" stroke="#C07858" stroke-width="1.5"
+            fill="none" stroke-linecap="round" opacity="0.5"/>
+      <!-- ── GLASSES — thin rim professional ── -->
+      <rect x="32" y="37" width="14" height="10" rx="4"
+            stroke="#2C1A0E" stroke-width="1.8" fill="rgba(180,220,255,0.08)"/>
+      <rect x="54" y="37" width="14" height="10" rx="4"
+            stroke="#2C1A0E" stroke-width="1.8" fill="rgba(180,220,255,0.08)"/>
+      <!-- bridge -->
+      <line x1="46" y1="42" x2="54" y2="42"
+            stroke="#2C1A0E" stroke-width="1.6"/>
+      <!-- temples -->
+      <line x1="32" y1="42" x2="27" y2="42"
+            stroke="#2C1A0E" stroke-width="1.6"/>
+      <line x1="68" y1="42" x2="73" y2="42"
+            stroke="#2C1A0E" stroke-width="1.6"/>
     </svg>"""
 
-    sub_cur = st.session_state.chat_sub
-    lvl_cur = st.session_state.chat_lvl
+    # Small version for chat bubble avatar (32x32)
+    USTAD_SVG_SMALL = """<svg width="32" height="32" viewBox="0 0 100 110"
+        xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="50" cy="107" rx="28" ry="4" fill="rgba(0,0,0,0.18)"/>
+      <path d="M18 75 Q15 110 20 110 L80 110 Q85 110 82 75
+               Q72 68 62 70 L50 76 L38 70 Q28 68 18 75Z" fill="#1E3A2F"/>
+      <polygon points="50,70 42,80 50,76 58,80" fill="#F5F0E8"/>
+      <polygon points="47,74 50,70 53,74 51,90 49,90" fill="#C9A84C"/>
+      <rect x="42" y="60" width="16" height="14" rx="5" fill="#C68642"/>
+      <ellipse cx="50" cy="42" rx="22" ry="26" fill="#D4956A"/>
+      <path d="M28 36 Q28 10 50 12 Q72 10 72 36 Q68 24 50 22 Q32 24 28 36Z"
+            fill="#2C1A0E"/>
+      <rect x="27" y="34" width="5" height="14" rx="2" fill="#2C1A0E"/>
+      <rect x="68" y="34" width="5" height="14" rx="2" fill="#2C1A0E"/>
+      <ellipse cx="28" cy="44" rx="4.5" ry="6" fill="#C68642"/>
+      <ellipse cx="72" cy="44" rx="4.5" ry="6" fill="#C68642"/>
+      <ellipse cx="39" cy="41" rx="5" ry="5.5" fill="#fff"/>
+      <ellipse cx="61" cy="41" rx="5" ry="5.5" fill="#fff"/>
+      <ellipse cx="39" cy="42" rx="3" ry="3.5" fill="#5C3A1E"/>
+      <ellipse cx="61" cy="42" rx="3" ry="3.5" fill="#5C3A1E"/>
+      <ellipse cx="39" cy="42.5" rx="1.6" ry="2" fill="#1A0A00"/>
+      <ellipse cx="61" cy="42.5" rx="1.6" ry="2" fill="#1A0A00"/>
+      <circle cx="40" cy="41.2" r="1" fill="#fff"/>
+      <circle cx="62" cy="41.2" r="1" fill="#fff"/>
+      <path d="M33 35 Q39 31 45 34" stroke="#2C1A0E" stroke-width="2.5"
+            fill="none" stroke-linecap="round"/>
+      <path d="M55 34 Q61 31 67 35" stroke="#2C1A0E" stroke-width="2.5"
+            fill="none" stroke-linecap="round"/>
+      <path d="M47 44 Q46 52 48 54 Q50 55.5 52 54 Q54 52 53 44"
+            fill="#C0784A" opacity="0.5"/>
+      <path d="M40 60 Q50 67 60 60" stroke="#9A5030" stroke-width="2"
+            fill="none" stroke-linecap="round"/>
+      <rect x="32" y="37" width="14" height="10" rx="4"
+            stroke="#2C1A0E" stroke-width="1.8" fill="rgba(180,220,255,0.08)"/>
+      <rect x="54" y="37" width="14" height="10" rx="4"
+            stroke="#2C1A0E" stroke-width="1.8" fill="rgba(180,220,255,0.08)"/>
+      <line x1="46" y1="42" x2="54" y2="42" stroke="#2C1A0E" stroke-width="1.6"/>
+    </svg>"""
+
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # BANNER — avatar + speech bubble showing last reply
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    msgs      = st.session_state.get("chat_messages", [])
+    last_reply = next((m["content"] for m in reversed(msgs)
+                       if m["role"] == "assistant"), None)
+    if last_reply:
+        # Show first 90 chars of last answer
+        preview = last_reply.replace("\n"," ")
+        preview = preview[:90] + ("…" if len(preview) > 90 else "")
+        speech_text = preview
+    else:
+        speech_text = f"Select {st.session_state.pending_sub} · {st.session_state.pending_lvl} and press Start Learning!"
 
     st.markdown(
         "<div class=\"ustad-banner\">"
-        f"<div class=\"ustad-face-col\">{ustad_svg}</div>"
-        "<div class=\"ustad-info\">"
-        "<div class=\"ustad-name-txt\">Ustad — Your AI Tutor</div>"
-        f"<div class=\"ustad-tagline\">{sub_cur} · {lvl_cur}</div>"
-        "<div class=\"ustad-online\">"
-        "<div class=\"ustad-dot\"></div>"
-        "<span class=\"ustad-online-txt\">Online · Ready to answer anything</span>"
-        "</div></div>"
+        "<div class=\"banner-glow\"></div>"
+        f"<div class=\"banner-avatar-col\">{USTAD_SVG_BANNER}</div>"
+        "<div class=\"banner-speech\">"
+        "<div class=\"speech-bubble\">"
+        "<div class=\"speech-name\">Ustad</div>"
+        f"<div class=\"speech-text\">{speech_text}</div>"
+        "<div class=\"speech-meta\">"
+        "<div class=\"speech-dot\"></div>"
+        "<span class=\"speech-online\">AI Tutor · Online</span>"
+        "</div></div></div>"
         "<div class=\"ai-chip\">✦ AI POWERED</div>"
         "</div>",
         unsafe_allow_html=True
     )
 
-    # ── Subject + Grade + Start Learning ─────────────────────
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # SELECTION ROW — dropdowns update PENDING only
+    # Start button COMMITS pending → active and resets chat
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    subj_list  = list(SUBJECTS.keys())
+    cur_p_sub  = st.session_state.pending_sub
+    cur_p_lvl  = st.session_state.pending_lvl
+    sub_idx    = subj_list.index(cur_p_sub) if cur_p_sub in subj_list else 0
+    lvl_idx    = LEVELS.index(cur_p_lvl)    if cur_p_lvl  in LEVELS    else 5
+
     cc1, cc2, cc3 = st.columns([2, 2, 1])
     with cc1:
-        new_sub = st.selectbox(
-            "Subject", list(SUBJECTS.keys()),
-            index=list(SUBJECTS.keys()).index(st.session_state.chat_sub),
-            label_visibility="collapsed", key="chat_sub_select"
-        )
+        sel_sub = st.selectbox("Subject", subj_list,
+                               index=sub_idx, label_visibility="collapsed",
+                               key="chat_sub_select")
     with cc2:
-        new_lvl = st.selectbox(
-            "Grade", LEVELS,
-            index=LEVELS.index(st.session_state.chat_lvl) if st.session_state.chat_lvl in LEVELS else 5,
-            label_visibility="collapsed", key="chat_lvl_select"
-        )
+        sel_lvl = st.selectbox("Grade", LEVELS,
+                               index=lvl_idx, label_visibility="collapsed",
+                               key="chat_lvl_select")
     with cc3:
-        start_btn = st.button("▶ Start Learning", use_container_width=True,
+        start_btn = st.button("▶ Start Learning",
+                              use_container_width=True,
                               type="primary", key="start_learning_btn")
 
-    # Update session state from selectboxes immediately
-    st.session_state.chat_sub     = new_sub
-    st.session_state.chat_lvl     = new_lvl
-    st.session_state.subject      = new_sub
-    sub = new_sub
-    lvl = new_lvl
+    # Always sync pending from dropdowns (no rerun, no side effects)
+    st.session_state.pending_sub = sel_sub
+    st.session_state.pending_lvl = sel_lvl
 
-    # Start button: reset chat and send opening message
+    # START button: commit pending → active, reset chat, send opener
     if start_btn:
+        st.session_state.active_sub    = sel_sub
+        st.session_state.active_lvl    = sel_lvl
+        st.session_state.subject       = sel_sub
         st.session_state.chat_messages = []
         st.session_state.session_id    = None
         first  = u["name"].split()[0]
         opener = (
             f"Assalam-o-Alaikum {first}! 👋\n\n"
-            f"I'm Ustad, your {sub} tutor for {lvl}.\n\n"
-            f"I'm ready to help you with {sub} at the {lvl} level. "
-            "Ask me any question — I can also help with other subjects if you need!\n\n"
-            "What would you like to learn today? 📚"
+            f"I am your **{sel_sub}** tutor for **{sel_lvl}**.\n\n"
+            f"I am ready to help you master {sel_sub} at the {sel_lvl} level. "
+            "Ask me any question — tap a topic card below or type your own!\n\n"
+            "Kya sikhna chahte hain aaj? 📚"
         )
         st.session_state.chat_messages.append({"role":"assistant","content":opener})
         st.rerun()
 
-    # ── Chat message window ───────────────────────────────────
-    msgs = st.session_state.get("chat_messages", [])
+    # Re-read active after potential commit
+    sub = st.session_state.active_sub
+    lvl = st.session_state.active_lvl
+
+    # Show a subtle indicator when pending ≠ active
+    if (sel_sub != sub or sel_lvl != lvl):
+        st.markdown(
+            f"<div style=\"font-size:11px;color:#D97706;font-weight:600;"
+            f"padding:5px 10px;background:#FEF3C7;border-radius:8px;margin-bottom:6px\">"
+            f"⚠️ Press <b>▶ Start Learning</b> to switch to <b>{sel_sub} · {sel_lvl}</b>"
+            "</div>",
+            unsafe_allow_html=True
+        )
+
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # CHAT MESSAGES — avatar next to every Ustad reply
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     if not msgs:
-        first = u["name"].split()[0]
         st.markdown(
             "<div class=\"chat-window\"><div class=\"chat-empty\">"
-            "<div class=\"chat-empty-icon\">🎓</div>"
-            f"<div class=\"chat-empty-title\">Assalam-o-Alaikum, {first}!</div>"
-            "<div class=\"chat-empty-sub\">"
-            f"I'm Ustad — pick your subject and grade above,<br>"
-            f"then press <b>▶ Start Learning</b> or tap a topic card below."
+            "<div class=\"chat-empty-icon\">👆</div>"
+            "<div class=\"chat-empty-title\">Pick subject & grade above</div>"
+            "<div class=\"chat-empty-sub\">Press <b>▶ Start Learning</b> to begin,<br>"
+            "or tap any topic card below to jump straight in."
             "</div></div></div>",
             unsafe_allow_html=True
         )
@@ -2025,72 +2177,75 @@ def page_chat():
         for m in msgs:
             safe = (m["content"]
                     .replace("&","&amp;").replace("<","&lt;")
-                    .replace(">","&gt;").replace("\n","<br>"))
+                    .replace(">","&gt;").replace("\n","<br>")
+                    .replace("**",""))          # strip markdown bold for HTML
             tag = m.get("tag","")
             if m["role"] == "user":
                 win += (f"<div class=\"user-row\">"
                         f"<div class=\"user-bubble\">{safe}</div></div>")
             elif tag == "image":
-                win += (f"<div class=\"img-row\"><div class=\"ai-ava\">🎓</div>"
+                win += (f"<div class=\"img-row\">"
+                        f"<div class=\"ai-ava\">{USTAD_SVG_SMALL}</div>"
                         f"<div class=\"img-bubble\">📸 <b>Homework Solution</b><br><br>{safe}</div></div>")
             else:
-                win += (f"<div class=\"ai-row\"><div class=\"ai-ava\">🎓</div>"
+                win += (f"<div class=\"ai-row\">"
+                        f"<div class=\"ai-ava\">{USTAD_SVG_SMALL}</div>"
                         f"<div class=\"ai-bubble\">{safe}</div></div>")
         win += "</div>"
         st.markdown(win, unsafe_allow_html=True)
 
-    # ── Topic cards (grade + subject aware) ───────────────────
-    topics = get_topics(sub, lvl)
-    TCARD_ICONS = {
-        "Maths":"📐","Physics":"⚡","Chemistry":"🧪","Biology":"🌿",
-        "English":"📖","Computer Science":"💻","Urdu":"🖊️"
-    }
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # TOPIC CARDS — keyed on ACTIVE sub+lvl so changing dropdowns
+    # does NOT re-render / fire cards
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    topics    = get_topics(sub, lvl)
     subj_icon = TCARD_ICONS.get(sub, "📚")
-
     st.markdown(
-        f"<div class=\"tcard-section-lbl\">⚡ {sub} topics for {lvl} — tap to ask</div>",
+        f"<div class=\"tcard-lbl\">⚡ {sub} · {lvl} — tap to ask Ustad</div>",
         unsafe_allow_html=True
     )
-    tcols = st.columns(len(topics)) if topics else []
-    for i, (col, topic) in enumerate(zip(tcols, topics)):
-        with col:
-            if st.button(f"{subj_icon} {topic}", key=f"tc_{sub}_{lvl}_{i}",
-                         use_container_width=True):
-                st.session_state.chat_messages.append({"role":"user","content":topic})
-                with st.spinner("🎓 Ustad is thinking…"):
-                    reply = call_ai(st.session_state.chat_messages,
-                                    build_system(u, sub, lvl))
-                if reply.startswith("__"):
-                    st.session_state.chat_messages.pop()
-                    st.error("⚠️ Could not reach Ustad — check API key in Streamlit secrets.")
-                else:
+    if topics:
+        tcols = st.columns(len(topics))
+        for i, (col, topic) in enumerate(zip(tcols, topics)):
+            with col:
+                # Key uses ACTIVE sub+lvl — stable until Start is pressed
+                if st.button(f"{subj_icon} {topic}",
+                             key=f"tc__{sub}__{lvl}__{i}",
+                             use_container_width=True):
                     st.session_state.chat_messages.append(
-                        {"role":"assistant","content":reply})
-                    bump_stats(sub)
-                    save_chat_session(sub, lvl)
-                st.rerun()
+                        {"role":"user","content":topic})
+                    with st.spinner("🎓 Ustad is thinking…"):
+                        reply = call_ai(st.session_state.chat_messages,
+                                        build_system(u, sub, lvl))
+                    if reply.startswith("__"):
+                        st.session_state.chat_messages.pop()
+                        st.error("⚠️ API error — check ANTHROPIC_API_KEY in secrets.")
+                    else:
+                        st.session_state.chat_messages.append(
+                            {"role":"assistant","content":reply})
+                        bump_stats(sub)
+                        save_chat_session(sub, lvl)
+                    st.rerun()
 
-    # ── Upload homework image ─────────────────────────────────
-    with st.expander("📸  Upload Homework Image — let Ustad solve it", expanded=False):
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # HOMEWORK IMAGE UPLOAD
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    with st.expander("📸  Upload Homework Image — Ustad will solve it", expanded=False):
         st.markdown(
             "<div class=\"upload-strip\">"
-            "<div style=\"font-size:26px;flex-shrink:0\">📷</div>"
+            "<div style=\"font-size:24px;flex-shrink:0\">📷</div>"
             "<div><div class=\"upload-title\">Photo Homework Solver</div>"
-            "<div class=\"upload-sub\">Take a photo of any question — Ustad reads, solves and explains every step.</div>"
-            "</div></div>",
+            "<div class=\"upload-sub\">Upload a photo — Ustad reads the question, "
+            "solves it and explains every step.</div></div></div>",
             unsafe_allow_html=True
         )
-        hw_img = st.file_uploader(
-            "Upload homework photo (JPG/PNG)",
-            type=["jpg","jpeg","png"], key="hw_img_upload",
-            label_visibility="collapsed"
-        )
+        hw_img = st.file_uploader("Photo (JPG/PNG)", type=["jpg","jpeg","png"],
+                                   key="hw_img_upload", label_visibility="collapsed")
         ic1, ic2 = st.columns([3,1])
         with ic1:
-            extra_note = st.text_input(
-                "Note", placeholder="Optional: e.g. Grade 8 Maths, Chapter 3…",
-                key="hw_img_note", label_visibility="collapsed"
-            )
+            extra_note = st.text_input("Note (optional)",
+                placeholder="e.g. Grade 8 Maths Chapter 3…",
+                key="hw_img_note", label_visibility="collapsed")
         with ic2:
             solve_btn = st.button("🔍 Solve It", key="hw_solve_btn",
                                   use_container_width=True, type="primary")
@@ -2100,14 +2255,14 @@ def page_chat():
             note_txt   = f" Context: {extra_note}." if extra_note.strip() else ""
             prompt = (
                 "Look carefully at this homework image." + note_txt +
-                "\n\n1. Write out the exact question(s) you can see."
-                "\n2. Solve each question with full step-by-step working."
-                "\n3. Briefly explain the method so the student understands."
+                "\n\n1. Write out the exact question(s) visible."
+                "\n2. Solve each with full step-by-step working."
+                "\n3. Explain the method clearly for a student."
                 "\nBe warm and encouraging."
             )
             st.session_state.chat_messages.append({
                 "role":"user",
-                "content": f"📸 Homework image uploaded{' — '+extra_note if extra_note.strip() else ''}"
+                "content": f"📸 Homework image{' — '+extra_note if extra_note.strip() else ''}"
             })
             with st.spinner("🔍 Ustad is reading your homework image…"):
                 try:
@@ -2132,16 +2287,19 @@ def page_chat():
                 bump_stats(sub); save_chat_session(sub, lvl)
             st.rerun()
 
-    # ── Text question form ────────────────────────────────────
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # TEXT QUESTION FORM
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     with st.form("chat_form", clear_on_submit=True):
         ph = ("یہاں سوال لکھیں — Ustad آپ کی مدد کرے گا…"
               if sub == "Urdu"
-              else f"Ask Ustad anything about {sub} ({lvl}) — or any other subject…")
-        txt = st.text_area("Ask Ustad", placeholder=ph, height=72,
+              else f"Ask Ustad anything about {sub} ({lvl}) — or any subject…")
+        txt = st.text_area("Ask Ustad", placeholder=ph, height=70,
                            label_visibility="collapsed", key="chat_input_area")
         fc1, fc2 = st.columns([4,1])
         with fc1:
-            send  = st.form_submit_button("📤  Ask Ustad", use_container_width=True, type="primary")
+            send  = st.form_submit_button("📤  Ask Ustad",
+                                          use_container_width=True, type="primary")
         with fc2:
             clear = st.form_submit_button("🗑️ Clear", use_container_width=True)
         if clear:
@@ -2151,20 +2309,26 @@ def page_chat():
         if send and txt.strip():
             _ok, used, limit = check_daily_limit(u)
             if not _ok:
-                st.error(f"⏰ Daily limit of {limit} questions reached. Upgrade to Pro for unlimited!")
+                st.error(f"⏰ Daily limit of {limit} reached. Upgrade to Pro for unlimited!")
             else:
-                st.session_state.chat_messages.append({"role":"user","content":txt.strip()})
+                st.session_state.chat_messages.append(
+                    {"role":"user","content":txt.strip()})
                 with st.spinner("🎓 Ustad is thinking…"):
-                    reply = call_ai(st.session_state.chat_messages, build_system(u, sub, lvl))
+                    reply = call_ai(st.session_state.chat_messages,
+                                    build_system(u, sub, lvl))
                 if reply.startswith("__"):
                     st.session_state.chat_messages.pop()
-                    st.error("🔑 API key missing — add ANTHROPIC_API_KEY to Streamlit secrets." if "API_KEY_MISSING" in reply else f"⚠️ {reply}")
+                    st.error("🔑 API key missing — add ANTHROPIC_API_KEY to Streamlit secrets."
+                             if "API_KEY_MISSING" in reply else f"⚠️ {reply}")
                 else:
-                    st.session_state.chat_messages.append({"role":"assistant","content":reply})
+                    st.session_state.chat_messages.append(
+                        {"role":"assistant","content":reply})
                     bump_stats(sub); save_chat_session(sub, lvl)
                 st.rerun()
 
-    # ── Daily limit bar ───────────────────────────────────────
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # DAILY LIMIT BAR
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     _ok, used, limit = check_daily_limit(u)
     left = max(0, limit - used)
     pct  = int(used / max(limit,1) * 100)

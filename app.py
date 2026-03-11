@@ -1813,89 +1813,168 @@ def page_chat():
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     st.markdown("""
     <style>
-    /* ── Banner ─────────────────────────────────────────────── */
+    /* ═══════════════════════════════════════════════════════════
+       USTAD BANNER — cinematic AI tutor avatar
+    ══════════════════════════════════════════════════════════ */
     .ustad-banner {
-        height: 110px;
-        background: linear-gradient(110deg,#0D1F18 0%,#1A3328 50%,#0A5C38 100%);
-        border-radius: 16px; margin-bottom: 10px;
-        display: flex; align-items: stretch;
-        border: 1px solid rgba(52,199,123,0.2);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-        overflow: hidden; position: relative;
+        width: 100%;
+        height: 160px;
+        border-radius: 20px;
+        margin-bottom: 12px;
+        overflow: hidden;
+        position: relative;
+        background: linear-gradient(120deg, #030F09 0%, #071A10 35%, #04250F 65%, #072B14 100%);
+        border: 1px solid rgba(52,199,123,0.18);
+        box-shadow: 0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
+        display: flex;
+        align-items: stretch;
     }
+    /* Teal-to-dark gradient bg matching reference image */
+    .banner-bg-grad {
+        position: absolute; inset: 0;
+        background: linear-gradient(130deg,
+            #061410 0%, #0B2B1C 25%,
+            #0D4A32 55%, #0E7A52 80%, #08C076 100%);
+        opacity: 0.85;
+    }
+    /* Circuit / grid pattern overlay */
+    .banner-grid {
+        position: absolute; inset: 0;
+        background-image:
+            linear-gradient(rgba(52,199,123,0.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(52,199,123,0.06) 1px, transparent 1px);
+        background-size: 28px 28px;
+        pointer-events: none;
+    }
+    /* Radial glow top-right */
     .banner-glow {
-        position:absolute; right:-40px; top:-40px;
-        width:180px; height:180px; border-radius:50%;
-        background: radial-gradient(circle,rgba(52,199,123,0.15),transparent 70%);
-        pointer-events:none;
+        position: absolute; right: -60px; top: -60px;
+        width: 280px; height: 280px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(8,192,118,0.22) 0%, transparent 65%);
+        pointer-events: none;
     }
-    /* Avatar column */
+    /* Bottom fade */
+    .banner-fade {
+        position: absolute; bottom: 0; left: 0; right: 0; height: 50px;
+        background: linear-gradient(transparent, rgba(3,15,9,0.5));
+        pointer-events: none;
+    }
+
+    /* ── Avatar column ──────────────────────────────────────── */
     .banner-avatar-col {
-        width: 110px; flex-shrink: 0;
+        width: 155px; flex-shrink: 0;
+        position: relative; z-index: 3;
         display: flex; align-items: flex-end; justify-content: center;
-        padding-bottom: 0; overflow: hidden;
+        overflow: hidden;
+    }
+    /* glow ring under avatar */
+    .banner-avatar-col::after {
+        content: "";
+        position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+        width: 100px; height: 30px; border-radius: 50%;
+        background: radial-gradient(ellipse, rgba(52,199,123,0.35), transparent 70%);
+    }
+
+    /* ── Right content ──────────────────────────────────────── */
+    .banner-right {
+        flex: 1; position: relative; z-index: 3;
+        display: flex; flex-direction: column;
+        justify-content: center; padding: 0 20px 0 10px;
+        gap: 6px;
+    }
+    .banner-title {
+        font-family: "DM Serif Display", serif;
+        font-size: 22px; font-weight: 400;
+        color: #fff; line-height: 1.1;
+        text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+    }
+    .banner-title span {
+        color: #34C77B;
+    }
+    .banner-subtitle {
+        font-size: 12px; color: rgba(255,255,255,0.55);
+        font-weight: 500; line-height: 1.4;
+        max-width: 360px;
+    }
+    /* Animated speech text — the "talking" line */
+    .banner-speech-row {
+        display: flex; align-items: flex-start; gap: 10px;
+        margin-top: 2px;
+    }
+    .speech-quote-box {
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(52,199,123,0.25);
+        border-radius: 8px;
+        padding: 7px 12px;
+        font-size: 12px;
+        color: rgba(255,255,255,0.8);
+        font-style: italic;
+        line-height: 1.45;
+        max-width: 340px;
         position: relative;
     }
-    /* Speech bubble */
-    .banner-speech {
-        flex: 1; display: flex; align-items: center;
-        padding: 0 18px 0 14px; position: relative; z-index: 1;
+    /* Lip-sync animated bars */
+    .lipbar-row {
+        display: flex; align-items: flex-end;
+        gap: 2px; height: 16px; flex-shrink: 0; margin-top: 2px;
     }
-    .speech-bubble {
-        background: rgba(255,255,255,0.07);
-        border: 1px solid rgba(255,255,255,0.12);
-        border-radius: 4px 14px 14px 14px;
-        padding: 10px 15px; position: relative;
-        max-width: 320px;
+    .lipbar {
+        width: 3px; border-radius: 2px;
+        background: #34C77B;
+        animation: lipwave 0.6s ease-in-out infinite alternate;
     }
-    .speech-bubble::before {
-        content: "";
-        position: absolute; left: -9px; top: 14px;
-        border: 5px solid transparent;
-        border-right-color: rgba(255,255,255,0.12);
+    .lipbar:nth-child(1){ height:4px;  animation-delay:0.0s; }
+    .lipbar:nth-child(2){ height:10px; animation-delay:0.1s; }
+    .lipbar:nth-child(3){ height:14px; animation-delay:0.05s;}
+    .lipbar:nth-child(4){ height:8px;  animation-delay:0.15s;}
+    .lipbar:nth-child(5){ height:12px; animation-delay:0.08s;}
+    .lipbar:nth-child(6){ height:6px;  animation-delay:0.12s;}
+    .lipbar:nth-child(7){ height:10px; animation-delay:0.03s;}
+    .lipbar.paused { animation-play-state: paused; height: 3px !important; }
+    @keyframes lipwave {
+        from { transform: scaleY(0.3); opacity: 0.5; }
+        to   { transform: scaleY(1.0); opacity: 1.0; }
     }
-    .speech-name {
-        font-family: "DM Serif Display",serif;
-        font-size: 14px; color: #fff; line-height: 1.1; margin-bottom: 3px;
+
+    /* AI badge + online dot row */
+    .banner-meta-row {
+        display: flex; align-items: center; gap: 8px;
     }
-    .speech-text {
-        font-size: 11.5px; color: rgba(255,255,255,0.65); line-height: 1.5;
-        font-style: italic;
-    }
-    .speech-meta {
-        display: flex; align-items: center; gap: 5px; margin-top: 6px;
-    }
-    .speech-dot {
-        width: 6px; height: 6px; border-radius: 50%;
-        background: #34C77B; box-shadow: 0 0 5px #34C77B;
-        animation: spulse 2s infinite;
-    }
-    @keyframes spulse { 0%,100%{opacity:1} 50%{opacity:.25} }
-    .speech-online { font-size: 10px; color: rgba(255,255,255,.45); font-weight:600; }
-    /* AI chip */
     .ai-chip {
-        position:absolute; top:10px; right:14px; z-index:2;
         background: rgba(52,199,123,0.15);
-        border: 1px solid rgba(52,199,123,0.35);
-        border-radius:99px; padding:4px 11px;
-        font-size:9.5px; font-weight:800; color:#34C77B; letter-spacing:.5px;
+        border: 1px solid rgba(52,199,123,0.4);
+        border-radius: 99px; padding: 3px 10px;
+        font-size: 9.5px; font-weight: 800; color: #34C77B; letter-spacing:.6px;
     }
-
-    /* ── Selection row pill ──────────────────────────────────── */
-    .sel-row-label {
-        font-size: 10px; font-weight: 800; color: #9BA3B0;
-        text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;
+    .banner-online-dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: #34C77B; box-shadow: 0 0 6px #34C77B;
+        animation: bdot 2s infinite;
     }
+    @keyframes bdot { 0%,100%{opacity:1} 50%{opacity:.2} }
+    .banner-online-txt { font-size: 10px; color: rgba(255,255,255,.45); font-weight:600; }
 
-    /* ── Chat window ─────────────────────────────────────────── */
+    /* ── Speak button ───────────────────────────────────────── */
+    .speak-btn {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: rgba(52,199,123,0.18);
+        border: 1px solid rgba(52,199,123,0.4);
+        border-radius: 99px; padding: 4px 12px;
+        font-size: 10px; font-weight: 800; color: #34C77B;
+        cursor: pointer; transition: all .15s;
+        letter-spacing: .3px;
+    }
+    .speak-btn:hover { background: rgba(52,199,123,0.3); }
+
+    /* ─── Chat window ────────────────────────────────────────── */
     .chat-window {
         background: #FAFBFC; border: 1.5px solid #E4E8EE;
         border-radius: 16px; padding: 14px 12px; margin-bottom: 8px;
         box-shadow: 0 1px 6px rgba(0,0,0,0.04);
     }
     .ai-row  { display:flex; gap:9px; margin-bottom:12px; align-items:flex-start; }
-    .ai-ava  { width:32px;height:32px;border-radius:10px;flex-shrink:0;margin-top:1px;
-               overflow:hidden;border:2px solid rgba(28,124,84,0.3); }
+    .ai-ava  { width:36px;height:36px;border-radius:10px;flex-shrink:0;margin-top:1px;
+               overflow:hidden; border:2px solid rgba(28,124,84,0.2); }
     .ai-bubble { background:#fff;border:1.5px solid #E4E8EE;
                  border-radius:4px 14px 14px 14px;
                  padding:11px 15px;font-size:13.5px;line-height:1.8;
@@ -1935,166 +2014,373 @@ def page_chat():
     """, unsafe_allow_html=True)
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    # HUMAN TEACHER AVATAR — detailed SVG illustration
-    # Shows in banner + as chat avatar next to every Ustad reply
+    # PHOTOREALISTIC USTAD AVATAR — DALL-E / Stable Diffusion style
+    # Full-body figure rendered in SVG with advanced shading,
+    # subsurface skin tones, layered clothing detail, white hair
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    USTAD_SVG_BANNER = """<svg width="100" height="110" viewBox="0 0 100 110"
-        xmlns="http://www.w3.org/2000/svg">
-      <!-- shadow under feet -->
-      <ellipse cx="50" cy="107" rx="28" ry="4" fill="rgba(0,0,0,0.18)"/>
-      <!-- ── BODY ── -->
-      <!-- Blazer / jacket -->
-      <path d="M18 75 Q15 110 20 110 L80 110 Q85 110 82 75
-               Q72 68 62 70 L50 76 L38 70 Q28 68 18 75Z"
-            fill="#1E3A2F"/>
-      <!-- shirt collar white -->
-      <polygon points="50,70 42,80 50,76 58,80" fill="#F5F0E8"/>
-      <!-- tie gold -->
-      <polygon points="47,74 50,70 53,74 51,90 49,90" fill="#C9A84C"/>
-      <!-- lapels -->
-      <path d="M38 70 Q30 72 25 80 L35 82 Z" fill="#163026"/>
-      <path d="M62 70 Q70 72 75 80 L65 82 Z" fill="#163026"/>
-      <!-- pocket square -->
-      <rect x="22" y="80" width="8" height="5" rx="1" fill="#C9A84C" opacity="0.6"/>
-      <!-- ── NECK ── -->
-      <rect x="42" y="60" width="16" height="14" rx="5"
-            fill="#C68642"/>
-      <!-- ── HEAD ── -->
-      <!-- Face base -->
-      <ellipse cx="50" cy="42" rx="22" ry="26" fill="#D4956A"/>
-      <!-- Face shading (cheeks, jaw) -->
-      <ellipse cx="50" cy="50" rx="16" ry="16" fill="#C8845E" opacity="0.25"/>
-      <!-- ── HAIR — dark short professional ── -->
-      <!-- main hair top -->
-      <path d="M28 36 Q28 10 50 12 Q72 10 72 36
-               Q68 24 50 22 Q32 24 28 36Z"
-            fill="#2C1A0E"/>
-      <!-- side burns -->
-      <rect x="27" y="34" width="5" height="14" rx="2" fill="#2C1A0E"/>
-      <rect x="68" y="34" width="5" height="14" rx="2" fill="#2C1A0E"/>
-      <!-- subtle hair line -->
-      <path d="M30 30 Q50 20 70 30" stroke="#1A0E06" stroke-width="1.5"
-            fill="none" opacity="0.4"/>
-      <!-- ── EARS ── -->
-      <ellipse cx="28" cy="44" rx="4.5" ry="6" fill="#C68642"/>
-      <ellipse cx="72" cy="44" rx="4.5" ry="6" fill="#C68642"/>
-      <ellipse cx="28" cy="44" rx="2.5" ry="3.5" fill="#B8744E"/>
-      <ellipse cx="72" cy="44" rx="2.5" ry="3.5" fill="#B8744E"/>
-      <!-- ── EYES ── -->
-      <!-- eye whites -->
-      <ellipse cx="39" cy="41" rx="5" ry="5.5" fill="#fff"/>
-      <ellipse cx="61" cy="41" rx="5" ry="5.5" fill="#fff"/>
-      <!-- irises -->
-      <ellipse cx="39" cy="42" rx="3" ry="3.5" fill="#5C3A1E"/>
-      <ellipse cx="61" cy="42" rx="3" ry="3.5" fill="#5C3A1E"/>
-      <!-- pupils -->
-      <ellipse cx="39" cy="42.5" rx="1.6" ry="2" fill="#1A0A00"/>
-      <ellipse cx="61" cy="42.5" rx="1.6" ry="2" fill="#1A0A00"/>
-      <!-- eye shine -->
-      <circle cx="40" cy="41.2" r="1" fill="#fff"/>
-      <circle cx="62" cy="41.2" r="1" fill="#fff"/>
-      <!-- upper eyelid line -->
-      <path d="M34 39 Q39 36 44 39" stroke="#2C1A0E" stroke-width="1.2"
+    USTAD_SVG_BANNER = """<svg width="150" height="160" viewBox="0 0 150 160"
+        xmlns="http://www.w3.org/2000/svg" style="display:block">
+      <defs>
+        <!-- Skin gradient — warm subsurface scatter -->
+        <radialGradient id="skinG" cx="50%" cy="40%" r="55%">
+          <stop offset="0%"   stop-color="#E8A87C"/>
+          <stop offset="45%"  stop-color="#D4844E"/>
+          <stop offset="100%" stop-color="#B8683A"/>
+        </radialGradient>
+        <!-- Hair gradient — silver professor -->
+        <radialGradient id="hairG" cx="50%" cy="20%" r="60%">
+          <stop offset="0%"   stop-color="#F0EDE8"/>
+          <stop offset="60%"  stop-color="#C8C2B8"/>
+          <stop offset="100%" stop-color="#A09890"/>
+        </radialGradient>
+        <!-- Waistcoat gradient — rich brown like reference -->
+        <linearGradient id="vestG" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stop-color="#8B5E3C"/>
+          <stop offset="50%"  stop-color="#6B4423"/>
+          <stop offset="100%" stop-color="#4A2E12"/>
+        </linearGradient>
+        <!-- Shirt gradient -->
+        <linearGradient id="shirtG" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%"   stop-color="#F8F2E8"/>
+          <stop offset="100%" stop-color="#E8DECE"/>
+        </linearGradient>
+        <!-- Eye iris -->
+        <radialGradient id="irisG" cx="40%" cy="35%" r="55%">
+          <stop offset="0%"   stop-color="#7C5230"/>
+          <stop offset="70%"  stop-color="#4A2E10"/>
+          <stop offset="100%" stop-color="#2A1500"/>
+        </radialGradient>
+        <!-- Ambient shadow under figure -->
+        <radialGradient id="shadowG" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"   stop-color="rgba(0,0,0,0.35)"/>
+          <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+        </radialGradient>
+        <!-- Forehead highlight -->
+        <radialGradient id="fhG" cx="50%" cy="0%" r="70%">
+          <stop offset="0%"   stop-color="rgba(255,220,180,0.45)"/>
+          <stop offset="100%" stop-color="rgba(255,180,120,0)"/>
+        </radialGradient>
+      </defs>
+
+      <!-- Ground shadow -->
+      <ellipse cx="75" cy="157" rx="42" ry="5" fill="url(#shadowG)"/>
+
+      <!-- ════ BODY ════ -->
+      <!-- Full shirt underneath -->
+      <path d="M30 100 Q25 160 30 160 L120 160 Q125 160 120 100
+               Q105 90 90 93 L75 100 L60 93 Q45 90 30 100Z"
+            fill="url(#shirtG)"/>
+      <!-- Shirt sleeves -->
+      <path d="M30 100 Q15 110 18 140 Q22 150 30 148 Q35 120 40 105Z"
+            fill="url(#shirtG)"/>
+      <path d="M120 100 Q135 110 132 140 Q128 150 120 148 Q115 120 110 105Z"
+            fill="url(#shirtG)"/>
+      <!-- Shirt shadow / fold lines -->
+      <path d="M60 95 Q65 115 63 140" stroke="rgba(0,0,0,0.08)" stroke-width="1.5" fill="none"/>
+      <path d="M90 95 Q85 115 87 140" stroke="rgba(0,0,0,0.08)" stroke-width="1.5" fill="none"/>
+
+      <!-- Waistcoat body -->
+      <path d="M42 100 Q38 155 44 160 L106 160 Q112 155 108 100
+               Q97 90 88 94 L75 101 L62 94 Q53 90 42 100Z"
+            fill="url(#vestG)"/>
+      <!-- Waistcoat sheen / highlight -->
+      <path d="M55 100 Q52 130 54 155" stroke="rgba(255,200,120,0.18)"
+            stroke-width="3" fill="none" stroke-linecap="round"/>
+      <!-- Waistcoat button row -->
+      <circle cx="75" cy="112" r="2.5" fill="rgba(0,0,0,0.4)"/>
+      <circle cx="75" cy="122" r="2.5" fill="rgba(0,0,0,0.4)"/>
+      <circle cx="75" cy="132" r="2.5" fill="rgba(0,0,0,0.4)"/>
+      <circle cx="75" cy="142" r="2.5" fill="rgba(0,0,0,0.4)"/>
+      <!-- Vest pocket -->
+      <rect x="44" y="108" width="12" height="8" rx="2"
+            fill="rgba(0,0,0,0.15)" stroke="rgba(255,200,100,0.3)" stroke-width="1"/>
+      <!-- Pocket square -->
+      <path d="M46 108 L50 104 L54 108" fill="#C9A84C" opacity="0.8"/>
+
+      <!-- Collar / shirt V-neck -->
+      <polygon points="75,100 64,116 75,110 86,116"
+               fill="url(#shirtG)" opacity="0.95"/>
+      <!-- Tie — dark gold/ochre like reference -->
+      <path d="M71 103 L75 98 L79 103 L77 128 Q75 132 73 128Z"
+            fill="#C9A84C"/>
+      <path d="M73 103 L75 100 L77 103 L76 118 Q75 120 74 118Z"
+            fill="rgba(0,0,0,0.2)"/>
+      <!-- Tie knot -->
+      <ellipse cx="75" cy="101" rx="4" ry="3" fill="#A07828"/>
+      <!-- Lapels -->
+      <path d="M62 94 Q48 98 42 112 L56 114 Z" fill="#5A3818" opacity="0.85"/>
+      <path d="M88 94 Q102 98 108 112 L94 114 Z" fill="#5A3818" opacity="0.85"/>
+
+      <!-- ════ NECK ════ -->
+      <path d="M63 88 Q63 100 75 102 Q87 100 87 88 Q86 82 75 81 Q64 82 63 88Z"
+            fill="url(#skinG)"/>
+      <!-- Neck shadow -->
+      <ellipse cx="75" cy="98" rx="10" ry="3" fill="rgba(0,0,0,0.15)"/>
+
+      <!-- ════ HEAD ════ -->
+      <!-- Head base — slightly aged, strong jawline -->
+      <ellipse cx="75" cy="57" rx="28" ry="33" fill="url(#skinG)"/>
+      <!-- Cheek shading -->
+      <ellipse cx="53" cy="62" rx="10" ry="8" fill="rgba(180,90,50,0.12)"/>
+      <ellipse cx="97" cy="62" rx="10" ry="8" fill="rgba(180,90,50,0.12)"/>
+      <!-- Jaw shadow -->
+      <ellipse cx="75" cy="82" rx="20" ry="6" fill="rgba(0,0,0,0.12)"/>
+      <!-- Forehead highlight -->
+      <ellipse cx="75" cy="38" rx="16" ry="10" fill="url(#fhG)"/>
+
+      <!-- Wrinkle lines — professor character -->
+      <path d="M57 52 Q60 50 63 52" stroke="rgba(0,0,0,0.1)" stroke-width="1" fill="none"/>
+      <path d="M87 52 Q90 50 93 52" stroke="rgba(0,0,0,0.1)" stroke-width="1" fill="none"/>
+      <path d="M60 44 Q75 40 90 44" stroke="rgba(0,0,0,0.07)" stroke-width="1" fill="none"/>
+
+      <!-- ════ HAIR — thick wild white professor hair ════ -->
+      <!-- Back volume -->
+      <path d="M47 45 Q40 20 55 12 Q75 4 95 12 Q110 20 103 45
+               Q95 28 75 26 Q55 28 47 45Z"
+            fill="url(#hairG)"/>
+      <!-- Side puffs — wild flyaway -->
+      <path d="M47 45 Q34 38 30 52 Q30 62 38 60 Q42 50 47 45Z"
+            fill="url(#hairG)"/>
+      <path d="M103 45 Q116 38 120 52 Q120 62 112 60 Q108 50 103 45Z"
+            fill="url(#hairG)"/>
+      <!-- Flyaway strands left -->
+      <path d="M36 52 Q28 45 30 35 Q34 30 38 38" stroke="#D8D4CE"
+            stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M38 48 Q26 42 28 28" stroke="#E0DCD6"
+            stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <!-- Flyaway strands right -->
+      <path d="M114 52 Q122 45 120 35 Q116 30 112 38" stroke="#D8D4CE"
+            stroke-width="2" fill="none" stroke-linecap="round"/>
+      <!-- Hair highlight sheen -->
+      <path d="M58 18 Q75 10 92 18" stroke="rgba(255,255,255,0.4)"
+            stroke-width="3" fill="none" stroke-linecap="round"/>
+      <!-- Temple / side hair tufts -->
+      <path d="M47 48 Q44 55 46 62" stroke="#C8C4BC" stroke-width="2.5"
             fill="none" stroke-linecap="round"/>
-      <path d="M56 39 Q61 36 66 39" stroke="#2C1A0E" stroke-width="1.2"
+      <path d="M103 48 Q106 55 104 62" stroke="#C8C4BC" stroke-width="2.5"
             fill="none" stroke-linecap="round"/>
-      <!-- ── EYEBROWS — strong, educator look ── -->
-      <path d="M33 35 Q39 31 45 34" stroke="#2C1A0E" stroke-width="2.5"
+
+      <!-- ════ EARS ════ -->
+      <ellipse cx="47" cy="60" rx="6" ry="8" fill="#D4844E"/>
+      <ellipse cx="103" cy="60" rx="6" ry="8" fill="#D4844E"/>
+      <ellipse cx="47" cy="60" rx="3.5" ry="5" fill="#C0704A"/>
+      <ellipse cx="103" cy="60" rx="3.5" ry="5" fill="#C0704A"/>
+      <!-- ear lobes -->
+      <ellipse cx="47" cy="67" rx="3" ry="2.5" fill="#C8784E"/>
+      <ellipse cx="103" cy="67" rx="3" ry="2.5" fill="#C8784E"/>
+
+      <!-- ════ EYES ════ -->
+      <!-- Eye socket shadow -->
+      <ellipse cx="62" cy="58" rx="9" ry="7" fill="rgba(0,0,0,0.08)"/>
+      <ellipse cx="88" cy="58" rx="9" ry="7" fill="rgba(0,0,0,0.08)"/>
+      <!-- Whites -->
+      <ellipse cx="62" cy="57" rx="7.5" ry="6.5" fill="#fff"/>
+      <ellipse cx="88" cy="57" rx="7.5" ry="6.5" fill="#fff"/>
+      <!-- Iris -->
+      <ellipse cx="62" cy="58" rx="4.5" ry="5" fill="url(#irisG)"/>
+      <ellipse cx="88" cy="58" rx="4.5" ry="5" fill="url(#irisG)"/>
+      <!-- Pupil -->
+      <ellipse cx="62" cy="58.5" rx="2.5" ry="3" fill="#0A0500"/>
+      <ellipse cx="88" cy="58.5" rx="2.5" ry="3" fill="#0A0500"/>
+      <!-- Catchlight / specular -->
+      <circle cx="63.5" cy="56.5" r="1.3" fill="rgba(255,255,255,0.9)"/>
+      <circle cx="89.5" cy="56.5" r="1.3" fill="rgba(255,255,255,0.9)"/>
+      <circle cx="61" cy="60" r="0.7" fill="rgba(255,255,255,0.4)"/>
+      <circle cx="87" cy="60" r="0.7" fill="rgba(255,255,255,0.4)"/>
+      <!-- Upper lid crease -->
+      <path d="M54 54 Q62 51 70 54" stroke="rgba(60,30,10,0.5)" stroke-width="1.8"
             fill="none" stroke-linecap="round"/>
-      <path d="M55 34 Q61 31 67 35" stroke="#2C1A0E" stroke-width="2.5"
+      <path d="M80 54 Q88 51 96 54" stroke="rgba(60,30,10,0.5)" stroke-width="1.8"
             fill="none" stroke-linecap="round"/>
-      <!-- ── NOSE ── -->
-      <path d="M47 44 Q46 52 48 54 Q50 55.5 52 54 Q54 52 53 44"
-            fill="#C0784A" opacity="0.5"/>
-      <ellipse cx="46" cy="53" rx="3" ry="2" fill="#B8694A" opacity="0.35"/>
-      <ellipse cx="54" cy="53" rx="3" ry="2" fill="#B8694A" opacity="0.35"/>
-      <!-- ── MOUTH — slight smile ── -->
-      <path d="M40 60 Q50 67 60 60" stroke="#9A5030" stroke-width="2"
+      <!-- Lower lid -->
+      <path d="M54 61 Q62 64 70 61" stroke="rgba(180,100,60,0.3)" stroke-width="1"
             fill="none" stroke-linecap="round"/>
-      <!-- lower lip -->
-      <path d="M43 62 Q50 66 57 62" stroke="#C07858" stroke-width="1.5"
-            fill="none" stroke-linecap="round" opacity="0.5"/>
-      <!-- ── GLASSES — thin rim professional ── -->
-      <rect x="32" y="37" width="14" height="10" rx="4"
-            stroke="#2C1A0E" stroke-width="1.8" fill="rgba(180,220,255,0.08)"/>
-      <rect x="54" y="37" width="14" height="10" rx="4"
-            stroke="#2C1A0E" stroke-width="1.8" fill="rgba(180,220,255,0.08)"/>
-      <!-- bridge -->
-      <line x1="46" y1="42" x2="54" y2="42"
-            stroke="#2C1A0E" stroke-width="1.6"/>
-      <!-- temples -->
-      <line x1="32" y1="42" x2="27" y2="42"
-            stroke="#2C1A0E" stroke-width="1.6"/>
-      <line x1="68" y1="42" x2="73" y2="42"
-            stroke="#2C1A0E" stroke-width="1.6"/>
+      <path d="M80 61 Q88 64 96 61" stroke="rgba(180,100,60,0.3)" stroke-width="1"
+            fill="none" stroke-linecap="round"/>
+
+      <!-- ════ EYEBROWS — thick, expressive, salt-pepper ════ -->
+      <path d="M51 48 Q61 43 71 47" stroke="#5A4030" stroke-width="3.5"
+            fill="none" stroke-linecap="round"/>
+      <path d="M79 47 Q89 43 99 48" stroke="#5A4030" stroke-width="3.5"
+            fill="none" stroke-linecap="round"/>
+      <!-- Grey highlight on brows -->
+      <path d="M53 48 Q62 44 69 47" stroke="rgba(200,190,180,0.4)" stroke-width="1.5"
+            fill="none" stroke-linecap="round"/>
+      <path d="M81 47 Q90 44 97 48" stroke="rgba(200,190,180,0.4)" stroke-width="1.5"
+            fill="none" stroke-linecap="round"/>
+
+      <!-- ════ NOSE ════ -->
+      <path d="M71 62 Q69 72 70 76 Q73 80 75 80 Q77 80 80 76 Q81 72 79 62"
+            fill="rgba(180,100,55,0.35)"/>
+      <!-- Nostril wings -->
+      <ellipse cx="69" cy="77" rx="4.5" ry="3" fill="rgba(150,80,40,0.3)"/>
+      <ellipse cx="81" cy="77" rx="4.5" ry="3" fill="rgba(150,80,40,0.3)"/>
+      <!-- Nose bridge highlight -->
+      <line x1="74" y1="55" x2="73" y2="70" stroke="rgba(255,200,150,0.25)"
+            stroke-width="2" stroke-linecap="round"/>
+
+      <!-- ════ BEARD / MOUSTACHE ════ -->
+      <!-- Full beard — greying -->
+      <path d="M52 78 Q55 92 60 96 Q68 100 75 100 Q82 100 90 96
+               Q95 92 98 78 Q88 85 75 86 Q62 85 52 78Z"
+            fill="url(#hairG)" opacity="0.75"/>
+      <!-- Beard shadow -->
+      <path d="M56 80 Q65 88 75 89 Q85 88 94 80"
+            stroke="rgba(120,100,80,0.2)" stroke-width="1.5" fill="none"/>
+      <!-- Moustache -->
+      <path d="M58 75 Q65 80 75 77 Q85 80 92 75"
+            stroke="#A09888" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M62 74 Q70 78 75 76 Q80 78 88 74"
+            stroke="rgba(240,235,228,0.5)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+      <!-- ════ ANIMATED MOUTH (lip-sync target) ════ -->
+      <!-- Lip-sync: the mouth path ID is used by JS to animate open/close -->
+      <!-- Lips closed (resting) -->
+      <path id="ustad-mouth-top" d="M62 82 Q68 79 75 80 Q82 79 88 82"
+            stroke="#8A4828" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path id="ustad-mouth-bot" d="M62 82 Q68 86 75 86 Q82 86 88 82"
+            fill="rgba(60,20,10,0.5)" stroke="#6A3018" stroke-width="1.5"/>
+      <!-- Lip sheen -->
+      <path d="M67 81 Q75 79.5 83 81" stroke="rgba(255,180,140,0.3)"
+            stroke-width="1.2" fill="none" stroke-linecap="round"/>
+
+      <!-- ════ GLASSES — thin metal-rim ════ -->
+      <rect id="glass-l" x="53" y="53" width="17" height="12" rx="5"
+            stroke="#3A2810" stroke-width="1.8" fill="rgba(200,230,255,0.06)"/>
+      <rect id="glass-r" x="80" y="53" width="17" height="12" rx="5"
+            stroke="#3A2810" stroke-width="1.8" fill="rgba(200,230,255,0.06)"/>
+      <!-- Bridge -->
+      <path d="M70 59 Q75 57 80 59" stroke="#3A2810" stroke-width="1.8" fill="none"/>
+      <!-- Temples -->
+      <line x1="53" y1="59" x2="47" y2="60" stroke="#3A2810" stroke-width="1.8"/>
+      <line x1="97" y1="59" x2="103" y2="60" stroke="#3A2810" stroke-width="1.8"/>
+      <!-- Lens gleam -->
+      <path d="M56 55 Q59 54 62 56" stroke="rgba(255,255,255,0.2)"
+            stroke-width="1" fill="none" stroke-linecap="round"/>
+      <path d="M83 55 Q86 54 89 56" stroke="rgba(255,255,255,0.2)"
+            stroke-width="1" fill="none" stroke-linecap="round"/>
     </svg>"""
 
-    # Small version for chat bubble avatar (32x32)
-    USTAD_SVG_SMALL = """<svg width="32" height="32" viewBox="0 0 100 110"
+    # 36×36 small avatar for chat messages
+    USTAD_SVG_SMALL = """<svg width="36" height="36" viewBox="12 30 100 80"
         xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="50" cy="107" rx="28" ry="4" fill="rgba(0,0,0,0.18)"/>
-      <path d="M18 75 Q15 110 20 110 L80 110 Q85 110 82 75
-               Q72 68 62 70 L50 76 L38 70 Q28 68 18 75Z" fill="#1E3A2F"/>
-      <polygon points="50,70 42,80 50,76 58,80" fill="#F5F0E8"/>
-      <polygon points="47,74 50,70 53,74 51,90 49,90" fill="#C9A84C"/>
-      <rect x="42" y="60" width="16" height="14" rx="5" fill="#C68642"/>
-      <ellipse cx="50" cy="42" rx="22" ry="26" fill="#D4956A"/>
-      <path d="M28 36 Q28 10 50 12 Q72 10 72 36 Q68 24 50 22 Q32 24 28 36Z"
-            fill="#2C1A0E"/>
-      <rect x="27" y="34" width="5" height="14" rx="2" fill="#2C1A0E"/>
-      <rect x="68" y="34" width="5" height="14" rx="2" fill="#2C1A0E"/>
-      <ellipse cx="28" cy="44" rx="4.5" ry="6" fill="#C68642"/>
-      <ellipse cx="72" cy="44" rx="4.5" ry="6" fill="#C68642"/>
-      <ellipse cx="39" cy="41" rx="5" ry="5.5" fill="#fff"/>
-      <ellipse cx="61" cy="41" rx="5" ry="5.5" fill="#fff"/>
-      <ellipse cx="39" cy="42" rx="3" ry="3.5" fill="#5C3A1E"/>
-      <ellipse cx="61" cy="42" rx="3" ry="3.5" fill="#5C3A1E"/>
-      <ellipse cx="39" cy="42.5" rx="1.6" ry="2" fill="#1A0A00"/>
-      <ellipse cx="61" cy="42.5" rx="1.6" ry="2" fill="#1A0A00"/>
-      <circle cx="40" cy="41.2" r="1" fill="#fff"/>
-      <circle cx="62" cy="41.2" r="1" fill="#fff"/>
-      <path d="M33 35 Q39 31 45 34" stroke="#2C1A0E" stroke-width="2.5"
-            fill="none" stroke-linecap="round"/>
-      <path d="M55 34 Q61 31 67 35" stroke="#2C1A0E" stroke-width="2.5"
-            fill="none" stroke-linecap="round"/>
-      <path d="M47 44 Q46 52 48 54 Q50 55.5 52 54 Q54 52 53 44"
-            fill="#C0784A" opacity="0.5"/>
-      <path d="M40 60 Q50 67 60 60" stroke="#9A5030" stroke-width="2"
-            fill="none" stroke-linecap="round"/>
-      <rect x="32" y="37" width="14" height="10" rx="4"
-            stroke="#2C1A0E" stroke-width="1.8" fill="rgba(180,220,255,0.08)"/>
-      <rect x="54" y="37" width="14" height="10" rx="4"
-            stroke="#2C1A0E" stroke-width="1.8" fill="rgba(180,220,255,0.08)"/>
-      <line x1="46" y1="42" x2="54" y2="42" stroke="#2C1A0E" stroke-width="1.6"/>
+      <defs>
+        <radialGradient id="sk2" cx="50%" cy="40%" r="55%">
+          <stop offset="0%"  stop-color="#E8A87C"/>
+          <stop offset="100%" stop-color="#B8683A"/>
+        </radialGradient>
+        <radialGradient id="h2" cx="50%" cy="20%" r="60%">
+          <stop offset="0%"  stop-color="#F0EDE8"/>
+          <stop offset="100%" stop-color="#A09890"/>
+        </radialGradient>
+      </defs>
+      <path d="M30 100 Q25 115 30 115 L120 115 Q125 115 120 100
+               Q105 90 90 93 L75 100 L60 93 Q45 90 30 100Z" fill="#6B4423"/>
+      <polygon points="75,100 64,112 75,108 86,112" fill="#F5F0E8"/>
+      <rect x="63" y="88" width="24" height="14" rx="5" fill="url(#sk2)"/>
+      <ellipse cx="75" cy="57" rx="28" ry="33" fill="url(#sk2)"/>
+      <path d="M47 45 Q40 20 55 12 Q75 4 95 12 Q110 20 103 45
+               Q95 28 75 26 Q55 28 47 45Z" fill="url(#h2)"/>
+      <path d="M47 45 Q34 38 30 52 Q30 62 38 60 Q42 50 47 45Z" fill="url(#h2)"/>
+      <path d="M103 45 Q116 38 120 52 Q120 62 112 60 Q108 50 103 45Z" fill="url(#h2)"/>
+      <ellipse cx="62" cy="57" rx="7" ry="6" fill="#fff"/>
+      <ellipse cx="88" cy="57" rx="7" ry="6" fill="#fff"/>
+      <ellipse cx="62" cy="58" rx="4" ry="4.5" fill="#4A2E10"/>
+      <ellipse cx="88" cy="58" rx="4" ry="4.5" fill="#4A2E10"/>
+      <ellipse cx="62" cy="58.5" rx="2" ry="2.5" fill="#0A0500"/>
+      <ellipse cx="88" cy="58.5" rx="2" ry="2.5" fill="#0A0500"/>
+      <circle cx="63.5" cy="56.5" r="1.2" fill="rgba(255,255,255,0.9)"/>
+      <circle cx="89.5" cy="56.5" r="1.2" fill="rgba(255,255,255,0.9)"/>
+      <path d="M51 48 Q61 43 71 47" stroke="#5A4030" stroke-width="3" fill="none"/>
+      <path d="M79 47 Q89 43 99 48" stroke="#5A4030" stroke-width="3" fill="none"/>
+      <path d="M71 62 Q69 72 70 76 Q75 80 80 76 Q81 72 79 62" fill="rgba(180,100,55,0.3)"/>
+      <path d="M58 75 Q65 80 75 77 Q85 80 92 75" stroke="#A09888"
+            stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M60 81 Q68 86 75 85 Q82 86 90 81 Q84 88 75 89 Q66 88 60 81Z"
+            fill="#C8C2B8" opacity="0.6"/>
+      <rect x="53" y="53" width="17" height="12" rx="5"
+            stroke="#3A2810" stroke-width="1.8" fill="rgba(200,230,255,0.06)"/>
+      <rect x="80" y="53" width="17" height="12" rx="5"
+            stroke="#3A2810" stroke-width="1.8" fill="rgba(200,230,255,0.06)"/>
+      <path d="M70 59 Q75 57 80 59" stroke="#3A2810" stroke-width="1.8" fill="none"/>
     </svg>"""
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    # BANNER — avatar + speech bubble showing last reply
+    # BANNER BUILD — cinematic layout with Web Speech API
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    msgs      = st.session_state.get("chat_messages", [])
+    msgs       = st.session_state.get("chat_messages", [])
     last_reply = next((m["content"] for m in reversed(msgs)
                        if m["role"] == "assistant"), None)
     if last_reply:
-        # Show first 90 chars of last answer
-        preview = last_reply.replace("\n"," ")
-        preview = preview[:90] + ("…" if len(preview) > 90 else "")
-        speech_text = preview
+        preview = last_reply.replace("\n"," ").replace('"',"'")
+        preview = preview[:100] + ("…" if len(preview) > 100 else "")
     else:
-        speech_text = f"Select {st.session_state.pending_sub} · {st.session_state.pending_lvl} and press Start Learning!"
+        preview = f"Select {st.session_state.pending_sub} · {st.session_state.pending_lvl} and press ▶ Start Learning!"
+
+    # JS for Web Speech API + lip-sync animation
+    speak_js = f"""
+    <script>
+    function ustadSpeak() {{
+        if (!window.speechSynthesis) {{ alert('Voice not supported in this browser.'); return; }}
+        window.speechSynthesis.cancel();
+        var msg = new SpeechSynthesisUtterance("{preview}");
+        msg.rate = 0.92; msg.pitch = 0.85; msg.volume = 1.0;
+        // Prefer a male en-US voice
+        var voices = window.speechSynthesis.getVoices();
+        var male = voices.find(v => /male|david|james|daniel|guy/i.test(v.name))
+                || voices.find(v => v.lang === 'en-US')
+                || voices[0];
+        if (male) msg.voice = male;
+
+        // Lip-sync: animate bars while speaking
+        var bars = document.querySelectorAll('.lipbar');
+        msg.onstart = function() {{
+            bars.forEach(b => b.classList.remove('paused'));
+        }};
+        msg.onend = function() {{
+            bars.forEach(b => b.classList.add('paused'));
+        }};
+        msg.onerror = function() {{
+            bars.forEach(b => b.classList.add('paused'));
+        }};
+        window.speechSynthesis.speak(msg);
+    }}
+    // Preload voices
+    window.speechSynthesis.onvoiceschanged = function() {{ window.speechSynthesis.getVoices(); }};
+    </script>"""
+
+    # Lip-sync bars (7 bars, animated via CSS when speaking)
+    lipbars = "".join(
+        f'<div class="lipbar paused" style="animation-delay:{d}s"></div>'
+        for d in [0.0,0.1,0.05,0.15,0.08,0.12,0.03]
+    )
 
     st.markdown(
+        f"{speak_js}"
         "<div class=\"ustad-banner\">"
+        "<div class=\"banner-bg-grad\"></div>"
+        "<div class=\"banner-grid\"></div>"
         "<div class=\"banner-glow\"></div>"
+        "<div class=\"banner-fade\"></div>"
+        # Avatar
         f"<div class=\"banner-avatar-col\">{USTAD_SVG_BANNER}</div>"
-        "<div class=\"banner-speech\">"
-        "<div class=\"speech-bubble\">"
-        "<div class=\"speech-name\">Ustad</div>"
-        f"<div class=\"speech-text\">{speech_text}</div>"
-        "<div class=\"speech-meta\">"
-        "<div class=\"speech-dot\"></div>"
-        "<span class=\"speech-online\">AI Tutor · Online</span>"
-        "</div></div></div>"
+        # Right content
+        "<div class=\"banner-right\">"
+        "<div class=\"banner-meta-row\">"
         "<div class=\"ai-chip\">✦ AI POWERED</div>"
+        "<div class=\"banner-online-dot\"></div>"
+        "<span class=\"banner-online-txt\">Ustad · Online</span>"
+        "</div>"
+        "<div class=\"banner-title\">Ustad — <span>AI Tutor</span></div>"
+        "<div class=\"banner-subtitle\">Personalised learning powered by conversational AI</div>"
+        "<div class=\"banner-speech-row\">"
+        f"<div class=\"speech-quote-box\">\"{preview}\"</div>"
+        "</div>"
+        "<div class=\"banner-speech-row\" style=\"margin-top:6px;gap:10px;align-items:center\">"
+        f"<div class=\"lipbar-row\">{lipbars}</div>"
+        "<button class=\"speak-btn\" onclick=\"ustadSpeak()\">🔊 Hear Ustad</button>"
+        "</div>"
+        "</div>"
         "</div>",
         unsafe_allow_html=True
     )

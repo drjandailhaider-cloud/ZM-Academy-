@@ -3,8 +3,30 @@
 # FIXED VERSION: All bugs corrected
 # ═══════════════════════════════════════════════════════════════════════════════
 import streamlit as st
-import json, hashlib, datetime, time, os, base64, random
+import json, hashlib, datetime, time, os, base64, random, io
 from anthropic import Anthropic
+
+# ── Text-to-Speech — OpenAI TTS (natural male voice, onyx) ──
+def speak_text(text):
+    """Convert text to MP3 via OpenAI TTS and autoplay with st.audio()."""
+    try:
+        import openai
+        oai_key = (st.secrets.get("OPENAI_API_KEY","") or
+                   os.environ.get("OPENAI_API_KEY",""))
+        if not oai_key:
+            return
+        clean = text
+        for sym in ["**","*","##","#","```","__","_"]:
+            clean = clean.replace(sym, "")
+        clean = clean.strip()[:600]
+        c = openai.OpenAI(api_key=oai_key)
+        r = c.audio.speech.create(model="tts-1", voice="onyx",
+                                   input=clean, response_format="mp3")
+        buf = io.BytesIO(r.content)
+        buf.seek(0)
+        st.audio(buf, format="audio/mp3", autoplay=True)
+    except Exception:
+        pass
 # ─────────────────────────────────────────────────────────────────
 # CAMBRIDGE + PAKISTAN NATIONAL CURRICULUM
 # Grades 1–10, O Level, A Level
@@ -2120,6 +2142,7 @@ def page_chat():
             "Kya sikhna chahte hain aaj? 📚"
         )
         st.session_state.chat_messages.append({"role":"assistant","content":opener})
+        speak_text(opener)
         st.rerun()
 
     # Re-read active after potential commit
@@ -2200,6 +2223,7 @@ def page_chat():
                     else:
                         st.session_state.chat_messages.append(
                             {"role":"assistant","content":reply})
+                        speak_text(reply)
                         bump_stats(sub)
                         save_chat_session(sub, lvl)
                     st.rerun()
@@ -2300,6 +2324,7 @@ def page_chat():
                 else:
                     st.session_state.chat_messages.append(
                         {"role":"assistant","content":reply})
+                    speak_text(reply)
                     bump_stats(sub); save_chat_session(sub, lvl)
                 st.rerun()
 

@@ -2074,38 +2074,7 @@ def page_chat():
     # ── 🔊 Web Speech — use st.components.v1.html so <script> actually runs ──
     # st.markdown strips all <script> tags; components.v1.html renders in an
     # iframe where scripts execute normally and postMessage lets it reach parent.
-    # ── 🔊 Voice — inject script via hidden st.markdown div trick ──
-    # components.html causes TypeError on Streamlit Cloud.
-    # Instead: embed a self-contained <audio> + vanilla JS inside an
-    # off-screen div. Streamlit allows <audio> and inline onload JS
-    # when the tag is buried inside a larger HTML block.
-    import json
-    txt_js  = json.dumps(str(preview))   # fully escaped JS string literal
-    # We use a <details> so clicking "Hear Ustad ▶" toggles speech in-place.
-    # The JS lives inside an onerror handler trick that fires synchronously.
-    speak_html = (
-        "<div style='margin-top:4px'>"
-        "<details style='display:inline-block'>"
-        "<summary style='"
-        "display:inline-flex;align-items:center;gap:6px;"
-        "background:linear-gradient(135deg,#1C7C54,#25A870);"
-        "color:#fff;border-radius:99px;padding:6px 16px;"
-        "font-size:12px;font-weight:700;cursor:pointer;"
-        "list-style:none;box-shadow:0 2px 8px rgba(28,124,84,.3)'>"
-        "&#128266; Hear Ustad"
-        "</summary>"
-        "<div style='margin-top:6px;font-size:12px;color:#555;padding:6px 10px;"
-        "background:#F0FDF4;border-radius:8px;border:1px solid #D1FAE5'>"
-        "&#128075; <b>Voice tip:</b> Copy the text below and paste into "
-        "<a href='https://ttsreader.com' target='_blank' style='color:#1C7C54'>"
-        "ttsreader.com</a> or use your device's read-aloud feature."
-        "<br><br>"
-        "<span style='font-size:11px;color:#374151;font-style:italic'>"
-        + preview.replace("**","").replace("*","").replace("#","").replace("&","&amp;").replace("<","&lt;").replace(">","&gt;") +
-        "</span>"
-        "</div></details></div>"
-    )
-    st.markdown(speak_html, unsafe_allow_html=True)
+    # Voice removed — browser TTS not reliably supported on Streamlit Cloud
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # SELECTION ROW — dropdowns update PENDING only

@@ -23,13 +23,12 @@ def _clean_for_tts(text):
 
 def speak_text(text):
     """
-    Generate MP3 via OpenAI TTS and cache it in session state.
-    Skips generation if:
-      - voice is toggled OFF
-      - same text was already spoken (cache hit)
-      - OpenAI key missing
+    Generate MP3 via OpenAI TTS with gTTS fallback.
+    • Skips if voice is OFF, text unchanged (cache hit), or both APIs unavailable.
+    • On success: stores base64 MP3 in _tts_b64 + fingerprint in _tts_last_text.
+    • On failure: sets _tts_b64 = None (text-only fallback, no crash).
     """
-    # Voice toggle gate
+    # ── 1. Voice toggle gate ───────────────────────────────────────
     if not st.session_state.get("_voice_on", True):
         return
 
@@ -37,30 +36,41 @@ def speak_text(text):
     if not clean:
         return
 
-    # Cache hit — don't regenerate same text
+    # ── 2. Cache hit — exact same text already spoken ─────────────
     if st.session_state.get("_tts_last_text") == clean:
-        return   # audio already in _tts_b64 from last time
+        return  # _tts_b64 already holds this audio
 
+    # ── 3. Try OpenAI TTS (primary) ───────────────────────────────
     try:
         import openai
-        oai_key = (st.secrets.get("OPENAI_API_KEY","") or
-                   os.environ.get("OPENAI_API_KEY",""))
-        if not oai_key:
-            st.session_state["_tts_b64"] = None
-            return
-        c = openai.OpenAI(api_key=oai_key)
-        r = c.audio.speech.create(
-            model="tts-1",       # fastest — low latency
-            voice="onyx",        # deep natural male teacher voice
-            input=clean,
-            response_format="mp3"
-        )
-        st.session_state["_tts_b64"]        = base64.b64encode(r.content).decode("ascii")
-        st.session_state["_tts_last_text"]  = clean
+        oai_key = (st.secrets.get("OPENAI_API_KEY", "") or
+                   os.environ.get("OPENAI_API_KEY", ""))
+        if oai_key:
+            c = openai.OpenAI(api_key=oai_key)
+            r = c.audio.speech.create(
+                model="tts-1",          # tts-1 = lowest latency
+                voice="onyx",           # deep natural male teacher voice
+                input=clean,
+                response_format="mp3",
+            )
+            st.session_state["_tts_b64"]       = base64.b64encode(r.content).decode("ascii")
+            st.session_state["_tts_last_text"] = clean
+            return                      # success — done
     except Exception:
-        st.session_state["_tts_b64"] = None   # fallback: text only, no crash
+        pass  # fall through to gTTS
+
+    # ── 4. gTTS fallback (free, no API key required) ──────────────
+    try:
+        from gtts import gTTS
+        import io
+        tts = gTTS(text=clean, lang="en", slow=False)
+        buf = io.BytesIO()
+        tts.write_to_fp(buf)
+        buf.seek(0)
+        st.session_state["_tts_b64"]       = base64.b64encode(buf.read()).decode("ascii")
+        st.session_state["_tts_last_text"] = clean
     except Exception:
-        pass
+        st.session_state["_tts_b64"] = None   # total failure → text-only, no crash
 # ─────────────────────────────────────────────────────────────────
 # CAMBRIDGE + PAKISTAN NATIONAL CURRICULUM
 # Grades 1–10, O Level, A Level
@@ -661,7 +671,7 @@ def hash_pw(password):
 # ─────────────────────────────────────────────────────────────────
 # STATS & BADGES
 # ─────────────────────────────────────────────────────────────────
-DAILY_LIMITS = {"free":10, "basic":50, "premium":9999}
+DAILY_LIMITS = {"free":15, "basic":50, "premium":9999}
 
 def init_stats():
     return {"total":0,"Maths":0,"Physics":0,"Chemistry":0,"Biology":0,
@@ -1789,46 +1799,64 @@ def page_chat():
     u = st.session_state.user
 
     # ══════════════════════════════════════════════════════════
-    # TTS PLAYER — runs at top of every render
-    # Req 5,6,7,8,9,10,12,13
+    # TTS PLAYER — runs at top of every render cycle
     # ══════════════════════════════════════════════════════════
-    # Initialise voice toggle (ON by default)
+
+    # Init voice toggle (ON by default)
     if "_voice_on" not in st.session_state:
         st.session_state["_voice_on"] = True
 
-    # Step A: if a new reply is pending, generate its audio now
+    # Step A — generate audio for a freshly-arrived reply
     if st.session_state.get("_tts_pending"):
         pending_txt = st.session_state.pop("_tts_pending")
-        with st.spinner("🎙️ Ustad is speaking..."):
+        with st.spinner("🔊 Ustad is speaking..."):
             speak_text(pending_txt)
 
-    # Step B: if audio is ready, render the player + autoplay HTML
-    if st.session_state.get("_tts_b64") and st.session_state.get("_voice_on", True):
-        mp3_b64 = st.session_state["_tts_b64"]   # keep — don't pop, so no re-gen on scroll
-        # Native Streamlit audio widget (visible, mobile-compatible)
-        raw = base64.b64decode(mp3_b64)
+    # Step B — render audio widget + autoplay (only when voice is ON)
+    _voice_on  = st.session_state.get("_voice_on", True)
+    _tts_b64   = st.session_state.get("_tts_b64")
+
+    if _tts_b64 and _voice_on:
+        # ── Visible audio player (mobile compatible) ──────────────
+        raw = base64.b64decode(_tts_b64)
         st.audio(raw, format="audio/mp3")
-        # Autoplay via hidden HTML audio tag (fires once per new b64)
-        autoplay_key = st.session_state.get("_tts_autoplay_key","")
-        new_key      = mp3_b64[-16:]   # last 16 chars as unique fingerprint
+
+        # ── Autoplay: inject via st.components.v1.html (iframe)
+        #    This survives Streamlit's script-stripping and works on
+        #    all browsers that allow autoplay of data-URI sources.
+        #    We use a fingerprint so it fires ONCE per new response.
+        autoplay_key = st.session_state.get("_tts_autoplay_key", "")
+        new_key      = _tts_b64[-20:]           # last 20 chars as unique ID
         if autoplay_key != new_key:
             st.session_state["_tts_autoplay_key"] = new_key
-            st.markdown(
-                "<audio autoplay style='display:none'>"
-                "<source src='data:audio/mp3;base64," + mp3_b64 + "' type='audio/mp3'/>"
-                "</audio>",
-                unsafe_allow_html=True
-            )
+            autoplay_html = f"""
+<html><body style="margin:0;padding:0;overflow:hidden;height:0">
+<audio id="ap" autoplay>
+  <source src="data:audio/mp3;base64,{_tts_b64}" type="audio/mp3"/>
+</audio>
+<script>
+  var a = document.getElementById('ap');
+  if(a) {{
+    a.play().catch(function() {{
+      // autoplay blocked — user must press ▶ in the widget above
+    }});
+  }}
+</script>
+</body></html>"""
+            st.components.v1.html(autoplay_html, height=0, scrolling=False)
 
-    # Voice toggle button — top right of chat
+    # ── Voice toggle row ──────────────────────────────────────────
     vcol1, vcol2 = st.columns([8, 1])
     with vcol2:
-        v_icon = "🔊" if st.session_state.get("_voice_on", True) else "🔇"
+        v_icon  = "🔊" if _voice_on else "🔇"
         v_label = f"{v_icon}"
         if st.button(v_label, key="voice_toggle_btn",
                      help="Toggle Ustad voice ON / OFF",
                      use_container_width=True):
-            st.session_state["_voice_on"] = not st.session_state.get("_voice_on", True)
+            st.session_state["_voice_on"] = not _voice_on
+            # Clear stale audio so toggling back ON re-speaks last reply
+            if not _voice_on:
+                st.session_state["_tts_last_text"] = ""
             st.rerun()
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2292,7 +2320,7 @@ def page_chat():
                              use_container_width=True):
                     st.session_state.chat_messages.append(
                         {"role":"user","content":topic})
-                    with st.spinner("🎓 Ustad is thinking…"):
+                    with st.spinner("👳‍♂️ Ustad is thinking..."):
                         reply = call_ai(st.session_state.chat_messages,
                                         build_system(u, sub, lvl))
                     if reply.startswith("__"):
@@ -2369,30 +2397,36 @@ def page_chat():
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # TEXT QUESTION FORM
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # TEXT INPUT FORM — st.text_input so ENTER key auto-submits
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     with st.form("chat_form", clear_on_submit=True):
         ph = ("یہاں سوال لکھیں — Ustad آپ کی مدد کرے گا…"
               if sub == "Urdu"
-              else f"Ask Ustad anything about {sub} ({lvl}) — or any subject…")
-        txt = st.text_area("Ask Ustad", placeholder=ph, height=70,
-                           label_visibility="collapsed", key="chat_input_area")
-        fc1, fc2 = st.columns([4,1])
+              else f"Ask Ustad anything about {sub} ({lvl}) — press Enter to send…")
+        # text_input → Enter key submits form natively in Streamlit
+        txt = st.text_input("Ask Ustad", placeholder=ph,
+                            label_visibility="collapsed", key="chat_input_field")
+        fc1, fc2 = st.columns([4, 1])
         with fc1:
             send  = st.form_submit_button("📤  Ask Ustad",
                                           use_container_width=True, type="primary")
         with fc2:
             clear = st.form_submit_button("🗑️ Clear", use_container_width=True)
         if clear:
-            st.session_state.chat_messages = []
-            st.session_state.session_id    = None
+            st.session_state.chat_messages     = []
+            st.session_state.session_id        = None
+            st.session_state["_tts_b64"]       = None
+            st.session_state["_tts_last_text"] = ""
             st.rerun()
         if send and txt.strip():
             _ok, used, limit = check_daily_limit(u)
             if not _ok:
-                st.error(f"⏰ Daily limit of {limit} reached. Upgrade to Pro for unlimited!")
+                st.error(f"⏰ Daily limit of {limit} questions reached. Upgrade to Pro for unlimited!")
             else:
                 st.session_state.chat_messages.append(
-                    {"role":"user","content":txt.strip()})
-                with st.spinner("🎓 Ustad is thinking…"):
+                    {"role": "user", "content": txt.strip()})
+                with st.spinner("👳‍♂️ Ustad is thinking..."):
                     reply = call_ai(st.session_state.chat_messages,
                                     build_system(u, sub, lvl))
                 if reply.startswith("__"):
@@ -2401,9 +2435,13 @@ def page_chat():
                              if "API_KEY_MISSING" in reply else f"⚠️ {reply}")
                 else:
                     st.session_state.chat_messages.append(
-                        {"role":"assistant","content":reply})
-                    st.session_state["_tts_pending"] = reply
-                    bump_stats(sub); save_chat_session(sub, lvl)
+                        {"role": "assistant", "content": reply})
+                    # Queue for TTS on next render cycle
+                    st.session_state["_tts_pending"]   = reply
+                    st.session_state["_tts_b64"]       = None   # clear stale audio
+                    st.session_state["_tts_last_text"] = ""     # force regeneration
+                    bump_stats(sub)
+                    save_chat_session(sub, lvl)
                 st.rerun()
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

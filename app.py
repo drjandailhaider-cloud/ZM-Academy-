@@ -2018,8 +2018,7 @@ def page_chat():
     # Full-body figure rendered in SVG with advanced shading,
     # subsurface skin tones, layered clothing detail, white hair
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    USTAD_SVG_BANNER = """<svg width="150" height="160" viewBox="0 0 150 160"
-        xmlns="http://www.w3.org/2000/svg" style="display:block">
+    USTAD_SVG_BANNER = """<svg width="150" height="160" viewBox="0 0 150 160" xmlns="http://www.w3.org/2000/svg" style="display:block;overflow:visible">
       <defs>
         <!-- Skin gradient — warm subsurface scatter -->
         <radialGradient id="skinG" cx="50%" cy="40%" r="55%">
@@ -2262,8 +2261,7 @@ def page_chat():
     </svg>"""
 
     # 36×36 small avatar for chat messages
-    USTAD_SVG_SMALL = """<svg width="36" height="36" viewBox="12 30 100 80"
-        xmlns="http://www.w3.org/2000/svg">
+    USTAD_SVG_SMALL = """<svg width="36" height="36" viewBox="12 30 100 80" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <radialGradient id="sk2" cx="50%" cy="40%" r="55%">
           <stop offset="0%"  stop-color="#E8A87C"/>

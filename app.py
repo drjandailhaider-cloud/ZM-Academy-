@@ -6,25 +6,38 @@ import streamlit as st
 import json, hashlib, datetime, time, os, base64, random, io
 from anthropic import Anthropic
 
-# ── Text-to-Speech — OpenAI TTS (natural male voice, onyx) ──
+# ── Text-to-Speech — OpenAI TTS with guaranteed autoplay ──
 def speak_text(text):
-    """Convert text to MP3 via OpenAI TTS and autoplay with st.audio()."""
+    """Generate MP3 via OpenAI TTS, embed as base64 data-URI and autoplay."""
     try:
         import openai
         oai_key = (st.secrets.get("OPENAI_API_KEY","") or
                    os.environ.get("OPENAI_API_KEY",""))
         if not oai_key:
             return
+        # Clean markdown
         clean = text
         for sym in ["**","*","##","#","```","__","_"]:
             clean = clean.replace(sym, "")
         clean = clean.strip()[:600]
+        if not clean:
+            return
+        # Call OpenAI TTS
         c = openai.OpenAI(api_key=oai_key)
-        r = c.audio.speech.create(model="tts-1", voice="onyx",
-                                   input=clean, response_format="mp3")
-        buf = io.BytesIO(r.content)
-        buf.seek(0)
-        st.audio(buf, format="audio/mp3", autoplay=True)
+        r = c.audio.speech.create(
+            model="tts-1", voice="onyx",
+            input=clean, response_format="mp3"
+        )
+        # Base64-encode the MP3 bytes
+        mp3_b64 = base64.b64encode(r.content).decode("ascii")
+        # Inject a hidden <audio> tag that autoplays — works on all browsers
+        # We use st.markdown; audio data-URI has no special chars to break HTML
+        audio_html = (
+            "<audio autoplay style='display:none'>"
+            "<source src='data:audio/mp3;base64," + mp3_b64 + "' type='audio/mp3'/>"
+            "</audio>"
+        )
+        st.markdown(audio_html, unsafe_allow_html=True)
     except Exception:
         pass
 # ─────────────────────────────────────────────────────────────────

@@ -3189,183 +3189,308 @@ def page_friends():
 # IMAGE GENERATOR
 # ─────────────────────────────────────────────────────────────────
 def page_image():
+    # ══════════════════════════════════════════════════════════════
+    # SESSION STATE INIT
+    # ══════════════════════════════════════════════════════════════
+    for _k, _v in [
+        ("img_last_svg",    None),   # cached SVG string of last result
+        ("img_last_prompt", ""),     # prompt that produced it
+        ("img_last_style",  ""),     # style label used
+        ("img_regenerate",  False),  # flag to re-trigger generation
+    ]:
+        if _k not in st.session_state:
+            st.session_state[_k] = _v
+
     u = st.session_state.user
-    st.markdown("<div class=\"section-header purple\">🎨 AI Image Generator</div>", unsafe_allow_html=True)
 
-    st.markdown("""
-    <div style="background:#F5F0FF;border:1.5px solid #7C3AED;border-radius:12px;
-        padding:12px 16px;margin-bottom:16px;font-size:13px;color:#5B21B6">
-        🖌️ Claude AI draws a <b>custom SVG diagram</b> — choose your style!
-        Generation takes 20-40 seconds. Works fully offline.
-    </div>""", unsafe_allow_html=True)
-
-    c1, c2 = st.columns(2)
-    with c1:
-        img_sub = st.selectbox("📚 Subject", list(SUBJECTS.keys()), key="img_sub")
-    with c2:
-        lvl_idx = get_level_index(u.get("grade","Grade 6"))
-        img_lvl = st.selectbox("🏫 Grade", LEVELS, index=lvl_idx, key="img_lvl")
-
-    style_choice = st.selectbox("🎨 Art Style", list(IMAGE_STYLES.keys()), key="img_style")
-    style_hint   = IMAGE_STYLES[style_choice]
-
-    style_colors = {
-        "📐 Educational Diagram":"#2563EB",
-        "🎨 Cartoon":            "#E8472A",
-        "🎌 Anime Style":        "#7C3AED",
-        "🤖 AI Art":             "#059669",
-        "🔬 Realistic / Scientific":"#B45309",
+    # ══════════════════════════════════════════════════════════════
+    # STYLE DEFINITIONS  (compact pills, not a dropdown)
+    # ══════════════════════════════════════════════════════════════
+    STYLES = {
+        "📐 Diagram":   ("a clean labeled educational diagram with arrows, colorful sections, white background",     "#2563EB"),
+        "🎨 Cartoon":   ("a bright fun cartoon illustration with cheerful bold colors suitable for students",         "#E8472A"),
+        "🔬 Realistic": ("a detailed realistic scientific illustration like a textbook diagram, accurate and labeled", "#059669"),
+        "🤖 3D / AI":   ("a futuristic 3D-rendered AI-generated digital art style with glowing elements and depth",   "#7C3AED"),
+        "🎌 Sci-Fi":    ("a sci-fi style illustration with neon accents, space themes, and high-tech elements",       "#B45309"),
     }
-    sc = style_colors.get(style_choice,"#666")
-    st.markdown(f"""
-    <div style="background:{sc}18;border:1.5px solid {sc}44;border-radius:10px;
-        padding:8px 14px;font-size:12px;color:{sc};font-weight:700;margin-bottom:12px">
-        {style_choice} — {style_hint[:60]}...
-    </div>""", unsafe_allow_html=True)
+    STYLE_KEYS = list(STYLES.keys())
+
+    SUGGESTIONS = [
+        "Solar system diagram",
+        "Human heart anatomy",
+        "Photosynthesis process",
+        "Water cycle",
+        "Plant cell structure",
+        "Pyramid / food chain",
+        "AI robot",
+        "Atom structure",
+    ]
+
+    # ── Read selected style from session state (default = first)
+    if "img_style_sel" not in st.session_state:
+        st.session_state.img_style_sel = STYLE_KEYS[0]
+
+    # ══════════════════════════════════════════════════════════════
+    # PROMPT INPUT AREA
+    # ══════════════════════════════════════════════════════════════
+
+    # Suggestion chips — clicking one fills the prompt
+    st.markdown(
+        "<div style='font-size:12px;font-weight:600;color:#888;"
+        "margin-bottom:6px;letter-spacing:.03em'>✨ Quick ideas</div>",
+        unsafe_allow_html=True
+    )
+    chip_cols = st.columns(len(SUGGESTIONS))
+    for ci, sug in enumerate(SUGGESTIONS):
+        with chip_cols[ci]:
+            if st.button(sug, key=f"sug_{ci}", use_container_width=True):
+                st.session_state["img_prompt_val"] = sug
+
+    # Carry suggestion into text area via session state
+    if "img_prompt_val" not in st.session_state:
+        st.session_state.img_prompt_val = ""
 
     prompt = st.text_area(
-        "📝 Describe what you want to see",
-        placeholder=(
-            "e.g. Diagram showing how photosynthesis works with labeled parts\n"
-            "e.g. Solar system with all 8 planets in order\n"
-            "e.g. Water cycle showing evaporation, clouds and rain\n"
-            "e.g. Human heart with blood flow direction"
-        ),
-        height=100, key="img_prompt"
+        "Prompt",
+        value=st.session_state.img_prompt_val,
+        placeholder="Describe the image you want to generate...",
+        height=110,
+        key="img_prompt_area",
+        label_visibility="collapsed",
     )
 
-    if st.button("🎨 Generate Image", use_container_width=True, type="primary"):
-        if not prompt.strip():
-            st.warning("Please enter a description first!")
-            return
+    # Style selector pills
+    st.markdown(
+        "<div style='font-size:12px;font-weight:600;color:#888;"
+        "margin:8px 0 4px;letter-spacing:.03em'>🎨 Style</div>",
+        unsafe_allow_html=True
+    )
+    scols = st.columns(len(STYLE_KEYS))
+    for si, sk in enumerate(STYLE_KEYS):
+        with scols[si]:
+            _, sc_hex = STYLES[sk]
+            is_active = st.session_state.img_style_sel == sk
+            btn_type  = "primary" if is_active else "secondary"
+            if st.button(sk, key=f"style_{si}", use_container_width=True, type=btn_type):
+                st.session_state.img_style_sel = sk
+                st.rerun()
 
-        prog = st.progress(0,  text="🎨 Step 1/4 — Planning your diagram...")
-        time.sleep(0.4)
-        prog.progress(20, text="✏️ Step 2/4 — Drawing shapes and structure...")
-        time.sleep(0.4)
-        prog.progress(45, text="🎨 Step 3/4 — Adding colors, labels and arrows...")
+    active_style  = st.session_state.img_style_sel
+    style_hint, _ = STYLES[active_style]
 
-        system_msg = (
-            "You are an expert SVG illustrator who creates educational diagrams. "
-            "STRICT OUTPUT RULES:\n"
-            "1. Output ONLY the SVG code. No markdown. No backticks. No explanations.\n"
-            "2. Start with exactly: <svg\n"
-            "3. End with exactly: </svg>\n"
-            "4. Use: xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 700 500\" width=\"700\" height=\"500\"\n"
-            "5. Include <defs> with at least 3 linearGradient definitions.\n"
-            "6. Bold title at top (y=35, font-size=24, font-weight=bold, text-anchor=middle, x=350).\n"
-            "7. BRIGHT colors — use gradient fills on all major shapes.\n"
-            "8. Include 20+ visual elements: shapes, labels, arrows.\n"
-            f"9. Style: {style_hint}\n"
-            "10. Every component must have a clear text label.\n"
-            "11. Make it look like a professional educational poster.\n"
-            "12. DO NOT use any xlink:href or external images."
-        )
-        user_msg = (
-            f"Create a detailed colorful educational SVG illustration:\n"
-            f"TOPIC: {prompt}\nSUBJECT: {img_sub}\nLEVEL: {img_lvl}\nSTYLE: {style_hint}\n\n"
-            f"Include: gradient background, bold title, labeled components, arrows.\n"
-            f"Output ONLY the SVG. Start with <svg and end with </svg>."
-        )
+    # Generate button
+    do_generate = st.button(
+        "✦ Generate Image",
+        use_container_width=True,
+        type="primary",
+        key="img_gen_btn",
+    )
 
-        raw = call_ai_svg([{"role":"user","content":user_msg}], system_msg)
-        prog.progress(90, text="✨ Step 4/4 — Finishing touches...")
-        time.sleep(0.3)
-        prog.progress(100, text="✅ Done!")
-        time.sleep(0.3)
-        prog.empty()
+    # Also trigger if Regenerate was pressed last cycle
+    if st.session_state.img_regenerate:
+        do_generate = True
+        st.session_state.img_regenerate = False
 
-        cleaned = raw
-        for fence in ["```svg","```xml","```html","```"]:
-            cleaned = cleaned.replace(fence,"")
-        cleaned = cleaned.strip()
+    # ══════════════════════════════════════════════════════════════
+    # GENERATION LOGIC
+    # ══════════════════════════════════════════════════════════════
+    if do_generate:
+        final_prompt = (prompt or st.session_state.img_last_prompt).strip()
+        if not final_prompt:
+            st.warning("Please enter a description or pick a suggestion above.")
+        else:
+            prog = st.progress(0,  text="🎨 Planning diagram…")
+            time.sleep(0.3)
+            prog.progress(20, text="✏️ Drawing shapes…")
+            time.sleep(0.3)
+            prog.progress(50, text="🎨 Adding colours & labels…")
 
-        svg_start = cleaned.find("<svg")
-        svg_end   = cleaned.rfind("</svg>")
-
-        if svg_start >= 0 and svg_end >= 0:
-            final_svg = cleaned[svg_start:svg_end+6]
-
-            st.success("✅ Image generated!")
-            st.markdown("### 🖼️ Your Educational Image")
-            st.components.v1.html(final_svg, height=520, scrolling=False)
-
-            b64 = base64.b64encode(final_svg.encode()).decode()
-            st.markdown(
-                f"<a href=\"data:image/svg+xml;base64,{b64}\" download=\"zm_diagram.svg\" "
-                f"style=\"display:inline-flex;align-items:center;gap:8px;padding:10px 22px;"
-                f"background:linear-gradient(135deg,#7C3AED,#A78BFA);color:#fff;"
-                f"border-radius:12px;font-weight:700;font-size:14px;text-decoration:none;margin-top:10px\">"
-                f"⬇️ Download SVG Image</a>",
-                unsafe_allow_html=True
+            system_msg = (
+                "You are an expert SVG illustrator who creates educational diagrams. "
+                "STRICT OUTPUT RULES:\n"
+                "1. Output ONLY the SVG code. No markdown. No backticks. No explanations.\n"
+                "2. Start with exactly: <svg\n"
+                "3. End with exactly: </svg>\n"
+                "4. Use: xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 700 500\" width=\"700\" height=\"500\"\n"
+                "5. Include <defs> with at least 3 linearGradient definitions.\n"
+                "6. Bold title at top (y=35, font-size=24, font-weight=bold, text-anchor=middle, x=350).\n"
+                "7. BRIGHT colors — use gradient fills on all major shapes.\n"
+                "8. Include 20+ visual elements: shapes, labels, arrows.\n"
+                f"9. Style: {style_hint}\n"
+                "10. Every component must have a clear text label.\n"
+                "11. Make it look like a professional educational poster.\n"
+                "12. DO NOT use any xlink:href or external images."
+            )
+            user_msg = (
+                f"Create a detailed colourful educational SVG illustration.\n"
+                f"TOPIC: {final_prompt}\nSTYLE: {style_hint}\n\n"
+                f"Include: gradient background, bold title, labeled components, arrows.\n"
+                f"Output ONLY the SVG. Start with <svg and end with </svg>."
             )
 
-            imgs  = load_json(IMAGES_FILE)
-            email = u["email"]
-            if email not in imgs: imgs[email] = []
-            imgs[email].insert(0,{
-                "id": str(int(time.time())), "svg": final_svg,
-                "prompt":prompt, "subject":img_sub, "level":img_lvl,
-                "style":style_choice,
-                "created": datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-            })
-            save_json(IMAGES_FILE, imgs)
+            raw = call_ai_svg([{"role": "user", "content": user_msg}], system_msg)
+            prog.progress(90, text="✨ Finishing touches…")
+            time.sleep(0.3)
+            prog.progress(100, text="✅ Done!")
+            time.sleep(0.2)
+            prog.empty()
 
-            users = load_json(USERS_FILE)
-            eu    = users.get(u["email"], u)
-            eu.setdefault("stats", init_stats())
-            eu["stats"]["images"] = eu["stats"].get("images",0)+1
-            eu, new_b = check_badges(eu)
-            users[u["email"]] = eu
-            save_json(USERS_FILE, users)
-            st.session_state.user = eu
-            for b in new_b:
-                st.toast(f"🏆 Badge: {b['icon']} {b['name']}!", icon="🎉")
-        else:
-            st.error("⚠️ Could not generate image. Try rephrasing your description.")
-            with st.expander("Debug"): st.code(raw[:600])
+            # Parse SVG
+            cleaned = raw
+            for fence in ["```svg", "```xml", "```html", "```"]:
+                cleaned = cleaned.replace(fence, "")
+            cleaned   = cleaned.strip()
+            svg_start = cleaned.find("<svg")
+            svg_end   = cleaned.rfind("</svg>")
 
+            if svg_start >= 0 and svg_end >= 0:
+                final_svg = cleaned[svg_start:svg_end + 6]
+
+                # Cache in session state (survives rerun)
+                st.session_state.img_last_svg    = final_svg
+                st.session_state.img_last_prompt = final_prompt
+                st.session_state.img_last_style  = active_style
+                st.session_state.img_prompt_val  = final_prompt
+
+                # Persist to images.json
+                imgs  = load_json(IMAGES_FILE)
+                email = u["email"]
+                if email not in imgs:
+                    imgs[email] = []
+                imgs[email].insert(0, {
+                    "id":      str(int(time.time())),
+                    "svg":     final_svg,
+                    "prompt":  final_prompt,
+                    "subject": "",
+                    "level":   "",
+                    "style":   active_style,
+                    "created": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+                })
+                save_json(IMAGES_FILE, imgs)
+
+                # Update user stats + badges
+                users = load_json(USERS_FILE)
+                eu    = users.get(u["email"], u)
+                eu.setdefault("stats", init_stats())
+                eu["stats"]["images"] = eu["stats"].get("images", 0) + 1
+                eu, new_b = check_badges(eu)
+                users[u["email"]] = eu
+                save_json(USERS_FILE, users)
+                st.session_state.user = eu
+                for b in new_b:
+                    st.toast(f"🏆 Badge: {b['icon']} {b['name']}!", icon="🎉")
+            else:
+                st.error("⚠️ Could not generate image. Try rephrasing your description.")
+                with st.expander("Debug"):
+                    st.code(raw[:600])
+
+    # ══════════════════════════════════════════════════════════════
+    # IMAGE RESULT DISPLAY  (persists across reruns via session state)
+    # ══════════════════════════════════════════════════════════════
+    cached_svg = st.session_state.get("img_last_svg")
+    if cached_svg:
+        st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+
+        # Centred image card
+        st.markdown(
+            "<div style='background:#fff;border-radius:16px;"
+            "box-shadow:0 2px 16px rgba(0,0,0,0.08);padding:16px;"
+            "margin:0 auto;max-width:740px'>",
+            unsafe_allow_html=True
+        )
+        st.components.v1.html(cached_svg, height=520, scrolling=False)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        # Utility buttons: Download | Regenerate
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+        ub1, ub2 = st.columns(2)
+        with ub1:
+            b64svg = base64.b64encode(cached_svg.encode()).decode()
+            st.markdown(
+                f"<a href='data:image/svg+xml;base64,{b64svg}' "
+                f"download='zm_diagram.svg' "
+                f"style='display:flex;align-items:center;justify-content:center;gap:8px;"
+                f"padding:10px 0;background:#7C3AED;color:#fff;border-radius:10px;"
+                f"font-weight:700;font-size:14px;text-decoration:none;width:100%;'>"
+                f"⬇️ Download Image</a>",
+                unsafe_allow_html=True
+            )
+        with ub2:
+            if st.button("🔄 Regenerate", key="img_regen_btn",
+                         use_container_width=True):
+                st.session_state.img_regenerate = True
+                st.rerun()
+
+        # Caption
+        cap_prompt = st.session_state.img_last_prompt
+        cap_style  = st.session_state.img_last_style
+        st.markdown(
+            f"<div style='text-align:center;font-size:11px;color:#aaa;margin-top:6px'>"
+            f"{cap_style} · {cap_prompt[:80]}{'…' if len(cap_prompt)>80 else ''}"
+            f"</div>",
+            unsafe_allow_html=True
+        )
+
+    # ══════════════════════════════════════════════════════════════
+    # GALLERY  — previous images, compact 2-column grid
+    # ══════════════════════════════════════════════════════════════
     imgs      = load_json(IMAGES_FILE)
     user_imgs = imgs.get(u["email"], [])
-    if user_imgs:
-        st.markdown("---")
-        st.markdown("### 🖼️ Your Image Gallery")
-        for i in range(0, min(len(user_imgs), 8), 2):
-            cols = st.columns(2)
-            for j, c in enumerate(cols):
-                if i+j < len(user_imgs):
-                    img = user_imgs[i+j]
-                    with c:
-                        prompt_preview = img['prompt'][:60] + ('...' if len(img['prompt'])>60 else '')
-                        st.markdown(f"""
-                        <div style="background:#fff;border-radius:14px;padding:12px;
-                            box-shadow:0 2px 10px rgba(0,0,0,0.07);border:1px solid #F0F0F5;
-                            margin-bottom:12px">
-                            <div style="font-size:11px;font-weight:800;color:#7C3AED;margin-bottom:8px">
-                                {img['style']} · {img['subject']} · {img['created']}
-                            </div>
-                            <div style="font-size:12px;color:#555;margin-bottom:8px">
-                                📝 {prompt_preview}
-                            </div>
-                        </div>""", unsafe_allow_html=True)
-                        with st.expander("🔍 View full image"):
-                            st.components.v1.html(img["svg"], height=480, scrolling=False)
-                            b64 = base64.b64encode(img["svg"].encode()).decode()
-                            dl_col, del_col = st.columns(2)
-                            with dl_col:
+    # Exclude the currently displayed image from gallery to avoid duplication
+    cached_id = None
+    if user_imgs and cached_svg:
+        cached_id = user_imgs[0]["id"] if user_imgs[0]["svg"] == cached_svg else None
+    gallery_imgs = [x for x in user_imgs if x["id"] != cached_id][:8]
+
+    if gallery_imgs:
+        st.markdown(
+            "<div style='height:6px'></div>"
+            "<div style='font-size:13px;font-weight:700;color:#555;"
+            "margin:12px 0 6px'>🖼️ Previous Images</div>",
+            unsafe_allow_html=True
+        )
+        for i in range(0, len(gallery_imgs), 2):
+            gcols = st.columns(2)
+            for j, gc in enumerate(gcols):
+                if i + j < len(gallery_imgs):
+                    img = gallery_imgs[i + j]
+                    with gc:
+                        preview = img["prompt"][:55] + ("…" if len(img["prompt"]) > 55 else "")
+                        st.markdown(
+                            f"<div style='background:#fff;border-radius:12px;"
+                            f"padding:10px 12px;box-shadow:0 1px 8px rgba(0,0,0,0.06);"
+                            f"border:1px solid #F0F0F5;margin-bottom:8px'>"
+                            f"<div style='font-size:10px;font-weight:700;color:#7C3AED;"
+                            f"margin-bottom:4px'>{img.get('style','—')} · {img['created']}</div>"
+                            f"<div style='font-size:12px;color:#444'>📝 {preview}</div>"
+                            f"</div>",
+                            unsafe_allow_html=True
+                        )
+                        with st.expander("🔍 View"):
+                            st.components.v1.html(img["svg"], height=440, scrolling=False)
+                            gd1, gd2 = st.columns(2)
+                            with gd1:
+                                b64g   = base64.b64encode(img["svg"].encode()).decode()
+                                img_id = img["id"]
                                 st.markdown(
-                                    f"<a href=\"data:image/svg+xml;base64,{b64}\" download=\"zm_diagram_{img['id']}.svg\" "
-                                    f"style=\"display:inline-block;padding:6px 14px;background:#7C3AED;color:#fff;"
-                                    f"border-radius:8px;font-weight:700;font-size:12px;text-decoration:none\">⬇️ Download</a>",
+                                    f"<a href='data:image/svg+xml;base64,{b64g}' "
+                                    f"download='zm_{img_id}.svg' "
+                                    f"style='display:inline-block;padding:6px 14px;"
+                                    f"background:#7C3AED;color:#fff;border-radius:8px;"
+                                    f"font-weight:700;font-size:12px;text-decoration:none'>"
+                                    f"⬇️ Download</a>",
                                     unsafe_allow_html=True
                                 )
-                            with del_col:
-                                if st.button("🗑️ Delete", key=f"del_img_{img['id']}", use_container_width=True):
-                                    imgs_fresh = load_json(IMAGES_FILE)
-                                    user_list  = imgs_fresh.get(u["email"], [])
-                                    imgs_fresh[u["email"]] = [x for x in user_list if x["id"] != img["id"]]
-                                    save_json(IMAGES_FILE, imgs_fresh)
-                                    st.success("Image deleted."); st.rerun()
+                            with gd2:
+                                if st.button("🗑️ Delete", key=f"del_img_{img['id']}",
+                                             use_container_width=True):
+                                    imgs_f = load_json(IMAGES_FILE)
+                                    imgs_f[u["email"]] = [
+                                        x for x in imgs_f.get(u["email"], [])
+                                        if x["id"] != img["id"]
+                                    ]
+                                    save_json(IMAGES_FILE, imgs_f)
+                                    st.rerun()
 
 
 # ─────────────────────────────────────────────────────────────────

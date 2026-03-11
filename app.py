@@ -4443,21 +4443,34 @@ def page_student_homework():
 # ─────────────────────────────────────────────────────────────────
 # ROUTER
 # ─────────────────────────────────────────────────────────────────
+# ── LOGIN BYPASS (demo mode — re-enable page_auth() when ready) ──
 if not st.session_state.logged_in:
-    page_auth()
-else:
-    render_sidebar()
-    p = st.session_state.page
-    if   p == "home":        page_home()
-    elif p == "chat":        page_chat()
-    elif p == "syllabus":    page_syllabus()
-    elif p == "quiz":        page_quiz()
-    elif p == "friends":     page_friends()
-    elif p == "image":       page_image()
-    elif p == "homework":    page_homework()
-    elif p == "my_homework": page_student_homework()
-    elif p == "admin":       page_admin()
-    elif p == "progress":    page_progress()
-    elif p == "history":     page_history()
-    elif p == "badges":      page_badges()
-    elif p == "profile":     page_profile()
+    st.session_state.logged_in = True
+    st.session_state.user = {
+        "email":   "demo@zmacademy.pk",
+        "name":    "Demo Student",
+        "grade":   "Grade 9",
+        "role":    "student",
+        "avatar":  "👨‍🎓",
+        "plan":    "free",
+        "badges":  [],
+        "stats":   init_stats(),
+        "is_new":  False,
+    }
+    st.rerun()
+
+render_sidebar()
+p = st.session_state.page
+if   p == "home":        page_home()
+elif p == "chat":        page_chat()
+elif p == "syllabus":    page_syllabus()
+elif p == "quiz":        page_quiz()
+elif p == "friends":     page_friends()
+elif p == "image":       page_image()
+elif p == "homework":    page_homework()
+elif p == "my_homework": page_student_homework()
+elif p == "admin":       page_admin()
+elif p == "progress":    page_progress()
+elif p == "history":     page_history()
+elif p == "badges":      page_badges()
+elif p == "profile":     page_profile()

@@ -2030,10 +2030,13 @@ def page_chat():
     last_reply = next((m["content"] for m in reversed(msgs)
                        if m["role"] == "assistant"), None)
     if last_reply:
-        preview = last_reply.replace("\n"," ").replace('"',"'")
-        preview = preview[:100] + ("…" if len(preview) > 100 else "")
+        _c = last_reply
+        for _m in ["**", "*", "##", "#", "```", "__", "_"]:
+            _c = _c.replace(_m, "")
+        _c = _c.replace("\n", " ").strip()
+        preview = _c[:110] + ("…" if len(_c) > 110 else "")
     else:
-        preview = f"Select {st.session_state.pending_sub} · {st.session_state.pending_lvl} and press ▶ Start Learning!"
+        preview = "Select " + st.session_state.pending_sub + " and press Start Learning!"
 
     # Lip-sync bars (7 bars, animated via CSS when speaking)
     lipbars = "".join(
@@ -2098,7 +2101,7 @@ def page_chat():
         "ttsreader.com</a> or use your device's read-aloud feature."
         "<br><br>"
         "<span style='font-size:11px;color:#374151;font-style:italic'>"
-        + json.dumps(preview)[1:-1] +   # strip outer quotes, already escaped
+        + preview.replace("**","").replace("*","").replace("#","").replace("&","&amp;").replace("<","&lt;").replace(">","&gt;") +
         "</span>"
         "</div></details></div>"
     )

@@ -1378,8 +1378,6 @@ def render_sidebar():
         nav_btn("📝", "Practice Quiz",   "quiz")
         nav_btn("👥", "Friendz Quiz",    "friends")
         nav_btn("🎨", "Image Generator", "image")
-
-        section_label("📋  Study")
         nav_btn("🕐", "Chat History",    "history")
         nav_btn("🏆", "Badges",          "badges")
 
@@ -1389,7 +1387,6 @@ def render_sidebar():
             if role == "teacher":
                 nav_btn("📋", "Create Homework", "homework")
 
-        section_label("👤  Account")
         nav_btn("👤", "Profile", "profile")
 
         # ── My Progress — footer section ─────────────────────────

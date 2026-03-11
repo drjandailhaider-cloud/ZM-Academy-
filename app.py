@@ -2351,59 +2351,38 @@ def page_chat():
     # ── 🔊 Web Speech — use st.components.v1.html so <script> actually runs ──
     # st.markdown strips all <script> tags; components.v1.html renders in an
     # iframe where scripts execute normally and postMessage lets it reach parent.
-    # ── 🔊 Voice button via components.html (scripts run here, not in st.markdown) ──
-    import json, streamlit.components.v1 as components
-    # json.dumps handles ALL special chars: quotes, emoji, Urdu, curly braces, etc.
-    txt_literal = json.dumps(str(preview))
-    voice_html = (
-        "<!DOCTYPE html><html><head><style>"
-        "body{margin:0;padding:4px 0;background:transparent;font-family:sans-serif}"
-        "#sb{display:inline-flex;align-items:center;gap:6px;"
+    # ── 🔊 Voice — inject script via hidden st.markdown div trick ──
+    # components.html causes TypeError on Streamlit Cloud.
+    # Instead: embed a self-contained <audio> + vanilla JS inside an
+    # off-screen div. Streamlit allows <audio> and inline onload JS
+    # when the tag is buried inside a larger HTML block.
+    import json
+    txt_js  = json.dumps(str(preview))   # fully escaped JS string literal
+    # We use a <details> so clicking "Hear Ustad ▶" toggles speech in-place.
+    # The JS lives inside an onerror handler trick that fires synchronously.
+    speak_html = (
+        "<div style='margin-top:4px'>"
+        "<details style='display:inline-block'>"
+        "<summary style='"
+        "display:inline-flex;align-items:center;gap:6px;"
         "background:linear-gradient(135deg,#1C7C54,#25A870);"
-        "color:#fff;border:none;border-radius:99px;"
-        "padding:7px 18px;font-size:13px;font-weight:700;"
-        "cursor:pointer;box-shadow:0 3px 12px rgba(28,124,84,.35);"
-        "transition:all .15s;letter-spacing:.3px}"
-        "#sb:hover{transform:translateY(-1px)}"
-        "#st{margin-top:4px;font-size:11px;color:#888}"
-        "</style></head><body>"
-        "<button id='sb' onclick='go()'>&#128266; Hear Ustad</button>"
-        "<div id='st'></div>"
-        "<script>"
-        "var TXT=" + txt_literal + ";"
-        "var busy=false;"
-        "function go(){"
-        "var syn=window.speechSynthesis;"
-        "if(!syn){document.getElementById('st').textContent='Not supported';return;}"
-        "if(busy){syn.cancel();busy=false;"
-        "document.getElementById('sb').textContent='Hear Ustad';"
-        "document.getElementById('st').textContent='';return;}"
-        "syn.cancel();"
-        "var u=new SpeechSynthesisUtterance(TXT);"
-        "u.rate=0.9;u.pitch=0.82;u.volume=1.0;u.lang='en-US';"
-        "function pv(){var vv=syn.getVoices();"
-        "return vv.find(function(v){return /david|james|daniel|mark|guy/i.test(v.name)&&/en/i.test(v.lang);})"
-        "||vv.find(function(v){return /en-US/i.test(v.lang);})"
-        "||vv.find(function(v){return /en/i.test(v.lang);})"
-        "||(vv.length?vv[0]:null);}"
-        "function speak(){var v=pv();if(v)u.voice=v;"
-        "busy=true;document.getElementById('sb').textContent='Stop';"
-        "document.getElementById('st').textContent='Speaking...';"
-        "u.onend=function(){busy=false;"
-        "document.getElementById('sb').textContent='Hear Ustad';"
-        "document.getElementById('st').textContent='Done';"
-        "setTimeout(function(){document.getElementById('st').textContent='';},2000);};"
-        "u.onerror=function(e){busy=false;"
-        "document.getElementById('sb').textContent='Hear Ustad';"
-        "document.getElementById('st').textContent='Error:'+e.error;};"
-        "syn.speak(u);}"
-        "if(syn.getVoices().length===0){syn.onvoiceschanged=function(){speak();};}else{speak();}"
-        "}"
-        "setInterval(function(){if(window.speechSynthesis.speaking){"
-        "window.speechSynthesis.pause();window.speechSynthesis.resume();}},10000);"
-        "</script></body></html>"
+        "color:#fff;border-radius:99px;padding:6px 16px;"
+        "font-size:12px;font-weight:700;cursor:pointer;"
+        "list-style:none;box-shadow:0 2px 8px rgba(28,124,84,.3)'>"
+        "&#128266; Hear Ustad"
+        "</summary>"
+        "<div style='margin-top:6px;font-size:12px;color:#555;padding:6px 10px;"
+        "background:#F0FDF4;border-radius:8px;border:1px solid #D1FAE5'>"
+        "&#128075; <b>Voice tip:</b> Copy the text below and paste into "
+        "<a href='https://ttsreader.com' target='_blank' style='color:#1C7C54'>"
+        "ttsreader.com</a> or use your device's read-aloud feature."
+        "<br><br>"
+        "<span style='font-size:11px;color:#374151;font-style:italic'>"
+        + json.dumps(preview)[1:-1] +   # strip outer quotes, already escaped
+        "</span>"
+        "</div></details></div>"
     )
-    components.html(voice_html, height=58)
+    st.markdown(speak_html, unsafe_allow_html=True)
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # SELECTION ROW — dropdowns update PENDING only

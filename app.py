@@ -2315,54 +2315,20 @@ def page_chat():
     else:
         preview = f"Select {st.session_state.pending_sub} · {st.session_state.pending_lvl} and press ▶ Start Learning!"
 
-    # JS for Web Speech API + lip-sync animation
-    speak_js = f"""
-    <script>
-    function ustadSpeak() {{
-        if (!window.speechSynthesis) {{ alert('Voice not supported in this browser.'); return; }}
-        window.speechSynthesis.cancel();
-        var msg = new SpeechSynthesisUtterance("{preview}");
-        msg.rate = 0.92; msg.pitch = 0.85; msg.volume = 1.0;
-        // Prefer a male en-US voice
-        var voices = window.speechSynthesis.getVoices();
-        var male = voices.find(v => /male|david|james|daniel|guy/i.test(v.name))
-                || voices.find(v => v.lang === 'en-US')
-                || voices[0];
-        if (male) msg.voice = male;
-
-        // Lip-sync: animate bars while speaking
-        var bars = document.querySelectorAll('.lipbar');
-        msg.onstart = function() {{
-            bars.forEach(b => b.classList.remove('paused'));
-        }};
-        msg.onend = function() {{
-            bars.forEach(b => b.classList.add('paused'));
-        }};
-        msg.onerror = function() {{
-            bars.forEach(b => b.classList.add('paused'));
-        }};
-        window.speechSynthesis.speak(msg);
-    }}
-    // Preload voices
-    window.speechSynthesis.onvoiceschanged = function() {{ window.speechSynthesis.getVoices(); }};
-    </script>"""
-
     # Lip-sync bars (7 bars, animated via CSS when speaking)
     lipbars = "".join(
         f'<div class="lipbar paused" style="animation-delay:{d}s"></div>'
         for d in [0.0,0.1,0.05,0.15,0.08,0.12,0.03]
     )
 
+    # Banner HTML (no script tags — st.markdown strips them)
     st.markdown(
-        f"{speak_js}"
         "<div class=\"ustad-banner\">"
         "<div class=\"banner-bg-grad\"></div>"
         "<div class=\"banner-grid\"></div>"
         "<div class=\"banner-glow\"></div>"
         "<div class=\"banner-fade\"></div>"
-        # Avatar
         f"<div class=\"banner-avatar-col\">{USTAD_SVG_BANNER}</div>"
-        # Right content
         "<div class=\"banner-right\">"
         "<div class=\"banner-meta-row\">"
         "<div class=\"ai-chip\">✦ AI POWERED</div>"
@@ -2374,14 +2340,125 @@ def page_chat():
         "<div class=\"banner-speech-row\">"
         f"<div class=\"speech-quote-box\">\"{preview}\"</div>"
         "</div>"
-        "<div class=\"banner-speech-row\" style=\"margin-top:6px;gap:10px;align-items:center\">"
-        f"<div class=\"lipbar-row\">{lipbars}</div>"
-        "<button class=\"speak-btn\" onclick=\"ustadSpeak()\">🔊 Hear Ustad</button>"
+        f"<div class=\"banner-speech-row\" style=\"margin-top:6px;gap:10px;align-items:center\">"
+        f"<div class=\"lipbar-row\" id=\"ustad-lipbars\">{lipbars}</div>"
         "</div>"
         "</div>"
         "</div>",
         unsafe_allow_html=True
     )
+
+    # ── 🔊 Web Speech — use st.components.v1.html so <script> actually runs ──
+    # st.markdown strips all <script> tags; components.v1.html renders in an
+    # iframe where scripts execute normally and postMessage lets it reach parent.
+    safe_preview = (preview
+                    .replace("\\", "\\\\")
+                    .replace("`", "'")
+                    .replace("\n", " ")
+                    .replace('"', "'"))
+
+    import streamlit.components.v1 as components
+    components.html(f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <style>
+      body {{ margin:0; padding:0; background:transparent; font-family:sans-serif; }}
+      #speakBtn {{
+        display:inline-flex; align-items:center; gap:6px;
+        background:linear-gradient(135deg,#1C7C54,#25A870);
+        color:#fff; border:none; border-radius:99px;
+        padding:8px 20px; font-size:13px; font-weight:700;
+        cursor:pointer; box-shadow:0 3px 12px rgba(28,124,84,0.35);
+        transition:all .15s; letter-spacing:.3px;
+      }}
+      #speakBtn:hover {{ transform:translateY(-1px); box-shadow:0 5px 18px rgba(28,124,84,0.45); }}
+      #speakBtn:active {{ transform:translateY(0); }}
+      #status {{ margin-top:5px; font-size:11px; color:#888; }}
+    </style>
+    </head>
+    <body>
+      <button id="speakBtn" onclick="ustadSpeak()">🔊 Hear Ustad</button>
+      <div id="status"></div>
+    <script>
+      var TEXT = `{safe_preview}`;
+      var speaking = false;
+
+      function ustadSpeak() {{
+        var synth = window.speechSynthesis;
+        if (!synth) {{ document.getElementById('status').textContent='Not supported'; return; }}
+
+        if (speaking) {{
+          synth.cancel();
+          speaking = false;
+          document.getElementById('speakBtn').textContent = '🔊 Hear Ustad';
+          document.getElementById('status').textContent = '';
+          return;
+        }}
+
+        synth.cancel();
+        var utter = new SpeechSynthesisUtterance(TEXT);
+        utter.rate   = 0.9;
+        utter.pitch  = 0.8;
+        utter.volume = 1.0;
+        utter.lang   = 'en-US';
+
+        // Pick best male voice
+        function pickVoice() {{
+          var voices = synth.getVoices();
+          return voices.find(v => /david|james|daniel|mark|guy|male/i.test(v.name) && /en/i.test(v.lang))
+              || voices.find(v => /en-US/i.test(v.lang) && v.name.match(/^[A-Z]/))
+              || voices.find(v => /en/i.test(v.lang))
+              || (voices.length ? voices[0] : null);
+        }}
+
+        var v = pickVoice();
+        if (!v && synth.getVoices().length === 0) {{
+          // Voices not loaded yet — wait
+          synth.onvoiceschanged = function() {{
+            var v2 = pickVoice();
+            if (v2) utter.voice = v2;
+            doSpeak(utter);
+          }};
+        }} else {{
+          if (v) utter.voice = v;
+          doSpeak(utter);
+        }}
+      }}
+
+      function doSpeak(utter) {{
+        var btn = document.getElementById('speakBtn');
+        var sta = document.getElementById('status');
+        speaking = true;
+        btn.textContent = '⏹ Stop';
+        sta.textContent = '🎙️ Ustad is speaking…';
+
+        utter.onend = function() {{
+          speaking = false;
+          btn.textContent = '🔊 Hear Ustad';
+          sta.textContent = '✓ Done';
+          setTimeout(function(){{ sta.textContent=''; }}, 2000);
+        }};
+        utter.onerror = function(e) {{
+          speaking = false;
+          btn.textContent = '🔊 Hear Ustad';
+          sta.textContent = '⚠ Error: ' + e.error;
+        }};
+
+        window.speechSynthesis.speak(utter);
+      }}
+
+      // Chrome bug fix: speech stops after ~15s unless we do this
+      var resumeTimer = setInterval(function() {{
+        if (window.speechSynthesis.speaking) {{
+          window.speechSynthesis.pause();
+          window.speechSynthesis.resume();
+        }}
+      }}, 10000);
+    </script>
+    </body>
+    </html>
+    """, height=60)
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # SELECTION ROW — dropdowns update PENDING only

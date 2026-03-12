@@ -1585,7 +1585,6 @@ def page_home():
             '<span style="font-size:17px">{icon}</span>'
             '<span style="font-size:12px;font-weight:700;color:#374151">{lbl}</span>'
             '</div>'
-            '<span style="font-size:12px;font-weight:800;color:{col}">{pct}%</span>'
             '</div>'
             '<div style="background:#F0F2F5;border-radius:99px;height:6px;overflow:hidden">'
             '<div style="width:{bw}%;height:6px;border-radius:99px;background:{col}"></div>'
@@ -1602,77 +1601,268 @@ def page_home():
         _prog_tile("Badges Earned",    _bd_count,_bd_goal, _bd_pct, "#C9A84C", "\U0001f3c6")
     )
 
-    # Banner: light professional background
-    _hero_css = (
-        '<style>'
-        '@keyframes _zmB{from{opacity:0;transform:translateY(12px)}'
-        'to{opacity:1;transform:translateY(0)}}'
-        '.zm-hero{animation:_zmB .45s ease both}'
-        '.zm-prog{animation:_zmB .45s .15s ease both;opacity:0}'
-        '</style>'
-    )
-    _hero_card = (
-        '<div class="zm-hero" style="'
-        'background:linear-gradient(135deg,#f0fdf6 0%,#ffffff 60%,#f5f8ff 100%);'
-        'border-radius:20px;padding:32px 32px 28px;margin-bottom:6px;'
-        'border:1px solid #dff0e8;'
-        'box-shadow:0 2px 24px rgba(28,124,84,.08),0 1px 4px rgba(0,0,0,.04)">'
+    # ── Banner: premium glassmorphism AI-EdTech with expand toggle ─
+    if "zm_info_open" not in st.session_state:
+        st.session_state["zm_info_open"] = False
+    _open = st.session_state["zm_info_open"]
 
-        '<div style="display:flex;align-items:center;'
-        'justify-content:space-between;gap:24px;flex-wrap:wrap">'
+    _hero_css = "".join([
+        "<style>",
 
-        # LEFT
-        '<div style="flex:1;min-width:220px;max-width:520px">'
-        '<div style="display:inline-flex;align-items:center;gap:6px;'
-        'background:#E6F4EE;border-radius:99px;padding:4px 14px;margin-bottom:18px">'
-        '<span style="width:6px;height:6px;border-radius:50%;background:#1C7C54;'
-        'display:inline-block"></span>'
-        '<span style="font-size:11px;font-weight:700;color:#1C7C54;'
-        'letter-spacing:.07em;text-transform:uppercase">AI-Powered Learning</span>'
-        '</div>'
+        # entry animation
+        "@keyframes _zmSlide{from{opacity:0;transform:translateY(16px)}"
+        "to{opacity:1;transform:translateY(0)}}",
+        "@keyframes _zmPulse{0%,100%{opacity:.6}50%{opacity:1}}",
+        "@keyframes _zmOrbit{from{transform:rotate(0deg) translateX(72px) rotate(0deg)}"
+        "to{transform:rotate(360deg) translateX(72px) rotate(-360deg)}}",
+
+        ".zm-hero{animation:_zmSlide .5s cubic-bezier(.22,.68,0,1.2) both}",
+        ".zm-prog{animation:_zmSlide .5s .18s ease both;opacity:0}",
+
+        # clickable banner wrapper
+        ".zm-bwrap{"
+        "cursor:pointer;"
+        "transition:box-shadow .3s ease,transform .3s cubic-bezier(.22,.68,0,1.2);"
+        "border-radius:24px}",
+        ".zm-bwrap:hover{"
+        "box-shadow:0 20px 60px rgba(28,124,84,.32),0 0 0 1px rgba(45,245,160,.3)!important;"
+        "transform:translateY(-4px) scale(1.005)}",
+        ".zm-bwrap:active{transform:translateY(-1px) scale(1.001)}",
+
+        # live pulse dot
+        ".zm-dot{animation:_zmPulse 2s ease infinite}",
+
+        "</style>",
+    ])
+
+    _arrow = "\u25b2" if _open else "\u25bc"
+
+    _card_parts = [
+        # ── outermost wrapper (glow border layer)
+        '<div class="zm-hero zm-bwrap" style="'
+        'background:linear-gradient(145deg,#062817 0%,#0e4428 40%,#1a6644 70%,#0a3320 100%);'
+        'border-radius:24px;padding:2px;margin-bottom:8px;'
+        'box-shadow:0 8px 48px rgba(14,68,40,.5),0 2px 8px rgba(0,0,0,.25),'
+        '0 0 0 1px rgba(45,245,160,.12)">',
+
+        # ── inner card with glassmorphism overlay
+        '<div style="'
+        'background:linear-gradient(145deg,'
+        'rgba(10,52,32,.97) 0%,'
+        'rgba(18,82,52,.95) 45%,'
+        'rgba(12,60,38,.97) 100%);'
+        'border-radius:22px;padding:30px 30px 24px;'
+        'position:relative;overflow:hidden">',
+
+        # glass shine strip at top
+        '<div style="position:absolute;top:0;left:0;right:0;height:1px;'
+        'background:linear-gradient(90deg,transparent,rgba(45,245,160,.4),rgba(201,168,76,.3),transparent);'
+        'pointer-events:none"></div>',
+
+        # dot-grid texture
+        '<div style="position:absolute;inset:0;'
+        'background-image:radial-gradient(rgba(45,245,160,.06) 1px,transparent 1px);'
+        'background-size:22px 22px;border-radius:22px;pointer-events:none"></div>',
+
+        # large ambient glow — top right
+        '<div style="position:absolute;top:-80px;right:-60px;width:280px;height:280px;'
+        'border-radius:50%;'
+        'background:radial-gradient(circle,rgba(45,245,160,.18) 0%,transparent 65%);'
+        'pointer-events:none"></div>',
+
+        # ambient glow — bottom left gold
+        '<div style="position:absolute;bottom:-60px;left:20px;width:200px;height:200px;'
+        'border-radius:50%;'
+        'background:radial-gradient(circle,rgba(201,168,76,.14) 0%,transparent 65%);'
+        'pointer-events:none"></div>',
+
+        # subtle mid-card glow
+        '<div style="position:absolute;top:50%;left:35%;width:160px;height:160px;'
+        'border-radius:50%;'
+        'background:radial-gradient(circle,rgba(45,245,160,.06) 0%,transparent 70%);'
+        'transform:translateY(-50%);pointer-events:none"></div>',
+
+        # ── main flex row
+        '<div style="position:relative;z-index:2;display:flex;align-items:center;'
+        'justify-content:space-between;gap:24px;flex-wrap:wrap">',
+
+        # ── LEFT column
+        '<div style="flex:1;min-width:200px;max-width:500px">',
+
+        # eyebrow pill with pulse dot
+        '<div style="display:inline-flex;align-items:center;gap:8px;'
+        'background:rgba(45,245,160,.10);'
+        'border:1px solid rgba(45,245,160,.30);'
+        'border-radius:99px;padding:5px 15px;margin-bottom:16px;'
+        'box-shadow:0 2px 12px rgba(45,245,160,.12)">',
+        '<span class="zm-dot" style="width:7px;height:7px;border-radius:50%;'
+        'background:#2DF5A0;box-shadow:0 0 8px rgba(45,245,160,.9);'
+        'display:inline-block;flex-shrink:0"></span>',
+        '<span style="font-size:11px;font-weight:700;color:#2DF5A0;'
+        'letter-spacing:.09em;text-transform:uppercase;white-space:nowrap">'
+        'Pakistan&#39;s #1 AI Academy</span>',
+        '</div>',
+
+        # headline — two-line with gradient word
         '<div style="font-family:\'DM Serif Display\',Georgia,serif;'
-        'font-size:clamp(24px,3.5vw,34px);color:#0F1B14;'
-        'line-height:1.18;margin-bottom:12px;letter-spacing:-.02em">'
-        'Welcome to ZM Academy'
-        '</div>'
-        '<div style="font-size:14px;color:#4B5563;line-height:1.72;'
-        'margin-bottom:22px;max-width:440px">'
-        'Pakistan&#39;s Only AI Academy Helping Parents, Teachers '
-        'and Kids Learn and Chase Their Dreams'
-        '</div>'
-        '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-        '<span style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:8px;'
-        'padding:5px 12px;font-size:12px;font-weight:600;color:#374151">'
-        '&#128218; {gl}</span>'
-        '<span style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:8px;'
-        'padding:5px 12px;font-size:12px;font-weight:600;color:#374151">'
-        '&#128293; {st}</span>'
-        '<span style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:8px;'
-        'padding:5px 12px;font-size:12px;font-weight:600;color:#374151">'
-        '&#127775; {mom}</span>'
-        '</div>'
-        '</div>'  # close left
+        'font-size:clamp(24px,3.4vw,36px);color:#fff;'
+        'line-height:1.15;margin-bottom:12px;'
+        'letter-spacing:-.025em;font-weight:400;'
+        'text-shadow:0 2px 20px rgba(0,0,0,.3)">',
+        'Welcome to<br>',
+        '<span style="background:linear-gradient(95deg,#2DF5A0 0%,#5DF0B8 40%,#C9A84C 100%);'
+        '-webkit-background-clip:text;-webkit-text-fill-color:transparent;'
+        'background-clip:text;font-weight:400">ZM Academy</span>',
+        '</div>',
 
-        # RIGHT avatar
+        # subheading
+        '<div style="font-size:13.5px;color:rgba(255,255,255,.72);'
+        'line-height:1.75;max-width:420px;margin-bottom:20px;'
+        'text-shadow:0 1px 4px rgba(0,0,0,.2)">',
+        'Pakistan&#39;s Only AI Academy Helping ',
+        '<b style="color:rgba(255,255,255,.95);font-weight:700">Parents</b>, ',
+        '<b style="color:rgba(255,255,255,.95);font-weight:700">Teachers</b> and ',
+        '<b style="color:rgba(255,255,255,.95);font-weight:700">Kids</b> ',
+        'Learn and Chase Their Dreams',
+        '</div>',
+
+        # click-hint pill
+        '<div style="display:inline-flex;align-items:center;gap:7px;'
+        'background:rgba(255,255,255,.07);'
+        'border:1px solid rgba(255,255,255,.16);'
+        'border-radius:10px;padding:6px 14px;'
+        'backdrop-filter:blur(8px);'
+        'box-shadow:0 1px 8px rgba(0,0,0,.1)">',
+        '<span style="font-size:12px;color:rgba(255,255,255,.75);'
+        'font-weight:600;letter-spacing:.01em">',
+        _arrow + '\u2002About ZM Academy',
+        '</span></div>',
+
+        '</div>',  # close left
+
+        # ── RIGHT avatar column
         '<div style="flex-shrink:0;display:flex;flex-direction:column;'
-        'align-items:center;gap:10px">'
-        '<div style="width:148px;height:148px;border-radius:50%;overflow:hidden;'
-        'border:3px solid #dff0e8;'
-        'box-shadow:0 4px 28px rgba(28,124,84,.16),0 1px 4px rgba(0,0,0,.06)">'
-        '<img src="data:image/svg+xml;base64,{av}"'
-        ' width="148" height="148" style="display:block" alt="Ustad"/>'
-        '</div>'
-        '<div style="text-align:center">'
-        '<div style="font-size:12px;font-weight:700;color:#0F1B14">Ustad AI</div>'
-        '<div style="font-size:10px;color:#9BA3B0;margin-top:1px">Your AI Tutor</div>'
-        '</div>'
-        '</div>'  # close right
+        'align-items:center;gap:10px">',
 
-        '</div>'  # close flex
-        '</div>'  # close card
-    ).format(gl=grade_lbl, st=streak_txt, mom=_momentum, av=_AV)
+        # avatar ring with glow
+        '<div style="position:relative">',
+        # outer glow ring
+        '<div style="position:absolute;inset:-6px;border-radius:50%;'
+        'background:conic-gradient(from 0deg,#2DF5A0,#C9A84C,#2DF5A0);'
+        'opacity:.35;filter:blur(4px)"></div>',
+        # avatar circle
+        '<div style="position:relative;width:158px;height:158px;border-radius:50%;'
+        'overflow:hidden;border:2.5px solid rgba(45,245,160,.45);'
+        'box-shadow:0 0 40px rgba(45,245,160,.28),0 8px 24px rgba(0,0,0,.3)">',
+        '<img src="data:image/svg+xml;base64,' + _AV + '"'
+        ' width="158" height="158" style="display:block" alt="Ustad"/>',
+        '</div>',
+        '</div>',  # close relative wrapper
 
+        # label below avatar
+        '<div style="text-align:center;margin-top:2px">',
+        '<div style="font-size:11px;font-weight:800;'
+        'color:rgba(45,245,160,.9);letter-spacing:.1em;'
+        'text-transform:uppercase;text-shadow:0 0 12px rgba(45,245,160,.5)">'
+        'Ustad AI</div>',
+        '<div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">'
+        'Your AI Tutor</div>',
+        '</div>',
+        '</div>',  # close right
+
+        '</div>',  # close flex row
+        '</div>',  # close inner card
+        '</div>',  # close outer wrapper
+    ]
+    _hero_card = "".join(_card_parts)
     st.markdown(_hero_css + _hero_card, unsafe_allow_html=True)
+
+    # Toggle button — centred, minimal
+    _tc1, _tc2, _tc3 = st.columns([1, 2, 1])
+    with _tc2:
+        _lbl = "\u25b2  Hide Details" if _open else "\u25bc  About ZM Academy"
+        if st.button(_lbl, key="zm_info_toggle", use_container_width=True):
+            st.session_state["zm_info_open"] = not st.session_state["zm_info_open"]
+            st.rerun()
+
+    # Expandable info panel
+    if st.session_state["zm_info_open"]:
+        _panel_parts = [
+            '<div style="background:linear-gradient(135deg,#f0fdf6,#ffffff);'
+                'border:1.5px solid #dff0e8;border-radius:18px;padding:28px 28px 24px;'
+                'margin-bottom:8px;box-shadow:0 2px 18px rgba(28,124,84,.07)">',
+
+            '<div style="font-size:18px;font-weight:600;color:#0F1B14;margin-bottom:8px">'
+                'What is ZM Academy?</div>',
+            '<div style="font-size:13px;color:#4B5563;line-height:1.75;margin-bottom:20px">'
+                'ZM Academy is Pakistan&#39;s first AI-powered education platform designed '
+                'for the national curriculum. Our AI tutor <b>Ustad</b> gives every student '
+                'personalised, step-by-step explanations instantly, at any time of day.'
+                '</div>',
+
+            '<div style="font-size:16px;font-weight:600;color:#0F1B14;margin-bottom:10px">'
+                'Who is it for?</div>',
+            '<div style="display:grid;grid-template-columns:repeat(3,1fr);'
+                'gap:10px;margin-bottom:20px">',
+
+            '<div style="background:#fff;border-radius:12px;padding:14px;'
+                'border:1.5px solid #E4E8EE;text-align:center">',
+            '<div style="font-size:26px;margin-bottom:6px">&#128106;</div>',
+            '<div style="font-size:12px;font-weight:700;color:#0F1B14;margin-bottom:4px">Parents</div>',
+            '<div style="font-size:11px;color:#6B7280;line-height:1.6">'
+                'Track your child&#39;s progress and support their learning journey</div>',
+            '</div>',
+
+            '<div style="background:#fff;border-radius:12px;padding:14px;'
+                'border:1.5px solid #E4E8EE;text-align:center">',
+            '<div style="font-size:26px;margin-bottom:6px">&#128104;&#8205;&#127979;</div>',
+            '<div style="font-size:12px;font-weight:700;color:#0F1B14;margin-bottom:4px">Teachers</div>',
+            '<div style="font-size:11px;color:#6B7280;line-height:1.6">'
+                'Assign homework, track class performance and enrich lessons with AI</div>',
+            '</div>',
+
+            '<div style="background:#fff;border-radius:12px;padding:14px;'
+                'border:1.5px solid #E4E8EE;text-align:center">',
+            '<div style="font-size:26px;margin-bottom:6px">&#127891;</div>',
+            '<div style="font-size:12px;font-weight:700;color:#0F1B14;margin-bottom:4px">Students</div>',
+            '<div style="font-size:11px;color:#6B7280;line-height:1.6">'
+                'Get instant help on any topic, take quizzes and earn badges</div>',
+            '</div>',
+            '</div>',  # close who-grid
+
+            '<div style="font-size:16px;font-weight:600;color:#0F1B14;margin-bottom:10px">'
+                'AI Learning Benefits</div>',
+            '<div style="display:grid;grid-template-columns:repeat(2,1fr);'
+                'gap:8px;margin-bottom:20px">',
+        ]
+        for _ic, _t, _d in [
+            ("&#129504;", "Personalised Explanations", "Ustad adapts to your grade and learning pace"),
+            ("&#128336;", "Available 24/7",            "Get help any time, no waiting for a teacher"),
+            ("&#127987;", "Pakistan Curriculum",       "Aligned with FBISE, Cambridge Pakistan, O and A Level"),
+            ("&#127942;", "Gamified Progress",         "Earn badges and build daily streaks to stay motivated"),
+        ]:
+            _panel_parts += [
+                '<div style="display:flex;align-items:flex-start;gap:10px;'
+                    'background:#fff;border-radius:10px;padding:12px;border:1.5px solid #E4E8EE">',
+                '<span style="font-size:18px;flex-shrink:0">' + _ic + '</span>',
+                '<div>',
+                '<div style="font-size:12px;font-weight:700;color:#0F1B14;margin-bottom:2px">' + _t + '</div>',
+                '<div style="font-size:11px;color:#6B7280;line-height:1.55">' + _d + '</div>',
+                '</div></div>',
+            ]
+        _panel_parts += [
+            '</div>',  # close benefits grid
+            '<div style="background:linear-gradient(90deg,#1C7C54,#25A870);'
+                'border-radius:12px;padding:16px 18px;'
+                'display:flex;align-items:center;gap:14px">',
+            '<span style="font-size:26px">&#127979;</span>',
+            '<div style="font-size:13px;color:#fff;line-height:1.65">'
+                '<b>Our Mission:</b> Make quality AI education accessible to every Pakistani '
+                'student, from Grade 1 to A Level, regardless of location or background.</div>',
+            '</div>',
+            '</div>',  # close panel
+        ]
+        st.markdown("".join(_panel_parts), unsafe_allow_html=True)
 
     # Learning Progress Indicators
     st.markdown(
@@ -1697,36 +1887,34 @@ def page_home():
         unsafe_allow_html=True
     )
 
-    # Scoped CSS for big action cards
-    st.markdown("""
-    <style>
-    .action-grid-btn .stButton > button {
-        min-height: 90px !important;
-        font-size: 15px !important;
-        font-weight: 700 !important;
-        border-radius: 16px !important;
-        white-space: normal !important;
-        word-break: break-word !important;
-        line-height: 1.4 !important;
-        border: 1.5px solid #E4E8EE !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
-    }
-    .action-grid-btn .stButton > button:hover {
-        border-color: #1C7C54 !important;
-        color: #1C7C54 !important;
-        transform: translateY(-3px) !important;
-        box-shadow: 0 6px 20px rgba(28,124,84,0.12) !important;
-    }
-    </style>
-    <div class="action-grid-btn">
-    """, unsafe_allow_html=True)
+    st.markdown(
+        '<style>'
+        '.action-grid-btn .stButton > button {'
+        'min-height: 90px !important;'
+        'font-size: 15px !important;'
+        'font-weight: 700 !important;'
+        'border-radius: 16px !important;'
+        'white-space: normal !important;'
+        'word-break: break-word !important;'
+        'line-height: 1.4 !important;'
+        'border: 1.5px solid #E4E8EE !important;'
+        'box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;}'
+        '.action-grid-btn .stButton > button:hover {'
+        'border-color: #1C7C54 !important;'
+        'color: #1C7C54 !important;'
+        'transform: translateY(-3px) !important;'
+        'box-shadow: 0 6px 20px rgba(28,124,84,0.12) !important;}'
+        '</style>'
+        '<div class="action-grid-btn">',
+        unsafe_allow_html=True
+    )
 
     action_cols = st.columns(4)
     actions = [
-        ("💬", "Ask Ustad\nAI Chat Tutor",     "chat"),
-        ("📝", "Take a Quiz\nPractise & Test",  "quiz"),
-        ("📚", "My Syllabus\nBrowse Topics",    "syllabus"),
-        ("🎨", "Draw It!\nAI Diagrams",         "image"),
+        ("\U0001f4ac", "Ask Ustad\nAI Chat Tutor",     "chat"),
+        ("\U0001f4dd", "Take a Quiz\nPractise & Test",  "quiz"),
+        ("\U0001f4da", "My Syllabus\nBrowse Topics",    "syllabus"),
+        ("\U0001f3a8", "Draw It!\nAI Diagrams",         "image"),
     ]
     for col, (icon, label, dest) in zip(action_cols, actions):
         with col:
@@ -1735,37 +1923,41 @@ def page_home():
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ── PICK A SUBJECT ────────────────────────────────────────
+    st.markdown("<div style=\"height:8px\"></div>", unsafe_allow_html=True)
+
+    # ── PICK A SUBJECT ─────────────────────────────────────
     st.markdown('<div style="height:4px"></div>', unsafe_allow_html=True)
     st.markdown(
-        '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;'
-        'color:#0F1B14;margin-bottom:14px;font-weight:400">&#128214; Pick a Subject</div>',
+        "<div style=\"font-family:'DM Serif Display',serif;font-size:22px;"
+        "color:#1A1D23;margin-bottom:14px\">&#128214; Pick a Subject</div>",
         unsafe_allow_html=True
     )
 
-    # Scoped CSS — the st.button IS the card; no separate heading button
+    # CSS: the entire st.button renders as a rich visual card
     st.markdown(
         '<style>'
-        '.zm-subj .stButton>button{'
+        '.zm-sc .stButton>button{'
         'background:#fff!important;'
         'border:1.5px solid #E4E8EE!important;'
-        'border-radius:16px!important;'
-        'padding:18px 8px 14px!important;'
-        'min-height:112px!important;'
+        'border-radius:0 0 16px 16px!important;'
+        'padding:16px 8px 14px!important;'
+        'min-height:108px!important;'
         'width:100%!important;'
-        'display:flex!important;flex-direction:column!important;'
-        'align-items:center!important;gap:4px!important;'
         'cursor:pointer!important;'
-        'transition:all .18s ease!important;'
-        'box-shadow:0 1px 6px rgba(0,0,0,.04)!important;'
+        'transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease!important;'
+        'box-shadow:0 1px 6px rgba(0,0,0,.05)!important;'
+        'overflow:hidden!important;'
         'white-space:normal!important;word-break:break-word!important;'
-        'line-height:1.35!important;font-size:12px!important;'
-        'font-weight:700!important;color:#1A1D23!important;'
-        'text-align:center!important}'
-        '.zm-subj .stButton>button:hover{'
-        'transform:translateY(-4px)!important;'
-        'box-shadow:0 8px 24px rgba(0,0,0,.10)!important;'
+        'font-size:12px!important;font-weight:700!important;'
+        'color:#1A1D23!important;text-align:center!important;'
+        'line-height:1.45!important;'
+        'display:flex!important;flex-direction:column!important;'
+        'align-items:center!important;gap:4px!important}'
+        '.zm-sc .stButton>button:hover{'
+        'transform:translateY(-5px)!important;'
+        'box-shadow:0 10px 28px rgba(0,0,0,.13)!important;'
         'border-color:#1C7C54!important}'
+        '.zm-sc .stButton>button:active{transform:translateY(-2px)!important}'
         '</style>',
         unsafe_allow_html=True
     )
@@ -1777,31 +1969,41 @@ def page_home():
         "Biology":          ("🌿", "#059669"),
         "English":          ("📖", "#D97706"),
         "Computer Science": ("💻", "#0891B2"),
-        "Urdu":             ("🖊️", "#BE185D"),
+        "Urdu":             ("🖊️",  "#BE185D"),
     }
 
     subj_cols = st.columns(len(SUBJ_META))
     for idx, (sname, (semoji, scolor)) in enumerate(SUBJ_META.items()):
-        sq = stats.get(sname, 0)
+        sq     = stats.get(sname, 0)
         sq_pct = min(int(sq / max(sq, 20) * 100), 100)
+        bar_w  = max(sq_pct, 2)
         with subj_cols[idx]:
-            # Colour accent bar above card
+            # top colour accent strip
             st.markdown(
-                '<div style="height:4px;border-radius:4px 4px 0 0;margin-bottom:-2px;'
-                'background:{c}"></div>'.format(c=scolor),
+                '<div style="height:4px;border-radius:4px 4px 0 0;background:{c};">'
+                '</div>'.format(c=scolor),
                 unsafe_allow_html=True
             )
-            st.markdown('<div class="zm-subj">', unsafe_allow_html=True)
-            card_lbl = "{e}\n{n}\n{sq} Qs \xb7 {pct}%".format(
-                e=semoji, n=sname, sq=sq, pct=sq_pct)
-            if st.button(card_lbl, key="subj_{k}".format(k=sname),
+            st.markdown('<div class="zm-sc">', unsafe_allow_html=True)
+            card_label = "{e}\n{n}\n{sq} Qs done".format(
+                e=semoji, n=sname, sq=sq)
+            if st.button(card_label,
+                         key="subj_{k}".format(k=sname),
                          use_container_width=True):
                 st.session_state.subject = sname
                 st.session_state.page    = "chat"
                 st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
+            # mini progress bar flush under card
+            st.markdown(
+                '<div style="background:#F0F2F5;border-radius:0 0 10px 10px;'
+                'height:4px;overflow:hidden;margin-top:-4px">'
+                '<div style="width:{bw}%;height:4px;background:{c}"></div>'
+                '</div>'.format(bw=bar_w, c=scolor),
+                unsafe_allow_html=True
+            )
 
-    # ── HOMEWORK DUE ──────────────────────────────────────────
+        # ── HOMEWORK DUE ──────────────────────────────────────────
     homework  = load_json(HOMEWORK_FILE)
     grade_val = u.get("grade","")
     pending   = [

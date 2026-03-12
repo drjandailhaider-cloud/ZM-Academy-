@@ -1515,224 +1515,169 @@ def page_home():
     # ── BANNER ────────────────────────────────────────────────
     first_name = u["name"].split()[0]
     grade_lbl  = u.get("grade", "")
-    streak_txt = (f"🔥 {streak} day streak!" if streak >= 2
-                  else ("🔥 Keep going!" if streak == 1
-                        else "Start your streak today!"))
+    streak_txt = (f"{streak} day streak" if streak >= 2
+                  else ("1 day streak" if streak == 1
+                        else "No streak yet"))
     reminder   = last_date and last_date != today_str
 
-    # Pre-baked base64 avatar SVG — no network, no f-string risk
+    # Pre-baked avatar base64 — 160px circular premium avatar
     _AV = (
-        "PHN2ZyB3aWR0aD0iMTMwIiBoZWlnaHQ9IjEzMCIgdmlld0JveD0iMCAwIDEzMCAxMzAiIHhtbG5z"
-        "PSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHJhZGlhbEdyYWRpZW50IGlkPSJh"
-        "YmciIGN4PSI1MCUiIGN5PSI1MCUiIHI9IjUwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xv"
-        "cj0iIzJERjVBMCIgc3RvcC1vcGFjaXR5PSIuMjgiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3At"
-        "Y29sb3I9IiMwQTRGMzIiIHN0b3Atb3BhY2l0eT0iMCIvPjwvcmFkaWFsR3JhZGllbnQ+PGxpbmVh"
-        "ckdyYWRpZW50IGlkPSJhYm9keSIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9m"
-        "ZnNldD0iMCUiIHN0b3AtY29sb3I9IiMxNTVFM0UiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3At"
-        "Y29sb3I9IiMxQzdDNTQiLz48L2xpbmVhckdyYWRpZW50PjxsaW5lYXJHcmFkaWVudCBpZD0iYWZh"
-        "Y2UiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNv"
-        "bG9yPSIjRkRFNjhBIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjRjU5RTBCIi8+"
-        "PC9saW5lYXJHcmFkaWVudD48bGluZWFyR3JhZGllbnQgaWQ9ImFzY3JlZW4iIHgxPSIwIiB5MT0i"
-        "MCIgeDI9IjAiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMEYyQTFBIi8+"
-        "PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMUM3QzU0IiBzdG9wLW9wYWNpdHk9Ii42"
-        "Ii8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PGNpcmNsZSBjeD0iNjUiIGN5PSI2NSIgcj0iNjIi"
-        "IGZpbGw9InVybCgjYWJnKSIvPjxjaXJjbGUgY3g9IjY1IiBjeT0iNjUiIHI9IjU4IiBmaWxsPSJu"
-        "b25lIiBzdHJva2U9IiMyREY1QTAiIHN0cm9rZS13aWR0aD0iMSIgc3Ryb2tlLWRhc2hhcnJheT0i"
-        "NSA3IiBvcGFjaXR5PSIuNCIvPjxyZWN0IHg9IjMyIiB5PSI4NCIgd2lkdGg9IjY2IiBoZWlnaHQ9"
-        "IjMyIiByeD0iMTgiIGZpbGw9InVybCgjYWJvZHkpIi8+PGVsbGlwc2UgY3g9IjY1IiBjeT0iMTAw"
-        "IiByeD0iMzAiIHJ5PSIyMCIgZmlsbD0idXJsKCNhYm9keSkiLz48cmVjdCB4PSI1NyIgeT0iNzEi"
-        "IHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgcng9IjciIGZpbGw9InVybCgjYWZhY2UpIi8+PGVsbGlw"
-        "c2UgY3g9IjY1IiBjeT0iNjAiIHJ4PSIyNiIgcnk9IjI2IiBmaWxsPSJ1cmwoI2FmYWNlKSIvPjxw"
-        "YXRoIGQ9Ik0zOSA1MCBRNjUgMjYgOTEgNTAiIGZpbGw9IiMxNTVFM0UiIG9wYWNpdHk9Ii45Ii8+"
-        "PGVsbGlwc2UgY3g9IjY1IiBjeT0iMzQiIHJ4PSIyMiIgcnk9IjEyIiBmaWxsPSIjMTU1RTNFIiBv"
-        "cGFjaXR5PSIuOCIvPjxlbGxpcHNlIGN4PSI2NSIgY3k9IjM0IiByeD0iMTQiIHJ5PSI3IiBmaWxs"
-        "PSIjMUM3QzU0IiBvcGFjaXR5PSIuNiIvPjxlbGxpcHNlIGN4PSI1NiIgY3k9IjU4IiByeD0iNCIg"
-        "cnk9IjQuNSIgZmlsbD0iIzFBMUQyMyIvPjxlbGxpcHNlIGN4PSI3NCIgY3k9IjU4IiByeD0iNCIg"
-        "cnk9IjQuNSIgZmlsbD0iIzFBMUQyMyIvPjxjaXJjbGUgY3g9IjU3LjIiIGN5PSI1Ni44IiByPSIx"
-        "LjQiIGZpbGw9IiNmZmYiLz48Y2lyY2xlIGN4PSI3NS4yIiBjeT0iNTYuOCIgcj0iMS40IiBmaWxs"
-        "PSIjZmZmIi8+PHJlY3QgeD0iNDkiIHk9IjU0IiB3aWR0aD0iMTQiIGhlaWdodD0iMTAiIHJ4PSI1"
-        "IiBmaWxsPSJub25lIiBzdHJva2U9IiMxQzdDNTQiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9"
-        "IjY3IiB5PSI1NCIgd2lkdGg9IjE0IiBoZWlnaHQ9IjEwIiByeD0iNSIgZmlsbD0ibm9uZSIgc3Ry"
-        "b2tlPSIjMUM3QzU0IiBzdHJva2Utd2lkdGg9IjIiLz48bGluZSB4MT0iNjMiIHkxPSI1OSIgeDI9"
-        "IjY3IiB5Mj0iNTkiIHN0cm9rZT0iIzFDN0M1NCIgc3Ryb2tlLXdpZHRoPSIxLjYiLz48cGF0aCBk"
-        "PSJNNTQ2NyBRNjUgNzUgNzQgNjciIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzkyNDAwRSIgc3Ryb2tl"
-        "LXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNNTIgNzMgUTY1IDg0"
-        "IDc4IDczIiBmaWxsPSIjOTI0MDBFIiBvcGFjaXR5PSIuMzUiLz48cmVjdCB4PSI3OCIgeT0iODAi"
-        "IHdpZHRoPSIzMCIgaGVpZ2h0PSIyMCIgcng9IjQiIGZpbGw9IiMwRjJBMUEiIHN0cm9rZT0iIzJE"
-        "RjVBMCIgc3Ryb2tlLXdpZHRoPSIxLjIiLz48cmVjdCB4PSI4MCIgeT0iODIiIHdpZHRoPSIyNiIg"
-        "aGVpZ2h0PSIxNCIgcng9IjIiIGZpbGw9InVybCgjYXNjcmVlbikiLz48bGluZSB4MT0iODMiIHkx"
-        "PSI4NiIgeDI9IjEwMyIgeTI9Ijg2IiBzdHJva2U9IiMyREY1QTAiIHN0cm9rZS13aWR0aD0iMSIg"
-        "b3BhY2l0eT0iLjciLz48bGluZSB4MT0iODMiIHkxPSI4OSIgeDI9Ijk3IiB5Mj0iODkiIHN0cm9r"
-        "ZT0iIzJERjVBMCIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIuNSIvPjxsaW5lIHgxPSI4MyIg"
-        "eTE9IjkyIiB4Mj0iMTAwIiB5Mj0iOTIiIHN0cm9rZT0iIzJERjVBMCIgc3Ryb2tlLXdpZHRoPSIx"
-        "IiBvcGFjaXR5PSIuNCIvPjxyZWN0IHg9IjgyIiB5PSIxMDAiIHdpZHRoPSIyNiIgaGVpZ2h0PSIz"
-        "IiByeD0iMS41IiBmaWxsPSIjMUM3QzU0IiBvcGFjaXR5PSIuNSIvPjxyZWN0IHg9IjE0IiB5PSI4"
-        "MiIgd2lkdGg9IjI2IiBoZWlnaHQ9IjE4IiByeD0iNiIgZmlsbD0iIzBBMkUxRiIgc3Ryb2tlPSIj"
-        "MkRGNUEwIiBzdHJva2Utd2lkdGg9IjEuNCI+PC9yZWN0Pjx0ZXh0IHg9IjI3IiB5PSI5NCIgZm9u"
-        "dC1zaXplPSI4IiBmb250LXdlaWdodD0iODAwIiBmaWxsPSIjMkRGNUEwIiB0ZXh0LWFuY2hvcj0i"
-        "bWlkZGxlIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIj5BSTwvdGV4dD48Y2lyY2xlIGN4PSIxMDUi"
-        "IGN5PSI1MiIgcj0iNCIgZmlsbD0iIzJERjVBMCIgb3BhY2l0eT0iLjgiLz48Y2lyY2xlIGN4PSIx"
-        "MDUiIGN5PSI1MiIgcj0iNyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMkRGNUEwIiBzdHJva2Utd2lk"
-        "dGg9IjEiIG9wYWNpdHk9Ii4zIi8+PC9zdmc+"
+        "PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgdmlld0JveD0iMCAwIDE2MCAxNjAiIHhtbG5z"
+        "PSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHJhZGlhbEdyYWRpZW50IGlkPSJy"
+        "ZyIgY3g9IjUwJSIgY3k9IjUwJSIgcj0iNTAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9y"
+        "PSIjMjVBODcwIiBzdG9wLW9wYWNpdHk9Ii4yIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNv"
+        "bG9yPSIjMUM3QzU0IiBzdG9wLW9wYWNpdHk9IjAiLz48L3JhZGlhbEdyYWRpZW50PjxsaW5lYXJH"
+        "cmFkaWVudCBpZD0iYmciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9"
+        "IjAlIiBzdG9wLWNvbG9yPSIjMUM3QzU0Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9y"
+        "PSIjMjVBODcwIi8+PC9saW5lYXJHcmFkaWVudD48bGluZWFyR3JhZGllbnQgaWQ9ImZhY2UiIHgx"
+        "PSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIj"
+        "RkRFNjhBIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjRjU5RTBCIi8+PC9saW5l"
+        "YXJHcmFkaWVudD48L2RlZnM+PGNpcmNsZSBjeD0iODAiIGN5PSI4MCIgcj0iODAiIGZpbGw9InVy"
+        "bCgjcmcpIi8+PGNpcmNsZSBjeD0iODAiIGN5PSI4MCIgcj0iNzYiIGZpbGw9InVybCgjYmcpIi8+"
+        "PGNpcmNsZSBjeD0iODAiIGN5PSI4MCIgcj0iNzYiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgy"
+        "NTUsMjU1LDI1NSwwLjIpIiBzdHJva2Utd2lkdGg9IjIiLz48ZWxsaXBzZSBjeD0iODAiIGN5PSIx"
+        "MjUiIHJ4PSIzOCIgcnk9IjI2IiBmaWxsPSJyZ2JhKDAsMCwwLC4yKSIvPjxyZWN0IHg9IjQyIiB5"
+        "PSI5OCIgd2lkdGg9Ijc2IiBoZWlnaHQ9IjM2IiByeD0iMTgiIGZpbGw9InJnYmEoMCwwLDAsMC4y"
+        "NSkiLz48cmVjdCB4PSI0NyIgeT0iOTAiIHdpZHRoPSI2NiIgaGVpZ2h0PSI0MCIgcng9IjIwIiBm"
+        "aWxsPSJ1cmwoI2JnKSIvPjxyZWN0IHg9IjYyIiB5PSI3OCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2"
+        "IiByeD0iOCIgZmlsbD0idXJsKCNmYWNlKSIvPjxlbGxpcHNlIGN4PSI4MCIgY3k9IjY0IiByeD0i"
+        "MjgiIHJ5PSIyOCIgZmlsbD0idXJsKCNmYWNlKSIvPjxwYXRoIGQ9Ik01MiA1NCBROCA4MCAyOCA1"
+        "NCAxMDggNTQiIGZpbGw9InJnYmEoMjgsMTI0LDg0LC45KSIvPjxlbGxpcHNlIGN4PSI4MCIgY3k9"
+        "IjQwIiByeD0iMjYiIHJ5PSIxMyIgZmlsbD0icmdiYSgyOCwxMjQsODQsLjgpIi8+PGVsbGlwc2Ug"
+        "Y3g9IjgwIiBjeT0iNDAiIHJ4PSIxNiIgcnk9IjgiIGZpbGw9InJnYmEoMzcsMTY4LDExMiwuNyki"
+        "Lz48ZWxsaXBzZSBjeD0iNzAiIGN5PSI2NCIgcng9IjUiIHJ5PSI2IiBmaWxsPSIjMUExRDIzIi8+"
+        "PGVsbGlwc2UgY3g9IjkwIiBjeT0iNjQiIHJ4PSI1IiByeT0iNiIgZmlsbD0iIzFBMUQyMyIvPjxj"
+        "aXJjbGUgY3g9IjcxLjUiIGN5PSI2Mi41IiByPSIxLjgiIGZpbGw9IiNmZmYiLz48Y2lyY2xlIGN4"
+        "PSI5MS41IiBjeT0iNjIuNSIgcj0iMS44IiBmaWxsPSIjZmZmIi8+PHJlY3QgeD0iNjIiIHk9IjYw"
+        "IiB3aWR0aD0iMTYiIGhlaWdodD0iMTIiIHJ4PSI2IiBmaWxsPSJub25lIiBzdHJva2U9InJnYmEo"
+        "MjU1LDI1NSwyNTUsLjYpIiBzdHJva2Utd2lkdGg9IjIiLz48cmVjdCB4PSI4MiIgeT0iNjAiIHdp"
+        "ZHRoPSIxNiIgaGVpZ2h0PSIxMiIgcng9IjYiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUs"
+        "MjU1LDI1NSwuNikiIHN0cm9rZS13aWR0aD0iMiIvPjxsaW5lIHgxPSI3OCIgeTE9IjY2IiB4Mj0i"
+        "ODIiIHkyPSI2NiIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LC42KSIgc3Ryb2tlLXdpZHRoPSIy"
+        "Ii8+PHBhdGggZD0iTTY5IDc0IFE4MCA4MiA5MSA3NCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTI0"
+        "MDBFIiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0i"
+        "TTY0IDgwIFE4MCA5MiA5NiA4MCIgZmlsbD0icmdiYSgxNDYsNjQsMTQsLjMpIi8+PC9zdmc+"
     )
 
-    # Subject chips — built in Python, no quoting hazard
-    _SDATA = [
-        ("🔢","Maths","#E8472A"),("⚡","Physics","#1B4FD8"),
-        ("🧪","Chemistry","#7C3AED"),("🌿","Biology","#059669"),
-        ("📖","English","#D97706"),("💻","CS","#0891B2"),
-        ("🖊️","Urdu","#BE185D"),
-    ]
-    _chips = "".join(
-        '<span style="display:inline-flex;align-items:center;gap:5px;'
-        'background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);'
-        'border-radius:99px;padding:4px 11px;font-size:11px;font-weight:600;'
-        'color:rgba(255,255,255,.85);border-left:3px solid {c};white-space:nowrap">'
-        '{e} {s}</span>'.format(e=e, s=s, c=c)
-        for e, s, c in _SDATA
-    )
+    # Compute live progress percentages
+    _q_done   = total
+    _q_goal   = max(_q_done, 100)
+    _q_pct    = min(int(_q_done / _q_goal * 100), 100)
+    _qz_done  = stats.get("quizzes_done", 0)
+    _qz_goal  = max(_qz_done, 20)
+    _qz_pct   = min(int(_qz_done / _qz_goal * 100), 100)
+    _bd_count = len(u.get("badges", []))
+    _bd_goal  = max(_bd_count, 10)
+    _bd_pct   = min(int(_bd_count / _bd_goal * 100), 100)
+    if streak == 0:   _momentum = "Start your journey"
+    elif streak < 3:  _momentum = "Building momentum"
+    elif streak < 7:  _momentum = "On a roll!"
+    else:             _momentum = "On fire! \U0001f525"
 
-    def _trust_tile(val, lbl, col):
+    def _prog_tile(label, val, goal, pct, color, icon):
+        bw = max(pct, 3)
         return (
-            '<div style="background:#fff;border-radius:14px;padding:11px 8px;'
-            'text-align:center;border:1.5px solid #E4E8EE;'
-            'box-shadow:0 1px 5px rgba(0,0,0,.04)">'
-            '<div style="font-family:\'DM Serif Display\',serif;font-size:21px;'
-            'color:{col};line-height:1">{val}</div>'
-            '<div style="font-size:10px;color:#9BA3B0;font-weight:700;'
-            'text-transform:uppercase;letter-spacing:.5px;margin-top:3px">{lbl}</div>'
+            '<div style="background:#fff;border-radius:14px;padding:14px 16px;'
+            'border:1.5px solid #E4E8EE;box-shadow:0 1px 6px rgba(0,0,0,.04)">'
+            '<div style="display:flex;align-items:center;'
+            'justify-content:space-between;margin-bottom:8px">'
+            '<div style="display:flex;align-items:center;gap:7px">'
+            '<span style="font-size:17px">{icon}</span>'
+            '<span style="font-size:12px;font-weight:700;color:#374151">{lbl}</span>'
             '</div>'
-        ).format(val=val, lbl=lbl, col=col)
+            '<span style="font-size:12px;font-weight:800;color:{col}">{pct}%</span>'
+            '</div>'
+            '<div style="background:#F0F2F5;border-radius:99px;height:6px;overflow:hidden">'
+            '<div style="width:{bw}%;height:6px;border-radius:99px;background:{col}"></div>'
+            '</div>'
+            '<div style="display:flex;justify-content:space-between;margin-top:5px">'
+            '<span style="font-size:10px;color:#9BA3B0">{val} done</span>'
+            '<span style="font-size:10px;color:#9BA3B0">Goal: {goal}</span>'
+            '</div></div>'
+        ).format(icon=icon, lbl=label, pct=pct, col=color, bw=bw, val=val, goal=goal)
 
-    _trust = (
-        _trust_tile(total,                        "Questions Solved", "#1C7C54") +
-        _trust_tile(stats.get("quizzes_done", 0), "Quizzes Taken",    "#1B4FD8") +
-        _trust_tile(7,                            "Subjects Available","#C9A84C")
+    _prog_html = (
+        _prog_tile("Questions Solved", _q_done,  _q_goal,  _q_pct,  "#1C7C54", "\u2753") +
+        _prog_tile("Quizzes Taken",    _qz_done, _qz_goal, _qz_pct, "#1B4FD8", "\U0001f4dd") +
+        _prog_tile("Badges Earned",    _bd_count,_bd_goal, _bd_pct, "#C9A84C", "\U0001f3c6")
     )
 
-    # Greeting pill + status pills use f-strings (safe: only {} vars, no HTML quotes)
-    _gpill = (
-        '<div style="display:inline-flex;align-items:center;gap:7px;'
-        'background:rgba(45,245,160,.10);border:1px solid rgba(45,245,160,.22);'
-        'border-radius:99px;padding:4px 13px;margin-bottom:14px">'
-        '<span style="width:7px;height:7px;border-radius:50%;display:inline-block;'
-        'background:#2DF5A0;box-shadow:0 0 7px rgba(45,245,160,.8)"></span>'
-        '<span style="font-size:11px;font-weight:700;color:#2DF5A0;'
-        'letter-spacing:.07em">{g}, {n}!</span>'
+    # Banner: light professional background
+    _hero_css = (
+        '<style>'
+        '@keyframes _zmB{from{opacity:0;transform:translateY(12px)}'
+        'to{opacity:1;transform:translateY(0)}}'
+        '.zm-hero{animation:_zmB .45s ease both}'
+        '.zm-prog{animation:_zmB .45s .15s ease both;opacity:0}'
+        '</style>'
+    )
+    _hero_card = (
+        '<div class="zm-hero" style="'
+        'background:linear-gradient(135deg,#f0fdf6 0%,#ffffff 60%,#f5f8ff 100%);'
+        'border-radius:20px;padding:32px 32px 28px;margin-bottom:6px;'
+        'border:1px solid #dff0e8;'
+        'box-shadow:0 2px 24px rgba(28,124,84,.08),0 1px 4px rgba(0,0,0,.04)">'
+
+        '<div style="display:flex;align-items:center;'
+        'justify-content:space-between;gap:24px;flex-wrap:wrap">'
+
+        # LEFT
+        '<div style="flex:1;min-width:220px;max-width:520px">'
+        '<div style="display:inline-flex;align-items:center;gap:6px;'
+        'background:#E6F4EE;border-radius:99px;padding:4px 14px;margin-bottom:18px">'
+        '<span style="width:6px;height:6px;border-radius:50%;background:#1C7C54;'
+        'display:inline-block"></span>'
+        '<span style="font-size:11px;font-weight:700;color:#1C7C54;'
+        'letter-spacing:.07em;text-transform:uppercase">AI-Powered Learning</span>'
         '</div>'
-    ).format(g=greet, n=first_name)
-
-    _spills = (
-        '<div style="display:flex;gap:7px;flex-wrap:wrap">'
-        '<span style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.13);'
-        'border-radius:99px;padding:4px 12px;font-size:11px;font-weight:700;color:#fff">'
-        '📚 {gl}</span>'
-        '<span style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.13);'
-        'border-radius:99px;padding:4px 12px;font-size:11px;font-weight:700;color:#fff">'
-        '{st}</span>'
-        '<span style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.13);'
-        'border-radius:99px;padding:4px 12px;font-size:11px;font-weight:700;color:#fff">'
-        '⭐ {tot} Qs solved</span>'
-        '</div>'
-    ).format(gl=grade_lbl, st=streak_txt, tot=total)
-
-    # Final single st.markdown — all pieces concatenated, no f-string inside HTML
-    st.markdown(
-        # ── CSS ──────────────────────────────────────────────────────
-        "<style>"
-        "@keyframes _zmFU{from{opacity:0;transform:translateY(10px)}"
-        "to{opacity:1;transform:translateY(0)}}"
-        ".zm-bnr{animation:_zmFU .4s ease both}"
-        ".zm-meta{animation:_zmFU .4s .14s ease both;opacity:0}"
-        ".zm-trust{animation:_zmFU .4s .24s ease both;opacity:0}"
-        "</style>"
-
-        # ── card open ─────────────────────────────────────────────────
-        '<div class="zm-bnr" style="'
-        'background:linear-gradient(128deg,#081F14 0%,#0C3320 50%,#102B1C 100%);'
-        'border-radius:22px;padding:24px 26px 20px;margin-bottom:4px;'
-        'position:relative;overflow:hidden;'
-        'border:1px solid rgba(45,245,160,.16);'
-        'box-shadow:0 6px 36px rgba(8,20,12,.5),inset 0 1px 0 rgba(45,245,160,.1)">'
-
-        # blobs
-        '<div style="position:absolute;top:-70px;right:-50px;width:220px;height:220px;'
-        'border-radius:50%;background:radial-gradient(circle,rgba(45,245,160,.13),transparent 65%);'
-        'pointer-events:none"></div>'
-        '<div style="position:absolute;bottom:-60px;left:30px;width:180px;height:180px;'
-        'border-radius:50%;background:radial-gradient(circle,rgba(201,168,76,.10),transparent 65%);'
-        'pointer-events:none"></div>'
-        '<div style="position:absolute;inset:0;'
-        'background-image:radial-gradient(rgba(45,245,160,.07) 1px,transparent 1px);'
-        'background-size:22px 22px;pointer-events:none;border-radius:22px"></div>'
-
-        # two-column flex
-        '<div style="position:relative;z-index:2;'
-        'display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">'
-
-        # left text col
-        '<div style="flex:1;min-width:200px;max-width:460px">'
-        + _gpill +
         '<div style="font-family:\'DM Serif Display\',Georgia,serif;'
-        'font-size:clamp(21px,3.2vw,29px);color:#fff;'
-        'line-height:1.2;margin-bottom:9px;letter-spacing:-.01em">'
-        'Ask Anything.<br>'
-        '<span style="background:linear-gradient(90deg,#2DF5A0,#C9A84C);'
-        '-webkit-background-clip:text;-webkit-text-fill-color:transparent;'
-        'background-clip:text">Learn Instantly.</span>'
+        'font-size:clamp(24px,3.5vw,34px);color:#0F1B14;'
+        'line-height:1.18;margin-bottom:12px;letter-spacing:-.02em">'
+        'Welcome to ZM Academy'
         '</div>'
-        '<div style="font-size:13px;color:rgba(255,255,255,.58);'
-        'line-height:1.7;margin-bottom:18px;max-width:360px">'
-        "Pakistan&#39;s smartest study companion.&nbsp;"
-        '<b style="color:rgba(255,255,255,.82)">Ustad AI</b>'
-        '&nbsp;explains every topic step-by-step &mdash; Grade&nbsp;1 to A&nbsp;Level.'
+        '<div style="font-size:14px;color:#4B5563;line-height:1.72;'
+        'margin-bottom:22px;max-width:440px">'
+        'Pakistan&#39;s Only AI Academy Helping Parents, Teachers '
+        'and Kids Learn and Chase Their Dreams'
         '</div>'
-        + _spills +
-        '</div>'  # close left col
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+        '<span style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:8px;'
+        'padding:5px 12px;font-size:12px;font-weight:600;color:#374151">'
+        '&#128218; {gl}</span>'
+        '<span style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:8px;'
+        'padding:5px 12px;font-size:12px;font-weight:600;color:#374151">'
+        '&#128293; {st}</span>'
+        '<span style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:8px;'
+        'padding:5px 12px;font-size:12px;font-weight:600;color:#374151">'
+        '&#127775; {mom}</span>'
+        '</div>'
+        '</div>'  # close left
 
-        # right avatar col
+        # RIGHT avatar
         '<div style="flex-shrink:0;display:flex;flex-direction:column;'
-        'align-items:center;gap:4px">'
-        '<img src="data:image/svg+xml;base64,' + _AV + '"'
-        ' width="130" height="130"'
-        ' style="filter:drop-shadow(0 0 22px rgba(45,245,160,.4))"'
-        ' alt="Ustad AI"/>'
-        '<div style="font-size:10px;font-weight:700;color:rgba(45,245,160,.6);'
-        'letter-spacing:.1em;text-transform:uppercase">Ustad AI</div>'
+        'align-items:center;gap:10px">'
+        '<div style="width:148px;height:148px;border-radius:50%;overflow:hidden;'
+        'border:3px solid #dff0e8;'
+        'box-shadow:0 4px 28px rgba(28,124,84,.16),0 1px 4px rgba(0,0,0,.06)">'
+        '<img src="data:image/svg+xml;base64,{av}"'
+        ' width="148" height="148" style="display:block" alt="Ustad"/>'
         '</div>'
-
-        '</div>'  # close two-col flex
-
-        # subject strip
-        '<div class="zm-meta" style="'
-        'position:relative;z-index:2;display:flex;gap:7px;flex-wrap:wrap;'
-        'align-items:center;margin-top:18px;padding-top:14px;'
-        'border-top:1px solid rgba(255,255,255,.07)">'
-        '<span style="font-size:10px;font-weight:700;color:rgba(255,255,255,.35);'
-        'text-transform:uppercase;letter-spacing:.1em;margin-right:2px">Subjects</span>'
-        + _chips +
+        '<div style="text-align:center">'
+        '<div style="font-size:12px;font-weight:700;color:#0F1B14">Ustad AI</div>'
+        '<div style="font-size:10px;color:#9BA3B0;margin-top:1px">Your AI Tutor</div>'
         '</div>'
+        '</div>'  # close right
 
-        '</div>',  # close card
-        unsafe_allow_html=True
-    )
+        '</div>'  # close flex
+        '</div>'  # close card
+    ).format(gl=grade_lbl, st=streak_txt, mom=_momentum, av=_AV)
 
-    # Real Streamlit CTA button
-    _bc1, _bc2, _bc3 = st.columns([1, 2, 1])
-    with _bc2:
-        if st.button(
-            "🚀  Start Learning with Ustad",
-            key="banner_cta", use_container_width=True, type="primary"
-        ):
-            st.session_state.page = "chat"
-            st.rerun()
+    st.markdown(_hero_css + _hero_card, unsafe_allow_html=True)
 
-    # Trust indicators
+    # Learning Progress Indicators
     st.markdown(
-        '<div class="zm-trust" style="display:grid;grid-template-columns:repeat(3,1fr);'
-        'gap:8px;margin:10px 0 16px">'
-        + _trust +
-        '</div>',
+        '<div class="zm-prog" style="display:grid;grid-template-columns:repeat(3,1fr);'
+        'gap:10px;margin:10px 0 4px">' + _prog_html + '</div>',
         unsafe_allow_html=True
     )
 
@@ -1741,7 +1686,7 @@ def page_home():
             '<div style="background:#FFF9E6;border:1.5px solid #FBBF24;'
             'border-radius:12px;padding:12px 16px;margin-bottom:16px;'
             'font-size:14px;color:#92400E;font-weight:600">'
-            "⏰ You haven't studied today — even 10 minutes counts! 💪</div>",
+            "\u23f0 You haven't studied today \u2014 even 10 minutes counts! \U0001f4aa</div>",
             unsafe_allow_html=True
         )
 
@@ -1790,46 +1735,71 @@ def page_home():
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ── MY SUBJECTS ───────────────────────────────────────────
-    st.markdown("<div style=\"height:8px\"></div>", unsafe_allow_html=True)
+    # ── PICK A SUBJECT ────────────────────────────────────────
+    st.markdown('<div style="height:4px"></div>', unsafe_allow_html=True)
     st.markdown(
-        "<div style=\"font-family:'DM Serif Display',serif;font-size:22px;"
-        "color:#1A1D23;margin-bottom:14px\">📖 Pick a Subject</div>",
+        '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;'
+        'color:#0F1B14;margin-bottom:14px;font-weight:400">&#128214; Pick a Subject</div>',
+        unsafe_allow_html=True
+    )
+
+    # Scoped CSS — the st.button IS the card; no separate heading button
+    st.markdown(
+        '<style>'
+        '.zm-subj .stButton>button{'
+        'background:#fff!important;'
+        'border:1.5px solid #E4E8EE!important;'
+        'border-radius:16px!important;'
+        'padding:18px 8px 14px!important;'
+        'min-height:112px!important;'
+        'width:100%!important;'
+        'display:flex!important;flex-direction:column!important;'
+        'align-items:center!important;gap:4px!important;'
+        'cursor:pointer!important;'
+        'transition:all .18s ease!important;'
+        'box-shadow:0 1px 6px rgba(0,0,0,.04)!important;'
+        'white-space:normal!important;word-break:break-word!important;'
+        'line-height:1.35!important;font-size:12px!important;'
+        'font-weight:700!important;color:#1A1D23!important;'
+        'text-align:center!important}'
+        '.zm-subj .stButton>button:hover{'
+        'transform:translateY(-4px)!important;'
+        'box-shadow:0 8px 24px rgba(0,0,0,.10)!important;'
+        'border-color:#1C7C54!important}'
+        '</style>',
         unsafe_allow_html=True
     )
 
     SUBJ_META = {
-        "Maths":            ("🔢","#E8472A"),
-        "Physics":          ("⚡","#1B4FD8"),
-        "Chemistry":        ("🧪","#7C3AED"),
-        "Biology":          ("🌿","#059669"),
-        "English":          ("📖","#D97706"),
-        "Computer Science": ("💻","#0891B2"),
-        "Urdu":             ("🖊️","#BE185D"),
+        "Maths":            ("🔢", "#E8472A"),
+        "Physics":          ("⚡", "#1B4FD8"),
+        "Chemistry":        ("🧪", "#7C3AED"),
+        "Biology":          ("🌿", "#059669"),
+        "English":          ("📖", "#D97706"),
+        "Computer Science": ("💻", "#0891B2"),
+        "Urdu":             ("🖊️", "#BE185D"),
     }
 
     subj_cols = st.columns(len(SUBJ_META))
     for idx, (sname, (semoji, scolor)) in enumerate(SUBJ_META.items()):
         sq = stats.get(sname, 0)
+        sq_pct = min(int(sq / max(sq, 20) * 100), 100)
         with subj_cols[idx]:
+            # Colour accent bar above card
             st.markdown(
-                f"<div style=\"background:#fff;border-radius:14px;padding:16px 10px;"
-                f"text-align:center;border:1.5px solid #E4E8EE;"
-                f"border-top:4px solid {scolor};"
-                f"box-shadow:0 2px 8px rgba(0,0,0,0.04);"
-                f"transition:all .18s ease;cursor:pointer\">"
-                f"<div style=\"font-size:30px;margin-bottom:8px\">{semoji}</div>"
-                f"<div style=\"font-size:12px;font-weight:700;color:#1A1D23;margin-bottom:4px\">{sname}</div>"
-                f"<div style=\"font-size:10px;color:#9BA3B0;font-weight:500\">{sq} Qs done</div>"
-                f"<div style=\"margin-top:8px;background:#F0F2F5;border-radius:99px;height:4px;overflow:hidden\">"
-                f"<div style=\"width:{min(sq*8,100)}%;height:4px;border-radius:99px;background:{scolor}\"></div>"
-                "</div></div>",
+                '<div style="height:4px;border-radius:4px 4px 0 0;margin-bottom:-2px;'
+                'background:{c}"></div>'.format(c=scolor),
                 unsafe_allow_html=True
             )
-            if st.button(f"Study {sname}", key=f"subj_{sname}", use_container_width=True):
+            st.markdown('<div class="zm-subj">', unsafe_allow_html=True)
+            card_lbl = "{e}\n{n}\n{sq} Qs \xb7 {pct}%".format(
+                e=semoji, n=sname, sq=sq, pct=sq_pct)
+            if st.button(card_lbl, key="subj_{k}".format(k=sname),
+                         use_container_width=True):
                 st.session_state.subject = sname
                 st.session_state.page    = "chat"
                 st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
 
     # ── HOMEWORK DUE ──────────────────────────────────────────
     homework  = load_json(HOMEWORK_FILE)
@@ -1878,34 +1848,50 @@ def page_home():
         if st.button("📋  Open Homework", key="hw_goto_home", use_container_width=False):
             st.session_state.page = "my_homework"; st.rerun()
 
-    # ── MY PROGRESS (simple 4-stat row) ───────────────────────
-    st.markdown("<div style=\"height:8px\"></div>", unsafe_allow_html=True)
+    # ── LEARNING ROADMAP ──────────────────────────────────────
+    st.markdown('<div style="height:8px"></div>', unsafe_allow_html=True)
     st.markdown(
-        "<div style=\"font-family:'DM Serif Display',serif;font-size:22px;"
-        "color:#1A1D23;margin-bottom:14px\">📊 My Progress</div>",
+        '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;'
+        'color:#0F1B14;margin-bottom:12px;font-weight:400">'
+        '&#128202; Learning Roadmap</div>',
         unsafe_allow_html=True
     )
-    p1, p2, p3, p4 = st.columns(4)
-    for col, icon, val, lbl, color in [
-        (p1, "❓", total,                          "Questions",    "#1C7C54"),
-        (p2, "🔥", f"{streak} days",              "Streak",       "#E8770A"),
-        (p3, "🏆", len(u.get("badges",[])),        "Badges",       "#C9A84C"),
-        (p4, "📝", stats.get("quizzes_done",0),    "Quizzes",      "#1B4FD8"),
+
+    _qr_pct  = min(int(total / max(total, 100) * 100), 100)
+    _str_pct = min(streak * 14, 100)
+    _bdg_pct = min(int(len(u.get("badges",[])) / max(len(u.get("badges",[])), 10) * 100), 100)
+    _qz_pct2 = min(int(stats.get("quizzes_done",0) / max(stats.get("quizzes_done",0), 20) * 100), 100)
+
+    def _rm_tile(icon, label, val_str, pct, color):
+        bw = max(pct, 2)
+        return (
+            '<div style="background:#fff;border-radius:12px;padding:12px 14px;'
+            'border:1.5px solid #E4E8EE;box-shadow:0 1px 4px rgba(0,0,0,.03)">'
+            '<div style="display:flex;align-items:center;'
+            'justify-content:space-between;margin-bottom:7px">'
+            '<div style="display:flex;align-items:center;gap:6px">'
+            '<span style="font-size:15px">{icon}</span>'
+            '<span style="font-size:11px;font-weight:700;color:#374151">{lbl}</span>'
+            '</div>'
+            '<span style="font-size:19px;font-weight:800;color:{col};line-height:1">{val}</span>'
+            '</div>'
+            '<div style="background:#F0F2F5;border-radius:99px;height:5px;'
+            'overflow:hidden;margin-bottom:4px">'
+            '<div style="width:{bw}%;height:5px;border-radius:99px;background:{col}">'
+            '</div></div>'
+            '<span style="font-size:10px;color:#9BA3B0;font-weight:600">{pct}% of milestone</span>'
+            '</div>'
+        ).format(icon=icon, lbl=label, val=val_str, col=color, bw=bw, pct=pct)
+
+    _rd1, _rd2, _rd3, _rd4 = st.columns(4)
+    for _col, _icon, _lbl, _val, _pct, _clr in [
+        (_rd1, "\u2753",        "Questions", str(total),                       _qr_pct,  "#1C7C54"),
+        (_rd2, "\U0001f525",    "Streak",    "{d}d".format(d=streak),           _str_pct, "#E8770A"),
+        (_rd3, "\U0001f3c6",    "Badges",    str(len(u.get("badges",[]))),      _bdg_pct, "#C9A84C"),
+        (_rd4, "\U0001f4dd",    "Quizzes",   str(stats.get("quizzes_done",0)), _qz_pct2, "#1B4FD8"),
     ]:
-        with col:
-            st.markdown(
-                f"<div style=\"background:#fff;border-radius:14px;padding:18px 14px;"
-                f"text-align:center;border:1.5px solid #E4E8EE;"
-                f"border-top:4px solid {color};"
-                f"box-shadow:0 2px 8px rgba(0,0,0,0.04)\">"
-                f"<div style=\"font-size:24px;margin-bottom:4px\">{icon}</div>"
-                f"<div style=\"font-family:'DM Serif Display',serif;font-size:28px;"
-                f"color:{color};line-height:1\">{val}</div>"
-                f"<div style=\"font-size:11px;color:#9BA3B0;font-weight:600;"
-                f"text-transform:uppercase;letter-spacing:.7px;margin-top:4px\">{lbl}</div>"
-                "</div>",
-                unsafe_allow_html=True
-            )
+        with _col:
+            st.markdown(_rm_tile(_icon, _lbl, _val, _pct, _clr), unsafe_allow_html=True)
 
     # ── CONTINUE LAST CHAT ─────────────────────────────────────
     hist      = load_json(HISTORY_FILE)

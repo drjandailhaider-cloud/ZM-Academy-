@@ -2016,12 +2016,13 @@ def page_home():
         if st.button("📋  Open Homework", key="hw_goto_home", use_container_width=False):
             st.session_state.page = "my_homework"; st.rerun()
 
-    # ── LEARNING ROADMAP ──────────────────────────────────────
+
+    # ── LEARNING ROADMAP — clickable poster cards ──────────────
     st.markdown('<div style="height:8px"></div>', unsafe_allow_html=True)
     st.markdown(
-        '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;'
-        'color:#0F1B14;margin-bottom:12px;font-weight:400">'
-        '&#128202; Learning Roadmap</div>',
+        "<div style=\"font-family:'DM Serif Display',serif;font-size:22px;"
+        "color:#0F1B14;margin-bottom:14px;font-weight:400\">"
+        "&#128202; Learning Roadmap</div>",
         unsafe_allow_html=True
     )
 
@@ -2030,36 +2031,87 @@ def page_home():
     _bdg_pct = min(int(len(u.get("badges",[])) / max(len(u.get("badges",[])), 10) * 100), 100)
     _qz_pct2 = min(int(stats.get("quizzes_done",0) / max(stats.get("quizzes_done",0), 20) * 100), 100)
 
-    def _rm_tile(icon, label, val_str, pct, color):
-        bw = max(pct, 2)
-        return (
-            '<div style="background:#fff;border-radius:12px;padding:12px 14px;'
-            'border:1.5px solid #E4E8EE;box-shadow:0 1px 4px rgba(0,0,0,.03)">'
-            '<div style="display:flex;align-items:center;'
-            'justify-content:space-between;margin-bottom:7px">'
-            '<div style="display:flex;align-items:center;gap:6px">'
-            '<span style="font-size:15px">{icon}</span>'
-            '<span style="font-size:11px;font-weight:700;color:#374151">{lbl}</span>'
-            '</div>'
-            '<span style="font-size:19px;font-weight:800;color:{col};line-height:1">{val}</span>'
-            '</div>'
-            '<div style="background:#F0F2F5;border-radius:99px;height:5px;'
-            'overflow:hidden;margin-bottom:4px">'
-            '<div style="width:{bw}%;height:5px;border-radius:99px;background:{col}">'
-            '</div></div>'
-            '<span style="font-size:10px;color:#9BA3B0;font-weight:600">{pct}% of milestone</span>'
-            '</div>'
-        ).format(icon=icon, lbl=label, val=val_str, col=color, bw=bw, pct=pct)
+    # Scoped CSS — st.button IS the poster card
+    st.markdown(
+        '<style>'
+        '.zm-rmap .stButton>button{'
+        'border:none!important;border-radius:20px!important;'
+        'padding:0!important;min-height:164px!important;width:100%!important;'
+        'cursor:pointer!important;overflow:hidden!important;'
+        'transition:transform .22s cubic-bezier(.22,.68,0,1.2),box-shadow .22s ease!important;'
+        'white-space:normal!important;line-height:1.3!important;'
+        'text-align:left!important;display:block!important;'
+        'box-shadow:0 4px 20px rgba(0,0,0,.12)!important;'
+        'background:transparent!important}'
+        '.zm-rmap .stButton>button:hover{'
+        'transform:translateY(-7px) scale(1.03)!important;'
+        'box-shadow:0 16px 44px rgba(0,0,0,.20)!important}'
+        '.zm-rmap .stButton>button:active{transform:translateY(-2px) scale(1.01)!important}'
+        '</style>',
+        unsafe_allow_html=True
+    )
 
-    _rd1, _rd2, _rd3, _rd4 = st.columns(4)
-    for _col, _icon, _lbl, _val, _pct, _clr in [
-        (_rd1, "\u2753",        "Questions", str(total),                       _qr_pct,  "#1C7C54"),
-        (_rd2, "\U0001f525",    "Streak",    "{d}d".format(d=streak),           _str_pct, "#E8770A"),
-        (_rd3, "\U0001f3c6",    "Badges",    str(len(u.get("badges",[]))),      _bdg_pct, "#C9A84C"),
-        (_rd4, "\U0001f4dd",    "Quizzes",   str(stats.get("quizzes_done",0)), _qz_pct2, "#1B4FD8"),
-    ]:
+    def _poster(icon, label, val_str, sublabel, pct, grad):
+        bw = max(pct, 3)
+        return (
+            '<div style="background:{g};border-radius:18px;padding:22px 20px 18px;'
+            'height:164px;box-sizing:border-box;display:flex;flex-direction:column;'
+            'justify-content:space-between;position:relative;overflow:hidden">'
+            '<div style="position:absolute;top:-28px;right:-28px;width:100px;height:100px;'
+            'border-radius:50%;background:rgba(255,255,255,.10);pointer-events:none"></div>'
+            '<div style="display:flex;align-items:center;gap:9px">'
+            '<span style="font-size:28px">{ic}</span>'
+            '<span style="font-size:13px;font-weight:700;color:rgba(255,255,255,.88)">{lb}</span>'
+            '</div>'
+            '<div style="font-family:\'DM Serif Display\',Georgia,serif;font-size:44px;'
+            'color:#fff;line-height:1;text-shadow:0 2px 10px rgba(0,0,0,.22)">'
+            '{v}<span style="font-size:13px;color:rgba(255,255,255,.6);'
+            'font-family:\'DM Sans\',sans-serif;font-weight:600;margin-left:5px">{sl}</span>'
+            '</div>'
+            '<div>'
+            '<div style="display:flex;justify-content:space-between;margin-bottom:5px">'
+            '<span style="font-size:10px;color:rgba(255,255,255,.62);font-weight:600">Progress</span>'
+            '<span style="font-size:10px;color:rgba(255,255,255,.88);font-weight:700">{p}%</span>'
+            '</div>'
+            '<div style="background:rgba(255,255,255,.22);border-radius:99px;height:5px;overflow:hidden">'
+            '<div style="width:{bw}%;height:5px;border-radius:99px;background:rgba(255,255,255,.85)"></div>'
+            '</div>'
+            '</div>'
+            '</div>'
+        ).format(g=grad, ic=icon, lb=label, v=val_str, sl=sublabel, p=pct, bw=bw)
+
+    _poster_data = [
+        (_poster("\u2753",     "Questions Solved",
+                 str(total),                            "answered",
+                 _qr_pct,
+                 "linear-gradient(135deg,#1C7C54 0%,#25A870 100%)"),
+         "chat"),
+        (_poster("\U0001f525", "Study Streak",
+                 str(streak),                           "days",
+                 _str_pct,
+                 "linear-gradient(135deg,#C2410C 0%,#EA580C 100%)"),
+         "chat"),
+        (_poster("\U0001f3c6", "Badges Earned",
+                 str(len(u.get("badges", []))),         "badges",
+                 _bdg_pct,
+                 "linear-gradient(135deg,#92400E 0%,#C9A84C 100%)"),
+         "badges"),
+        (_poster("\U0001f4dd", "Quizzes Taken",
+                 str(stats.get("quizzes_done", 0)),     "quizzes",
+                 _qz_pct2,
+                 "linear-gradient(135deg,#1B4FD8 0%,#3B82F6 100%)"),
+         "quiz"),
+    ]
+
+    _rc1, _rc2, _rc3, _rc4 = st.columns(4)
+    for _col, (_html, _dest) in zip([_rc1, _rc2, _rc3, _rc4], _poster_data):
         with _col:
-            st.markdown(_rm_tile(_icon, _lbl, _val, _pct, _clr), unsafe_allow_html=True)
+            st.markdown('<div class="zm-rmap">', unsafe_allow_html=True)
+            if st.button(_html, key="rmp_" + _dest + str(id(_html)),
+                         use_container_width=True):
+                st.session_state.page = _dest
+                st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
 
     # ── CONTINUE LAST CHAT ─────────────────────────────────────
     hist      = load_json(HISTORY_FILE)

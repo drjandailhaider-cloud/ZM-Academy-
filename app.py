@@ -889,7 +889,13 @@ html,body,[class*="css"]{
 }
 
 /* ── SIDEBAR ────────────────────────────────────────── */
+/* Force sidebar always visible — Student-only mode */
 [data-testid="stSidebar"]{
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  width:auto !important;
+  min-width:240px !important;
   background:#FFFFFF !important;
   border-right:1.5px solid var(--border) !important;
 }
@@ -1337,24 +1343,12 @@ def render_sidebar():
                 unsafe_allow_html=True
             )
 
-        # Role selector
-        st.markdown("<div style=\"padding:8px 8px 0\">", unsafe_allow_html=True)
-        new_role_lbl = st.selectbox(
-            "Role", ROLE_OPTIONS, index=cur_role_idx,
-            key="sidebar_role_select", label_visibility="collapsed"
-        )
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        if ROLE_MAP[new_role_lbl] != u.get("role","student"):
-            users_tmp = load_json(USERS_FILE)
-            u["role"] = ROLE_MAP[new_role_lbl]
-            users_tmp[u["email"]]["role"] = ROLE_MAP[new_role_lbl]
-            save_json(USERS_FILE, users_tmp)
-            st.session_state.user = u
-            role = ROLE_MAP[new_role_lbl]
-            st.rerun()
-        else:
-            role = u.get("role","student")
+        # ── Role selector HIDDEN — app runs in Student-only mode ──
+        # Role switching UI removed; all users experience Student mode.
+        # Backend role data and ROLE_OPTIONS/ROLE_MAP/ROLE_REVERSE are
+        # preserved below for future use — only rendering is suppressed.
+        # ROLE_OPTIONS / ROLE_MAP / ROLE_REVERSE defined above, kept intact.
+        role = "student"   # always student in UI
 
         cur = st.session_state.page
 
@@ -1381,11 +1375,14 @@ def render_sidebar():
         nav_btn("🕐", "Chat History",    "history")
         nav_btn("🏆", "Badges",          "badges")
 
-        if role in ("teacher","admin"):
-            section_label("🛡️  Admin")
-            nav_btn("📊", "Student Performance", "admin")
-            if role == "teacher":
-                nav_btn("📋", "Create Homework", "homework")
+        # Admin/Teacher nav — hidden in Student-only mode.
+        # Backend page_admin() and page_homework() functions are untouched.
+        # To re-enable: remove the comment markers below.
+        # if role in ("teacher","admin"):
+        #     section_label("🛡️  Admin")
+        #     nav_btn("📊", "Student Performance", "admin")
+        #     if role == "teacher":
+        #         nav_btn("📋", "Create Homework", "homework")
 
         nav_btn("👤", "Profile", "profile")
 

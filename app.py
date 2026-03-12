@@ -845,7 +845,14 @@ html,body,[class*="css"]{
   padding-left:1.8rem !important; padding-right:1.8rem !important;
   background:var(--bg) !important;
 }
-#MainMenu,footer,header{ visibility:hidden; }
+#MainMenu, footer { visibility:hidden; }
+/* Keep header visible so the sidebar toggle (☰) works */
+header { visibility:visible !important; background:transparent !important; }
+/* Ensure sidebar collapse/expand button is always clickable */
+[data-testid="collapsedControl"],
+button[kind="header"],
+.css-1rs6os,
+.css-1544g2n { display:block !important; visibility:visible !important; opacity:1 !important; }
 
 @media(max-width:768px){
   .main .block-container{ padding-left:.7rem !important; padding-right:.7rem !important; }
@@ -894,10 +901,16 @@ html,body,[class*="css"]{
   display:block !important;
   visibility:visible !important;
   opacity:1 !important;
-  width:auto !important;
-  min-width:240px !important;
   background:#FFFFFF !important;
   border-right:1.5px solid var(--border) !important;
+  min-width:240px !important;
+  max-width:320px !important;
+}
+/* Sidebar toggle arrow always clickable */
+[data-testid="collapsedControl"]{
+  display:flex !important;
+  visibility:visible !important;
+  opacity:1 !important;
 }
 [data-testid="stSidebar"] *{ color:var(--text) !important; }
 [data-testid="stSidebar"] p,

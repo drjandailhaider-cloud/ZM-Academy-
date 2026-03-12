@@ -1569,47 +1569,10 @@ def page_home():
         "TTY0IDgwIFE4MCA5MiA5NiA4MCIgZmlsbD0icmdiYSgxNDYsNjQsMTQsLjMpIi8+PC9zdmc+"
     )
 
-    # Compute live progress percentages
-    _q_done   = total
-    _q_goal   = max(_q_done, 100)
-    _q_pct    = min(int(_q_done / _q_goal * 100), 100)
-    _qz_done  = stats.get("quizzes_done", 0)
-    _qz_goal  = max(_qz_done, 20)
-    _qz_pct   = min(int(_qz_done / _qz_goal * 100), 100)
-    _bd_count = len(u.get("badges", []))
-    _bd_goal  = max(_bd_count, 10)
-    _bd_pct   = min(int(_bd_count / _bd_goal * 100), 100)
     if streak == 0:   _momentum = "Start your journey"
     elif streak < 3:  _momentum = "Building momentum"
     elif streak < 7:  _momentum = "On a roll!"
     else:             _momentum = "On fire! \U0001f525"
-
-    def _prog_tile(label, val, goal, pct, color, icon):
-        bw = max(pct, 3)
-        return (
-            '<div style="background:#fff;border-radius:14px;padding:14px 16px;'
-            'border:1.5px solid #E4E8EE;box-shadow:0 1px 6px rgba(0,0,0,.04)">'
-            '<div style="display:flex;align-items:center;'
-            'justify-content:space-between;margin-bottom:8px">'
-            '<div style="display:flex;align-items:center;gap:7px">'
-            '<span style="font-size:17px">{icon}</span>'
-            '<span style="font-size:12px;font-weight:700;color:#374151">{lbl}</span>'
-            '</div>'
-            '</div>'
-            '<div style="background:#F0F2F5;border-radius:99px;height:6px;overflow:hidden">'
-            '<div style="width:{bw}%;height:6px;border-radius:99px;background:{col}"></div>'
-            '</div>'
-            '<div style="display:flex;justify-content:space-between;margin-top:5px">'
-            '<span style="font-size:10px;color:#9BA3B0">{val} done</span>'
-            '<span style="font-size:10px;color:#9BA3B0">Goal: {goal}</span>'
-            '</div></div>'
-        ).format(icon=icon, lbl=label, pct=pct, col=color, bw=bw, val=val, goal=goal)
-
-    _prog_html = (
-        _prog_tile("Questions Solved", _q_done,  _q_goal,  _q_pct,  "#1C7C54", "\u2753") +
-        _prog_tile("Quizzes Taken",    _qz_done, _qz_goal, _qz_pct, "#1B4FD8", "\U0001f4dd") +
-        _prog_tile("Badges Earned",    _bd_count,_bd_goal, _bd_pct, "#C9A84C", "\U0001f3c6")
-    )
 
     # ── Banner: premium glassmorphism AI-EdTech with expand toggle ─
     if "zm_info_open" not in st.session_state:
@@ -1873,13 +1836,6 @@ def page_home():
             '</div>',  # close panel
         ]
         st.markdown("".join(_panel_parts), unsafe_allow_html=True)
-
-    # Learning Progress Indicators
-    st.markdown(
-        '<div class="zm-prog" style="display:grid;grid-template-columns:repeat(3,1fr);'
-        'gap:10px;margin:10px 0 4px">' + _prog_html + '</div>',
-        unsafe_allow_html=True
-    )
 
     if reminder:
         st.markdown(

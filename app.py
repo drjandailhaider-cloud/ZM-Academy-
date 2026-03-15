@@ -1732,6 +1732,15 @@ def page_auth():
 # SIDEBAR
 # ─────────────────────────────────────────────────────────────────
 
+
+def _back_btn(label="🏠  Home", dest="home", key_suffix=""):
+    """Render a compact back-to-home button. Placed at top of every page."""
+    if st.button(label, key=f"_back_{dest}{key_suffix}",
+                 use_container_width=False):
+        st.session_state.page = dest
+        st.rerun()
+    st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+
 def render_sidebar():
     u    = st.session_state.user
     role = u.get("role", "student")
@@ -2643,6 +2652,7 @@ def save_chat_session(sub, lvl):
 
 def page_chat():
     u = st.session_state.user
+    _back_btn("🏠  Home", "home", "_chat")
 
     # ══════════════════════════════════════════════════════════
     # TTS PLAYER — runs at top of every render cycle
@@ -3314,6 +3324,7 @@ def page_chat():
 # ─────────────────────────────────────────────────────────────────
 def page_quiz():
     u = st.session_state.user
+    _back_btn("🏠  Home", "home", "_quiz")
     st.markdown("<div class=\"section-header orange\">📝 Practice Quiz</div>", unsafe_allow_html=True)
 
     q = st.session_state.quiz
@@ -3690,6 +3701,7 @@ def _cleanup_old_rooms():
 
 def page_friends():
     u = st.session_state.user
+    _back_btn("🏠  Home", "home", "_friends")
     st.markdown("<div class=\"section-header purple\">👥 Online Friends Quiz</div>", unsafe_allow_html=True)
 
     # ── Session state shortcuts ───────────────────────────────
@@ -4059,6 +4071,7 @@ def page_image():
 
     u = st.session_state.user
 
+    _back_btn("🏠  Home", "home", "_image")
     # ══════════════════════════════════════════════════════════════
     # STYLE DEFINITIONS  (compact pills, not a dropdown)
     # ══════════════════════════════════════════════════════════════
@@ -4438,6 +4451,7 @@ def page_syllabus():
     # SELECTOR ROW  ── Curriculum | Grade | Subject
     # ══════════════════════════════════════════════════════════════
     u = _ensure_fields(st.session_state.user)
+    _back_btn("🏠  Home", "home", "_syllabus")
 
     sc1, sc2, sc3 = st.columns(3)
     with sc1:
@@ -4780,7 +4794,7 @@ def page_progress():
     u     = st.session_state.user
     stats = u.get("stats",{})
     total = stats.get("total",0)
-
+    _back_btn("🏠  Home", "home", "_progress")
     st.markdown("<div class=\"section-header\">📊 My Progress</div>", unsafe_allow_html=True)
     c1,c2,c3,c4 = st.columns(4)
     with c1: st.metric("❓ Questions",  total)
@@ -4818,6 +4832,7 @@ def page_progress():
 # ─────────────────────────────────────────────────────────────────
 def page_history():
     u = st.session_state.user
+    _back_btn("🏠  Home", "home", "_history")
     st.markdown("<div class=\"section-header\">🕐 Chat History</div>", unsafe_allow_html=True)
     hist     = load_json(HISTORY_FILE)
     sessions = sorted(hist.get(u["email"],[]), key=lambda x:x.get("updated",""), reverse=True)
@@ -4880,6 +4895,7 @@ def page_history():
 def page_badges():
     u      = st.session_state.user
     earned = u.get("badges",[])
+    _back_btn("🏠  Home", "home", "_badges")
     st.markdown("<div class=\"section-header orange\">🏆 Badges & Achievements</div>", unsafe_allow_html=True)
     st.markdown(f"<p style=\"color:#666;font-size:13px\">Earned "
                 f"<b style=\"color:#1A1A2E\">{len(earned)}</b> of "
@@ -4905,6 +4921,7 @@ def page_badges():
 # ─────────────────────────────────────────────────────────────────
 def page_profile():
     u = st.session_state.user
+    _back_btn("🏠  Home", "home", "_profile")
     st.markdown("<div class=\"section-header\">👤 My Profile</div>", unsafe_allow_html=True)
     c1,c2 = st.columns([1,2])
     with c1:
@@ -5804,6 +5821,7 @@ def page_admin():
 # ─────────────────────────────────────────────────────────────────
 def page_student_homework():
     u = st.session_state.user
+    _back_btn("🏠  Home", "home", "_myhw")
     st.markdown("<div class=\"section-header\">📋 My Homework</div>", unsafe_allow_html=True)
 
     homework = load_json(HOMEWORK_FILE)

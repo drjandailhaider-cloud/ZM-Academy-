@@ -2917,6 +2917,13 @@ def page_quiz():
             bg     = "#F0FDF4" if correct else "#FFF1EE"
             border = "#059669" if correct else "#E8472A"
             wrong_line = "" if correct else f"<div style=\"font-size:13px;color:#059669;margin-top:2px\">✅ Correct: <b>{ques['answer']}</b></div>"
+            # Strip any HTML tags from explanation before rendering
+            import html as _html
+            raw_expl = ques.get("explanation", "")
+            # Remove HTML tags if AI returned them, then escape special chars
+            import re as _re
+            clean_expl = _re.sub(r'<[^>]+>', '', raw_expl).strip()
+            clean_expl = _html.escape(clean_expl)
             st.markdown(f"""
             <div style="background:{bg};border:1.5px solid {border};border-radius:12px;
                 padding:14px 16px;margin-bottom:10px;color:#1A1A2E">
@@ -2926,7 +2933,7 @@ def page_quiz():
                 </div>
                 {wrong_line}
                 <div style="font-size:12px;color:#555;margin-top:5px;padding:6px 10px;background:rgba(0,0,0,.04);border-radius:8px">
-                    💡 {ques.get("explanation","")}
+                    💡 {clean_expl}
                 </div>
             </div>""", unsafe_allow_html=True)
 
@@ -3453,6 +3460,9 @@ def page_friends():
                 bg      = "#F0FDF4" if correct else "#FFF1EE"
                 border  = "#059669" if correct else "#E8472A"
                 wrong   = "" if correct else f"<div style=\"font-size:12px;color:#059669;margin-top:3px\">✅ {ques['answer']}</div>"
+                import html as _html2, re as _re2
+                fq_expl = _re2.sub(r'<[^>]+>', '', ques.get("explanation", "")).strip()
+                fq_expl = _html2.escape(fq_expl)
                 st.markdown(f"""
                 <div style="background:{bg};border:1.5px solid {border};border-radius:12px;
                     padding:12px 14px;margin-bottom:8px">
@@ -3461,7 +3471,7 @@ def page_friends():
                         Your answer: <b>{chosen}</b> {"✅" if correct else "❌"}</div>
                     {wrong}
                     <div style="font-size:11px;color:#666;margin-top:4px;padding:5px 8px;
-                        background:rgba(0,0,0,.04);border-radius:6px">💡 {ques.get("explanation","")}</div>
+                        background:rgba(0,0,0,.04);border-radius:6px">💡 {fq_expl}</div>
                 </div>""", unsafe_allow_html=True)
 
             if st.button("🔄 Play Again", use_container_width=True, type="primary", key="play_again"):
@@ -3645,8 +3655,9 @@ def page_image():
         with chip_cols[ci]:
             if st.button(sug, key=f"sug_{ci}", use_container_width=True):
                 st.session_state["img_prompt_val"] = sug
+                st.rerun()
 
-    # Carry suggestion into text area via session state
+    # Carry suggestion into text area — key must NOT conflict with value=
     if "img_prompt_val" not in st.session_state:
         st.session_state.img_prompt_val = ""
 
@@ -3655,9 +3666,10 @@ def page_image():
         value=st.session_state.img_prompt_val,
         placeholder="Describe the image you want to generate...",
         height=110,
-        key="img_prompt_area",
         label_visibility="collapsed",
     )
+    # Keep session state in sync with whatever user typed
+    st.session_state.img_prompt_val = prompt
 
     # Style selector pills
     st.markdown(
@@ -4989,10 +5001,13 @@ def _render_hw_card(hw_prev, show_answers=True, creator_view=False):
                             💡 <b>Hint:</b> {q.get('hint','')}
                         </div>""", unsafe_allow_html=True)
                 if q.get("explanation"):
+                    import html as _html3, re as _re3
+                    _expl3 = _re3.sub(r'<[^>]+>', '', q.get('explanation','')).strip()
+                    _expl3 = _html3.escape(_expl3)
                     st.markdown(f"""
                     <div style="background:#F3F4FF;border-radius:8px;padding:8px 12px;
                         margin-top:4px;font-size:12px;color:#3730A3">
-                        📖 <b>Explanation:</b> {q.get('explanation','')}
+                        📖 <b>Explanation:</b> {_expl3}
                     </div>""", unsafe_allow_html=True)
 
     if data.get("marking_guide"):
@@ -5568,6 +5583,9 @@ def page_student_homework():
                                   f"✅ Correct: <b>{correct_ans}</b></div>"
                                   if is_mcq and not is_correct else "")
                         expl   = question.get("explanation","")
+                        import html as _html4, re as _re4
+                        expl   = _re4.sub(r'<[^>]+>', '', expl).strip()
+                        expl   = _html4.escape(expl)
                         expl_html = (f"<div style='font-size:11px;color:#3730A3;margin-top:4px;"
                                      f"padding:5px 8px;background:rgba(99,102,241,0.08);"
                                      f"border-radius:6px'>📖 {expl}</div>" if expl else "")

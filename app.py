@@ -632,6 +632,452 @@ CAMBRIDGE_SUBJECTS = {
 for g in ["Grade 1","Grade 2","Grade 3","Grade 4","Grade 5"]:
     CAMBRIDGE_SUBJECTS[g] = ["Mathematics","English","Urdu","Science","Islamiyat"]
 
+
+# ─────────────────────────────────────────────────────────────────
+# SINDH BOARD CURRICULUM
+# Structure mirrors CAMBRIDGE_CURRICULUM exactly:
+#   SINDH_CURRICULUM[subject_key][grade] = {"board":..., "units":[...]}
+# Future grades / subjects can be added here without any UI change.
+# ─────────────────────────────────────────────────────────────────
+SINDH_CURRICULUM = {}
+
+SINDH_CURRICULUM["Maths"] = {
+  "Grade 1": {"board":"Sindh Textbook Board – Grade 1","units":[
+    _u("Numbers 1–100",["Counting forward and backward","Number names in English and Urdu","Place value: tens and ones","Comparing numbers (greater, smaller, equal)","Ordinal numbers 1st to 10th"]),
+    _u("Addition",["Adding single-digit numbers","Adding two-digit numbers without carrying","Number bonds to 10 and 20","Word problems on addition"]),
+    _u("Subtraction",["Subtracting single-digit numbers","Subtracting two-digit numbers without borrowing","Relationship between addition and subtraction","Word problems on subtraction"]),
+    _u("Shapes & Measurement",["2D shapes: square, rectangle, circle, triangle","3D shapes: cube, cuboid, sphere, cylinder","Comparing lengths: long, short, tall","Comparing mass: heavy, light","Measuring with non-standard units"]),
+  ]},
+  "Grade 2": {"board":"Sindh Textbook Board – Grade 2","units":[
+    _u("Numbers to 1000",["Reading and writing numbers to 999","Place value: hundreds, tens, ones","Comparing and ordering numbers","Even and odd numbers","Skip counting by 2, 5, 10"]),
+    _u("Addition & Subtraction",["Addition with carrying","Subtraction with borrowing","Mental math strategies","Word problems"]),
+    _u("Multiplication",["Concept of multiplication","Times tables: 2, 5, 10","Multiplication as repeated addition","Simple word problems"]),
+    _u("Division",["Concept of sharing equally","Division facts related to 2 and 5 times tables","Relationship between multiplication and division"]),
+    _u("Fractions",["Halves and quarters","Equal parts of a whole","Fractions of a set","Simple comparison of fractions"]),
+  ]},
+  "Grade 3": {"board":"Sindh Textbook Board – Grade 3","units":[
+    _u("Numbers & Place Value",["Numbers to 9999","Place value: thousands, hundreds, tens, ones","Comparing and ordering 4-digit numbers","Rounding to nearest 10 and 100","Roman numerals I–XX"]),
+    _u("Operations",["Addition and subtraction of 4-digit numbers","Multiplication tables 2–10","Long multiplication (2-digit × 1-digit)","Division with and without remainder"]),
+    _u("Fractions & Decimals",["Equivalent fractions","Comparing fractions with same denominator","Introduction to decimal notation","Tenths and hundredths"]),
+    _u("Geometry",["Properties of triangles","Properties of quadrilaterals","Angles: right, acute, obtuse","Perimeter of simple shapes","Area by counting squares"]),
+    _u("Measurement",["Units of length: mm, cm, m, km","Units of mass: g, kg","Units of capacity: ml, l","Reading clocks to the minute","Calendar: days, weeks, months, years"]),
+  ]},
+  "Grade 4": {"board":"Sindh Textbook Board – Grade 4","units":[
+    _u("Numbers",["Numbers to 100,000","LCM and HCF","Prime and composite numbers","Factors and multiples","Negative numbers"]),
+    _u("Fractions & Decimals",["Mixed numbers","Adding and subtracting fractions with different denominators","Multiplying fractions","Decimals to hundredths","Converting fractions to decimals"]),
+    _u("Basic Algebra",["Patterns and rules","Simple equations","Variables","Word problem equations"]),
+    _u("Geometry & Mensuration",["Area of rectangles and triangles","Volume of simple cuboids","Properties of circles","Angles in polygons","Symmetry and tessellation"]),
+  ]},
+  "Grade 5": {"board":"Sindh Textbook Board – Grade 5","units":[
+    _u("Number & Operations",["Numbers to 1,000,000","Prime factorisation","BODMAS rule","Estimation and rounding","Index notation"]),
+    _u("Fractions, Decimals & Percentages",["Converting between fractions, decimals, percentages","Ratio and proportion","Profit and loss","Simple interest","Discount"]),
+    _u("Algebra",["Expressions and substitution","Solving linear equations","Sequences and patterns","Graphs of simple equations"]),
+    _u("Geometry",["Area of circles","Volume of prisms","Surface area of cuboids","Coordinates in all four quadrants","Angles in a triangle and quadrilateral"]),
+    _u("Statistics",["Bar charts, pie charts, line graphs","Mean, median, mode, range","Probability: impossible to certain scale"]),
+  ]},
+  "Grade 6": {"board":"Sindh Textbook Board – Grade 6","units":[
+    _u("Number Theory",["Divisibility rules","LCM and HCF using prime factorisation","Integers and the number line","Rational numbers","Absolute value"]),
+    _u("Algebra",["Algebraic expressions","Like and unlike terms","Expanding and simplifying","Linear equations in one variable","Word problems"]),
+    _u("Geometry",["Lines, line segments, rays","Angles: types and measurement","Triangles: properties and classification","Parallel lines and transversals","Congruence of triangles"]),
+    _u("Mensuration",["Perimeter and area of polygons","Circumference and area of circles","Volume of cuboids","Surface area of cuboids"]),
+    _u("Statistics",["Frequency tables","Bar charts and pictographs","Mean, median, mode","Introduction to probability"]),
+  ]},
+  "Grade 7": {"board":"Sindh Textbook Board – Grade 7","units":[
+    _u("Number",["Rational and irrational numbers","Operations with integers","Percentages: profit, loss, tax","Ratio, proportion, and rate","Direct and inverse proportion"]),
+    _u("Algebra",["Algebraic fractions","Simultaneous linear equations","Inequalities","Factorisation of algebraic expressions","Formulae and substitution"]),
+    _u("Geometry",["Congruent and similar triangles","Pythagoras theorem","Circle properties: chord, arc, tangent","Loci","Transformations: translation, rotation, reflection"]),
+    _u("Mensuration",["Area of composite shapes","Surface area of prisms","Volume of cylinders","Arc length and sector area"]),
+    _u("Statistics & Probability",["Frequency distribution tables","Histograms","Mean from grouped data","Combined probability"]),
+  ]},
+  "Grade 8": {"board":"Sindh Textbook Board – Grade 8","units":[
+    _u("Number & Algebra",["Laws of indices","Standard form (scientific notation)","Algebraic identities: (a±b)²","Quadratic expressions","Linear simultaneous equations"]),
+    _u("Geometry",["Circle theorems","Trigonometry: sin, cos, tan in right triangles","Bearings and angles of elevation/depression","Vectors: notation and addition","3D geometry and Pythagoras"]),
+    _u("Mensuration",["Surface area of spheres and cones","Volume of spheres, cones and pyramids","Similar shapes: areas and volumes"]),
+    _u("Statistics",["Cumulative frequency","Box-and-whisker plots","Scatter diagrams and correlation","Sampling methods"]),
+  ]},
+  "Grade 9": {"board":"Sindh Board HSSC Part-I – Science","units":[
+    _u("Algebra",["Sets and real number system","Algebraic manipulation","Linear and quadratic equations","Simultaneous equations","Matrices: operations and determinant"]),
+    _u("Geometry & Trigonometry",["Circle theorems (advanced)","Trigonometric ratios and identities","Sine and cosine rules","Angle of elevation and depression","Coordinate geometry: distance, midpoint, gradient"]),
+    _u("Advanced Algebra",["Functions: domain, range, types","Polynomials: remainder and factor theorems","Sequences: arithmetic and geometric","Logarithms"]),
+    _u("Statistics & Probability",["Frequency distribution","Measures of central tendency and dispersion","Probability: addition and multiplication rules","Tree diagrams"]),
+  ]},
+  "Grade 10": {"board":"Sindh Board HSSC Part-II – Science","units":[
+    _u("Advanced Algebra",["Quadratic formula and discriminant","Partial fractions","Binomial theorem","Matrices: inverse and systems of equations"]),
+    _u("Calculus Introduction",["Limits and continuity","Differentiation: rules and applications","Integration: basic rules","Applications of calculus"]),
+    _u("Trigonometry",["Trigonometric identities","Trigonometric equations","Graphs of trigonometric functions","Inverse trigonometric functions"]),
+    _u("Statistics",["Standard deviation","Normal distribution (introduction)","Regression and correlation","Index numbers"]),
+  ]},
+}
+
+SINDH_CURRICULUM["Physics"] = {
+  "Grade 6": {"board":"Sindh Textbook Board – Grade 6 (General Science)","units":[
+    _u("Matter & Its Properties",["States of matter","Physical and chemical changes","Density","Solubility"]),
+    _u("Forces & Motion",["Types of forces","Balanced and unbalanced forces","Speed, distance and time","Simple machines"]),
+    _u("Energy",["Forms of energy","Energy conversion","Heat transfer: conduction, convection, radiation","Conservation of energy"]),
+  ]},
+  "Grade 7": {"board":"Sindh Textbook Board – Grade 7 (General Science)","units":[
+    _u("Mechanics",["Scalars and vectors","Velocity and acceleration","Newton's Laws of Motion","Momentum and impulse"]),
+    _u("Pressure",["Pressure in solids and liquids","Atmospheric pressure","Archimedes principle and buoyancy","Hydraulic systems"]),
+    _u("Waves",["Properties of waves","Sound: frequency, amplitude, pitch","Reflection and refraction of sound","Ultrasound applications"]),
+  ]},
+  "Grade 8": {"board":"Sindh Textbook Board – Grade 8 (Science)","units":[
+    _u("Kinematics",["Distance-time and velocity-time graphs","Equations of motion (v=u+at etc.)","Free fall and acceleration due to gravity","Projectile motion basics"]),
+    _u("Dynamics",["Newton's laws in detail","Friction: static and kinetic","Circular motion basics","Gravitational force and weight"]),
+    _u("Work, Energy & Power",["Work done by a force","Kinetic and potential energy","Conservation of mechanical energy","Power and efficiency"]),
+    _u("Electricity",["Electric charge","Current, voltage and resistance","Ohm's Law","Series and parallel circuits"]),
+  ]},
+  "Grade 9": {"board":"Sindh Board HSSC Part-I Physics","units":[
+    _u("Physical Measurements",["SI units and prefixes","Significant figures","Errors and uncertainties","Dimensional analysis"]),
+    _u("Kinematics",["Scalars and vectors","Equations of motion","Graphs of motion","Projectile motion"]),
+    _u("Dynamics",["Newton's Laws","Momentum and impulse","Friction","Elastic and inelastic collisions"]),
+    _u("Work, Power & Energy",["Work-energy theorem","Types of energy","Conservation of energy","Power"]),
+    _u("Thermal Physics",["Temperature and heat","Specific heat capacity","Latent heat","Thermal expansion"]),
+  ]},
+  "Grade 10": {"board":"Sindh Board HSSC Part-II Physics","units":[
+    _u("Waves & Optics",["Wave properties","Reflection, refraction, diffraction","Interference","Lenses and mirrors"]),
+    _u("Electricity & Magnetism",["Coulomb's law","Electric field and potential","Capacitance","Magnetic effects of current","Electromagnetic induction","AC circuits"]),
+    _u("Modern Physics",["Photoelectric effect","Atomic models","Nuclear reactions: fission and fusion","Radioactivity","Semiconductor basics"]),
+  ]},
+}
+
+SINDH_CURRICULUM["Chemistry"] = {
+  "Grade 9": {"board":"Sindh Board HSSC Part-I Chemistry","units":[
+    _u("Introduction to Chemistry",["Branches of chemistry","Laboratory safety","Physical and chemical changes","Mixtures and pure substances","Separation techniques"]),
+    _u("Atomic Structure",["Atoms, molecules, ions","Atomic number and mass number","Isotopes","Electronic configuration","Periodic table introduction"]),
+    _u("Chemical Bonding",["Ionic bonding","Covalent bonding","Metallic bonding","Properties of ionic and covalent compounds"]),
+    _u("States of Matter",["Kinetic molecular theory","Properties of gases, liquids, solids","Gas laws: Boyle's and Charles'","Ideal gas equation"]),
+    _u("Chemical Reactions",["Types of reactions","Balancing equations","Mole concept","Stoichiometry","Limiting reagent"]),
+  ]},
+  "Grade 10": {"board":"Sindh Board HSSC Part-II Chemistry","units":[
+    _u("Electrochemistry",["Electrolysis","Electrochemical cells","Corrosion and its prevention","Industrial applications"]),
+    _u("Organic Chemistry",["Hydrocarbons: alkanes, alkenes, alkynes","Functional groups","Isomerism","Reactions of organic compounds","Polymers"]),
+    _u("Acids, Bases & Salts",["Properties of acids and bases","pH scale","Neutralisation","Preparation of salts","Titration calculations"]),
+    _u("Industrial Chemistry",["Haber process (ammonia)","Contact process (sulphuric acid)","Petroleum refining","Fertilisers and their effects"]),
+  ]},
+}
+
+SINDH_CURRICULUM["Biology"] = {
+  "Grade 9": {"board":"Sindh Board HSSC Part-I Biology","units":[
+    _u("Introduction to Biology",["Characteristics of living things","Levels of organisation","Cell structure: plant and animal","Microscopy","Scientific method"]),
+    _u("Biochemistry",["Carbohydrates","Proteins and enzymes","Lipids","Nucleic acids","Water and its roles"]),
+    _u("Cell Biology",["Cell membrane and transport","Mitosis and meiosis","Cell cycle","Stem cells"]),
+    _u("Nutrition",["Photosynthesis","Plant nutrition","Human digestive system","Balanced diet","Malnutrition"]),
+    _u("Transport",["Blood and its components","Heart and circulation","Lymphatic system","Transport in plants: xylem and phloem"]),
+  ]},
+  "Grade 10": {"board":"Sindh Board HSSC Part-II Biology","units":[
+    _u("Gaseous Exchange",["Human respiratory system","Gas exchange in plants","Breathing mechanism","Smoking and lung disease"]),
+    _u("Excretion",["Human excretory system","Kidney structure and function","Dialysis","Excretion in plants"]),
+    _u("Nervous System",["Neurons and nerve impulse","Central and peripheral nervous system","Reflex arc","Sense organs"]),
+    _u("Reproduction",["Sexual and asexual reproduction","Human reproductive system","Fertilisation and development","Plant reproduction"]),
+    _u("Genetics & Evolution",["DNA structure and replication","Protein synthesis","Mendelian genetics","Gene mutations","Natural selection and evolution"]),
+  ]},
+}
+
+SINDH_CURRICULUM["English"] = {
+  "Grade 1": {"board":"Sindh Textbook Board – Grade 1 English","units":[
+    _u("Phonics & Vocabulary",["Alphabet recognition A–Z","Letter sounds (phonics)","Simple CVC words","High-frequency sight words","Basic vocabulary: colours, animals, numbers"]),
+    _u("Reading",["Reading simple sentences","Understanding pictures and text","Left to right reading direction","Simple comprehension questions"]),
+    _u("Writing",["Pencil grip and letter formation","Writing capital and small letters","Copying simple words and sentences","Writing own name"]),
+  ]},
+  "Grade 6": {"board":"Sindh Textbook Board – Grade 6 English","units":[
+    _u("Reading Comprehension",["Identifying main idea and details","Inferencing","Vocabulary in context","Types of texts: narrative, descriptive","Summary writing"]),
+    _u("Grammar",["Parts of speech: nouns, pronouns, verbs, adjectives, adverbs","Tenses: simple present, past, future","Sentence types: declarative, interrogative, imperative, exclamatory","Punctuation"]),
+    _u("Writing",["Paragraph writing","Descriptive essays","Informal letters","Story writing","Narrative composition"]),
+    _u("Literature",["Poetry: appreciation and analysis","Short stories","Figures of speech: simile, metaphor, personification"]),
+  ]},
+  "Grade 9": {"board":"Sindh Board HSSC Part-I English","units":[
+    _u("Reading & Comprehension",["Unseen passages","Literary analysis","Skimming and scanning","Critical reading","Vocabulary enrichment"]),
+    _u("Grammar & Usage",["Advanced tenses","Modal verbs","Conditional sentences","Passive voice","Reported speech","Articles and prepositions"]),
+    _u("Writing Skills",["Essay writing: argumentative, discursive, narrative","Formal and informal letters","Report writing","Précis writing","Story with a moral"]),
+    _u("Literature",["Prose: themes and characters","Poetry: form, meter, rhyme scheme","Drama: analysis of scenes","Figures of speech and literary devices"]),
+  ]},
+  "Grade 10": {"board":"Sindh Board HSSC Part-II English","units":[
+    _u("Advanced Reading",["Complex unseen passages","Comparative analysis","Evaluation and critique","Synthesis of ideas from multiple texts"]),
+    _u("Advanced Grammar",["Complex sentences","Clauses: noun, adjective, adverb","Transformation of sentences","Error correction"]),
+    _u("Advanced Writing",["Argumentative essays","Research-based writing","Business letters and emails","Creative writing","Translation (Urdu to English)"]),
+    _u("Literature (Advanced)",["Novel analysis","Shakespearean play scenes","Modern poetry","Sociolinguistics and register"]),
+  ]},
+}
+
+SINDH_CURRICULUM["Urdu"] = {
+  "Grade 1": {"board":"Sindh Textbook Board – Grade 1 Urdu","units":[
+    _u("حروف تہجی",["الف سے ی تک حروف کی پہچان","حروف کی آوازیں","آسان الفاظ","دو حرفی الفاظ"]),
+    _u("پڑھنا",["سادہ جملے","تصویری کہانی","سوال جواب"]),
+    _u("لکھنا",["حروف لکھنا","آسان الفاظ لکھنا","نقل لکھنا"]),
+  ]},
+  "Grade 6": {"board":"Sindh Textbook Board – Grade 6 Urdu","units":[
+    _u("نظم",["نظم کا خلاصہ","مرکزی خیال","محاوروں کا استعمال"]),
+    _u("نثر",["سبق کا خلاصہ","سوال و جواب","الفاظ کے معنی"]),
+    _u("قواعد",["اسم، ضمیر، فعل، صفت","جملے کی اقسام","واحد جمع","مذکر مؤنث"]),
+    _u("تحریر",["مضمون نویسی","خط نویسی","کہانی"]),
+  ]},
+  "Grade 9": {"board":"Sindh Board HSSC Part-I Urdu","units":[
+    _u("نظم (شاعری)",["غزل","نظم","حمد و نعت","شاعری کی تکنیک"]),
+    _u("نثر",["افسانہ","مضمون","سوانح عمری","طنز و مزاح"]),
+    _u("قواعد",["مرکب الفاظ","محاورے اور ضرب الامثال","مترادف و متضاد","اعراب"]),
+    _u("تحریر",["درخواست نویسی","مضمون نویسی","خلاصہ نویسی","تقریر"]),
+  ]},
+}
+
+SINDH_CURRICULUM["Computer Science"] = {
+  "Grade 6": {"board":"Sindh Textbook Board – Grade 6 Computer Studies","units":[
+    _u("Introduction to Computers",["Types of computers","Input and output devices","Storage devices","Parts of a computer system","Uses of computers in daily life"]),
+    _u("Operating Systems",["Purpose of an operating system","Windows basics","File management","Desktop and taskbar"]),
+    _u("MS Word",["Creating and saving documents","Formatting text","Tables","Inserting images","Printing"]),
+  ]},
+  "Grade 9": {"board":"Sindh Board HSSC Part-I Computer Science","units":[
+    _u("Computer Fundamentals",["Number systems: binary, octal, hexadecimal","Boolean algebra and logic gates","Computer architecture","Memory hierarchy","Input/output devices"]),
+    _u("Programming Fundamentals",["Introduction to algorithms","Flowcharts and pseudocode","Python basics: variables, data types","Control structures: if-else, loops","Functions"]),
+    _u("Data Management",["Introduction to databases","Data models","SQL basics: SELECT, INSERT, UPDATE","Spreadsheet functions"]),
+    _u("Networking",["Types of networks: LAN, WAN","Network topologies","Internet basics","Email and web browsing","Cybersecurity basics"]),
+  ]},
+  "Grade 10": {"board":"Sindh Board HSSC Part-II Computer Science","units":[
+    _u("Advanced Programming",["Object-oriented programming concepts","Classes and objects in Python","Inheritance and polymorphism","File handling","Exception handling"]),
+    _u("Data Structures",["Arrays and lists","Stacks and queues","Linked lists","Sorting algorithms","Searching algorithms"]),
+    _u("Database Management",["Relational databases","Normalisation","Advanced SQL","ER diagrams","Database security"]),
+    _u("Web Development",["HTML and CSS basics","JavaScript introduction","Responsive design","Web hosting basics"]),
+  ]},
+}
+
+# Sindh Board: subjects available per grade
+SINDH_SUBJECTS = {}
+for _g in ["Grade 1","Grade 2","Grade 3","Grade 4","Grade 5"]:
+    SINDH_SUBJECTS[_g] = ["Mathematics","English","Urdu","Science","Islamiyat"]
+for _g in ["Grade 6","Grade 7","Grade 8"]:
+    SINDH_SUBJECTS[_g] = ["Mathematics","Physics","Chemistry","Biology","English","Computer Science","Urdu"]
+for _g in ["Grade 9","Grade 10"]:
+    SINDH_SUBJECTS[_g] = ["Mathematics","Physics","Chemistry","Biology","English","Computer Science","Urdu"]
+
+
+# ─────────────────────────────────────────────────────────────────
+# PUNJAB BOARD CURRICULUM
+# ─────────────────────────────────────────────────────────────────
+PUNJAB_CURRICULUM = {}
+
+PUNJAB_CURRICULUM["Maths"] = {
+  "Grade 1": {"board":"Punjab Curriculum & Textbook Board (PCTB) – Grade 1","units":[
+    _u("Numbers 1–100",["Counting objects to 100","Number recognition and writing","Before, after, between","Comparing numbers using >, <, =","Ordinal numbers 1st–10th"]),
+    _u("Addition",["Adding single-digit numbers","Number bonds to 10","Adding two-digit numbers","Simple word problems"]),
+    _u("Subtraction",["Subtracting single-digit numbers","Taking away from two-digit numbers","Inverse of addition","Word problems"]),
+    _u("Shapes",["Identify squares, rectangles, circles, triangles","Sort shapes by colour and size","Symmetry in shapes"]),
+    _u("Measurement",["Compare lengths, heights, weights","Use non-standard units","Tell time on the hour"]),
+  ]},
+  "Grade 2": {"board":"PCTB – Grade 2","units":[
+    _u("Numbers to 999",["Three-digit numbers","Place value: hundreds, tens, ones","Comparing and ordering","Even and odd numbers"]),
+    _u("Addition & Subtraction",["Adding with carrying","Subtracting with borrowing","Mental math","Word problems"]),
+    _u("Multiplication",["Times tables 2, 5, 10","Arrays","Word problems"]),
+    _u("Division",["Sharing equally","Grouping","Simple division facts"]),
+    _u("Fractions",["Half, quarter","Parts of a whole","Fractions of a set"]),
+    _u("Measurement & Time",["Centimetres and metres","Kilograms and grams","Telling time to half-hour","Days and months"]),
+  ]},
+  "Grade 3": {"board":"PCTB – Grade 3","units":[
+    _u("Numbers to 10,000",["Place value to thousands","Comparing 4-digit numbers","Rounding to 10 and 100"]),
+    _u("Operations",["Addition and subtraction of 4-digit numbers","Multiplication tables 2–12","Division with remainder","Multi-step word problems"]),
+    _u("Fractions & Decimals",["Equivalent fractions","Comparing fractions","Decimal place value","Tenths"]),
+    _u("Geometry",["Angles: right, acute, obtuse","2D and 3D shapes","Symmetry","Perimeter"]),
+    _u("Data Handling",["Tally charts","Bar charts","Pictograms","Simple probability"]),
+  ]},
+  "Grade 4": {"board":"PCTB – Grade 4","units":[
+    _u("Numbers & Algebra",["Numbers to 1,000,000","Prime and composite numbers","LCM and HCF","Negative numbers","Simple equations"]),
+    _u("Fractions & Decimals",["Mixed numbers","Adding/subtracting fractions","Decimal multiplication","Converting fractions to decimals"]),
+    _u("Geometry",["Properties of triangles","Quadrilaterals","Coordinates","Transformations"]),
+    _u("Measurement",["Perimeter and area","Volume","Converting units","Compound measures"]),
+  ]},
+  "Grade 5": {"board":"PCTB – Grade 5","units":[
+    _u("Number Theory",["Prime factorisation","Indices","BODMAS","Estimation"]),
+    _u("Fractions & Percentages",["FDP conversion","Ratio and proportion","Profit, loss, discount","Simple interest"]),
+    _u("Algebra",["Algebraic expressions","Solving equations","Sequences","Graphs"]),
+    _u("Geometry",["Circles: area and circumference","Volume of prisms","Surface area","Interior angles"]),
+    _u("Statistics",["Charts and graphs","Mean, median, mode, range","Probability"]),
+  ]},
+  "Grade 6": {"board":"PCTB – Grade 6","units":[
+    _u("Number System",["Integers and rational numbers","LCM and HCF","Standard form","Percentage applications"]),
+    _u("Algebra",["Algebraic expressions","Linear equations","Inequalities","Formulae"]),
+    _u("Geometry",["Lines and angles","Triangles and quadrilaterals","Congruence","Constructions"]),
+    _u("Mensuration",["Perimeter and area of polygons","Circles","Volume of cuboids","Surface area"]),
+    _u("Statistics",["Data collection","Frequency tables","Bar charts, pie charts","Mean, median, mode"]),
+  ]},
+  "Grade 7": {"board":"PCTB – Grade 7","units":[
+    _u("Number",["Rational numbers","Percentage: profit, loss, tax","Ratio and proportion","Direct and inverse proportion"]),
+    _u("Algebra",["Algebraic fractions","Factorisation","Simultaneous equations","Quadratic expressions"]),
+    _u("Geometry",["Pythagoras theorem","Similar and congruent triangles","Circle theorems","Transformations"]),
+    _u("Mensuration",["Composite areas","Surface area and volume of cylinders","Arcs and sectors"]),
+    _u("Statistics",["Frequency distribution","Histograms","Grouped data: mean","Probability"]),
+  ]},
+  "Grade 8": {"board":"PCTB – Grade 8","units":[
+    _u("Algebra",["Laws of indices","Quadratics: expansion and factorisation","Simultaneous equations","Functions"]),
+    _u("Geometry & Trigonometry",["Trigonometric ratios","Bearings","Vectors","3D Pythagoras","Loci"]),
+    _u("Mensuration",["Similar shapes: areas and volumes","Surface area of spheres and cones","Volume of pyramids"]),
+    _u("Statistics",["Cumulative frequency","Box plots","Scatter diagrams","Correlation"]),
+  ]},
+  "Grade 9": {"board":"Punjab Board Matric Part-I Mathematics","units":[
+    _u("Matrices & Determinants",["Matrix types and operations","Determinant","Inverse matrix","Solving systems using matrices"]),
+    _u("Real Numbers & Logarithms",["Properties of real numbers","Laws of logarithms","Common and natural logarithm","Applications"]),
+    _u("Algebraic Expressions",["Polynomials","Factorisation: all methods","HCF and LCM of polynomials","Algebraic fractions"]),
+    _u("Equations",["Linear equations","Quadratic equations: factorisation, formula","Radical equations","Simultaneous equations"]),
+    _u("Geometry",["Properties of triangles (theorems)","Similarity","Pythagoras theorem and converse","Circle theorems"]),
+    _u("Trigonometry",["Trigonometric ratios","Complementary angles","Heights and distances","Trigonometric identities"]),
+  ]},
+  "Grade 10": {"board":"Punjab Board Matric Part-II Mathematics","units":[
+    _u("Quadratic Equations",["Nature of roots and discriminant","Sum and product of roots","Equations reducible to quadratic"]),
+    _u("Theory of Quadratic Equations",["Completing the square","Quadratic formula","Graph of a quadratic function"]),
+    _u("Variations",["Direct, inverse, joint variation","Partial fractions"]),
+    _u("Partial Fractions",["Types of partial fractions","Resolving into partial fractions"]),
+    _u("Sets & Functions",["Set notation and operations","Types of functions","Composition of functions","Inverse functions"]),
+    _u("Basic Statistics",["Frequency distribution","Measures of central tendency","Measures of dispersion","Normal distribution basics"]),
+    _u("Introduction to Trigonometry (Advanced)",["General angles","Radian measure","Trigonometric functions of any angle","Inverse trig functions"]),
+  ]},
+}
+
+PUNJAB_CURRICULUM["Physics"] = {
+  "Grade 6": {"board":"PCTB – Grade 6 General Science","units":[
+    _u("Introduction to Physics",["What is physics?","Measurement: length, mass, time","SI units","Scientific notation"]),
+    _u("Kinematics",["Distance and displacement","Speed and velocity","Acceleration","Equations of motion"]),
+    _u("Forces",["Newton's Laws","Weight and mass","Friction","Simple machines"]),
+  ]},
+  "Grade 9": {"board":"Punjab Board Matric Part-I Physics","units":[
+    _u("Physical Quantities & Measurement",["Base and derived quantities","SI units","Scientific notation","Significant figures","Measuring instruments"]),
+    _u("Kinematics",["Rest and motion","Scalars and vectors","Equations of motion","Free fall","Graphs of motion"]),
+    _u("Dynamics",["Newton's Laws","Momentum and impulse","Friction","Uniform circular motion","Gravitation"]),
+    _u("Work, Energy & Power",["Work done","Kinetic and potential energy","Conservation of energy","Power and efficiency"]),
+    _u("Properties of Matter",["Elasticity: stress and strain","Pressure in fluids","Archimedes principle","Atmospheric pressure"]),
+    _u("Thermal Properties",["Temperature and heat","Specific heat capacity","Latent heat","Thermal expansion of solids, liquids, gases"]),
+  ]},
+  "Grade 10": {"board":"Punjab Board Matric Part-II Physics","units":[
+    _u("Sound",["Production and propagation","Properties: frequency, amplitude, speed","Reflection: echoes","Doppler effect","Ultrasound"]),
+    _u("Geometrical Optics",["Reflection at curved mirrors","Refraction at curved surfaces","Lenses","Human eye and defects","Optical instruments"]),
+    _u("Electrostatics",["Electric charge and Coulomb's law","Electric field and potential","Capacitance","Applications"]),
+    _u("Current Electricity",["Ohm's Law","Series and parallel circuits","Kirchhoff's Laws","Power and energy","Domestic wiring"]),
+    _u("Magnetism & Electromagnetism",["Magnetic field","Force on a current-carrying conductor","Electromagnetic induction","AC generator and transformer"]),
+    _u("Electronics",["Thermionic emission","Cathode ray oscilloscope","Transistors","Logic gates","Digital and analogue electronics"]),
+    _u("Nuclear Physics",["Atomic model","Radioactivity","Nuclear reactions: fission, fusion","Uses of nuclear energy","Radiation safety"]),
+  ]},
+}
+
+PUNJAB_CURRICULUM["Chemistry"] = {
+  "Grade 9": {"board":"Punjab Board Matric Part-I Chemistry","units":[
+    _u("Fundamentals of Chemistry",["Definition and branches","Importance of chemistry","Lab safety","Physical vs chemical change"]),
+    _u("Structure of Atoms",["Sub-atomic particles","Atomic number and mass number","Electronic configuration","Isotopes"]),
+    _u("Periodic Table",["History and development","Periods and groups","Periodic trends: atomic radius, ionisation energy, electronegativity"]),
+    _u("Chemical Bonding",["Ionic bonding: formation and properties","Covalent bonding: single, double, triple","Polarity","Metallic bonding"]),
+    _u("Physical States of Matter",["Solid, liquid, gas — kinetic theory","Gas laws","Solutions, suspensions, colloids"]),
+    _u("Stoichiometry",["Mole concept","Avogadro's number","Molar mass","Chemical formulae","Balancing equations","Percentage composition"]),
+  ]},
+  "Grade 10": {"board":"Punjab Board Matric Part-II Chemistry","units":[
+    _u("Electrochemistry",["Redox reactions","Electrolytic cells","Voltaic cells","Applications: electroplating, batteries"]),
+    _u("Chemical Kinetics",["Rate of reaction","Factors affecting rate","Activation energy","Catalysts"]),
+    _u("Chemical Equilibrium",["Reversible reactions","Le Chatelier's principle","Equilibrium constant (Kc and Kp)"]),
+    _u("Acids, Bases & Salts",["Arrhenius, Brønsted-Lowry, Lewis theories","pH and pOH","Neutralisation and titration","Buffer solutions"]),
+    _u("Organic Chemistry",["Hybridisation","Alkanes, alkenes, alkynes","Functional groups","Reactions","Polymers and plastics"]),
+    _u("Environmental Chemistry",["Air, water and soil pollution","Greenhouse effect","Acid rain","Green chemistry"]),
+  ]},
+}
+
+PUNJAB_CURRICULUM["Biology"] = {
+  "Grade 9": {"board":"Punjab Board Matric Part-I Biology","units":[
+    _u("Introduction to Biology",["Branches of biology","Characteristics of life","Biological method","Tools: microscopy and staining"]),
+    _u("Solving a Biological Problem",["Hypothesis","Experiment design","Data collection and analysis","Conclusion"]),
+    _u("Biodiversity",["Classification of living organisms","Five kingdoms","Binomial nomenclature"]),
+    _u("Cells and Cell Biology",["Prokaryotic and eukaryotic cells","Cell organelles","Cell membrane transport","Cell cycle: mitosis"]),
+    _u("Enzymes",["Enzyme structure and function","Factors affecting enzyme activity","Enzyme inhibition","Enzyme applications"]),
+    _u("Bioenergetics",["Photosynthesis: light and dark reactions","Aerobic and anaerobic respiration","Fermentation"]),
+    _u("Nutrition",["Autotrophic and heterotrophic nutrition","Human digestive system","Dietary requirements"]),
+    _u("Transport",["Transport in plants: xylem and phloem","Human blood and circulatory system","Lymphatic system"]),
+  ]},
+  "Grade 10": {"board":"Punjab Board Matric Part-II Biology","units":[
+    _u("Gaseous Exchange",["Respiratory surfaces","Human respiratory system","Gas exchange mechanism","Diseases: asthma, bronchitis"]),
+    _u("Homeostasis",["Concept of homeostasis","Osmoregulation","Thermoregulation","Role of kidneys"]),
+    _u("Coordination & Control",["Nervous system structure","Neuron and nerve impulse","Brain and spinal cord","Endocrine system","Hormones"]),
+    _u("Support & Movement",["Skeletal system","Types of joints","Muscles and movement","Disorders of skeletal system"]),
+    _u("Reproduction",["Asexual reproduction","Human reproductive system","Fertilisation and development","Contraception"]),
+    _u("Inheritance",["Mendel's laws","Genotype and phenotype","Monohybrid and dihybrid cross","Sex determination","Mutations"]),
+    _u("Biotechnology",["Genetic engineering","Cloning","PCR technique","Applications in medicine and agriculture"]),
+    _u("Ecology",["Ecosystem components","Food chains and webs","Energy flow","Nutrient cycles","Pollution and conservation"]),
+  ]},
+}
+
+PUNJAB_CURRICULUM["English"] = {
+  "Grade 1": {"board":"PCTB – Grade 1 English","units":[
+    _u("Phonics",["Letter sounds A–Z","Blending sounds","CVC words","Sight words"]),
+    _u("Reading",["Simple sentences","Comprehension","Story reading"]),
+    _u("Writing",["Letter formation","Copying words","Simple sentences"]),
+  ]},
+  "Grade 6": {"board":"PCTB – Grade 6 English","units":[
+    _u("Reading",["Comprehension passages","Main idea and details","Vocabulary in context","Inference"]),
+    _u("Grammar",["Parts of speech","Tenses","Sentence structure","Punctuation"]),
+    _u("Writing",["Paragraph writing","Descriptive writing","Informal letters","Story writing"]),
+    _u("Literature",["Poetry","Short stories","Drama extracts"]),
+  ]},
+  "Grade 9": {"board":"Punjab Board Matric Part-I English","units":[
+    _u("Reading Comprehension",["Prose passages","Comprehension questions","Summary writing","Vocabulary"]),
+    _u("Grammar",["Tenses (all)","Modals","Conditional sentences","Passive voice","Reported speech"]),
+    _u("Writing",["Essay types: narrative, descriptive, argumentative","Formal and informal letters","Report writing","Précis"]),
+    _u("Literature",["Prose: lessons from textbook","Poems: themes, devices","Translation: English to Urdu"]),
+  ]},
+  "Grade 10": {"board":"Punjab Board Matric Part-II English","units":[
+    _u("Advanced Reading",["Complex comprehension passages","Critical reading","Unseen poems"]),
+    _u("Advanced Grammar",["Complex sentences","Clauses","Transformation of sentences","Error correction"]),
+    _u("Advanced Writing",["Argumentative essay","Research writing","Creative writing","Formal communication"]),
+    _u("Literature",["Novel / drama extracts","Advanced poetry analysis","Translation"]),
+  ]},
+}
+
+PUNJAB_CURRICULUM["Urdu"] = {
+  "Grade 1": {"board":"PCTB – Grade 1 Urdu","units":[
+    _u("حروف تہجی",["حروف کی پہچان","آوازیں","آسان الفاظ"]),
+    _u("پڑھنا و لکھنا",["سادہ جملے","نقل نویسی"]),
+  ]},
+  "Grade 9": {"board":"Punjab Board Matric Part-I Urdu","units":[
+    _u("نثر",["اسباق کا خلاصہ","سوال و جواب","مرکزی خیال"]),
+    _u("نظم",["نظموں کا تجزیہ","مرکزی خیال","صنائع بدائع"]),
+    _u("قواعد",["اسم کی اقسام","فعل کی اقسام","محاورے و ضرب الامثال","مترادف و متضاد"]),
+    _u("تحریر",["مضمون نویسی","خط نویسی","درخواست","خلاصہ نویسی"]),
+  ]},
+  "Grade 10": {"board":"Punjab Board Matric Part-II Urdu","units":[
+    _u("نثر (جدید)",["افسانے","انشائیے","سفرنامے"]),
+    _u("شاعری (جدید)",["غزل","نظم","قصیدہ"]),
+    _u("جدید قواعد",["فقرے کی اقسام","مرکب الفاظ","صنائع بدائع (مکمل)"]),
+    _u("اعلیٰ تحریر",["تقابلی مضمون","تنقیدی جائزہ","تحقیقی خلاصہ"]),
+  ]},
+}
+
+PUNJAB_CURRICULUM["Computer Science"] = {
+  "Grade 9": {"board":"Punjab Board Matric Part-I Computer Science","units":[
+    _u("Computer Basics",["History of computers","Types and generations","Hardware: input, output, storage, processing","Software: system and application","Number systems: binary, octal, hexadecimal"]),
+    _u("Programming with Python",["Python environment setup","Variables and data types","Input/output","Arithmetic and logical operators","Conditional statements"]),
+    _u("Algorithms & Flowcharts",["Algorithm definition","Properties of algorithms","Flowchart symbols","Pseudocode","Problem-solving examples"]),
+    _u("MS Office",["Word: formatting, tables, mail merge","Excel: formulas, functions, charts","PowerPoint: slides, transitions, animations"]),
+  ]},
+  "Grade 10": {"board":"Punjab Board Matric Part-II Computer Science","units":[
+    _u("Advanced Programming",["Loops: for, while, do-while","Functions and parameters","Arrays and lists","Sorting and searching","OOP basics"]),
+    _u("Database",["DBMS concepts","Relational model","SQL: DDL and DML","ER diagrams","Database applications"]),
+    _u("Networking & Internet",["OSI model","Network devices","TCP/IP","Internet services","Security threats and solutions"]),
+    _u("Web Development",["HTML structure","CSS styling","JavaScript basics","Responsive web design","Hosting a website"]),
+  ]},
+}
+
+# Punjab Board: subjects available per grade
+PUNJAB_SUBJECTS = {}
+for _g in ["Grade 1","Grade 2","Grade 3","Grade 4","Grade 5"]:
+    PUNJAB_SUBJECTS[_g] = ["Mathematics","English","Urdu","Science","Islamiyat"]
+for _g in ["Grade 6","Grade 7","Grade 8"]:
+    PUNJAB_SUBJECTS[_g] = ["Mathematics","Physics","Chemistry","Biology","English","Computer Science","Urdu"]
+for _g in ["Grade 9","Grade 10"]:
+    PUNJAB_SUBJECTS[_g] = ["Mathematics","Physics","Chemistry","Biology","English","Computer Science","Urdu"]
+
+
+# ─────────────────────────────────────────────────────────────────
+# BOARD ROUTER
+# Maps board UI label → (curriculum_dict, subjects_dict)
+# To add a new board: add one entry here + define its dicts above.
+# ─────────────────────────────────────────────────────────────────
+BOARD_DATA = {
+    "Cambridge":   (CAMBRIDGE_CURRICULUM, CAMBRIDGE_SUBJECTS),
+    "Sindh Board": (SINDH_CURRICULUM,     SINDH_SUBJECTS),
+    "Punjab Board":(PUNJAB_CURRICULUM,    PUNJAB_SUBJECTS),
+}
+BOARD_LABELS = list(BOARD_DATA.keys())
+
 # ─────────────────────────────────────────────────────────────────
 # DATA STORAGE
 # ─────────────────────────────────────────────────────────────────
@@ -3995,15 +4441,25 @@ def page_syllabus():
 
     sc1, sc2, sc3 = st.columns(3)
     with sc1:
-        curriculum = st.selectbox("Curriculum", ["Cambridge (Pakistan)"],
-                                  key="syl_curr", label_visibility="visible")
+        # Restore previously selected board from session state
+        _board_idx = BOARD_LABELS.index(
+            st.session_state.get("syl_board", "Cambridge")
+        ) if st.session_state.get("syl_board", "Cambridge") in BOARD_LABELS else 0
+        curriculum = st.selectbox(
+            "Syllabus Board", BOARD_LABELS,
+            index=_board_idx,
+            key="syl_curr", label_visibility="visible"
+        )
+        st.session_state["syl_board"] = curriculum
     with sc2:
         def_grade     = normalise_level(u.get("grade", "Grade 8"))
         def_grade_idx = get_level_index(def_grade)
         sel_grade = st.selectbox("Grade", LEVELS, index=def_grade_idx,
                                  key="syl_grade_sel", label_visibility="visible")
     with sc3:
-        avail_subs = CAMBRIDGE_SUBJECTS.get(sel_grade, list(SUBJECTS.keys()))
+        # Route subject list through selected board
+        _board_curr, _board_subs = BOARD_DATA[curriculum]
+        avail_subs = _board_subs.get(sel_grade, list(SUBJECTS.keys()))
         sel_sub = st.selectbox("Subject", avail_subs,
                                key="syl_sub_sel", label_visibility="visible")
 
@@ -4018,7 +4474,7 @@ def page_syllabus():
             st.session_state.user["grade"] = sel_grade
 
     # When selectors change, reset to list view
-    _sel_sig = f"{sel_grade}|{sel_sub}"
+    _sel_sig = f"{curriculum}|{sel_grade}|{sel_sub}"
     if st.session_state.get("_syl_sel_sig") != _sel_sig:
         st.session_state["_syl_sel_sig"] = _sel_sig
         st.session_state.syl_view        = "list"
@@ -4031,19 +4487,20 @@ def page_syllabus():
     sub_color = info["color"]
     sub_emoji = info["emoji"]
 
-    # ── Load units ────────────────────────────────────────────────
-    curr = CAMBRIDGE_CURRICULUM.get(subj_key, {}).get(sel_grade, {})
+    # ── Load units — routed through selected board ───────────────
+    _active_curr, _ = BOARD_DATA[curriculum]
+    curr = _active_curr.get(subj_key, {}).get(sel_grade, {})
     if not curr:
         for _ao, _an in _LEVEL_ALIAS.items():
             if _an == sel_grade:
-                curr = CAMBRIDGE_CURRICULUM.get(subj_key, {}).get(_ao, {})
+                curr = _active_curr.get(subj_key, {}).get(_ao, {})
                 if curr: break
 
     board = curr.get("board", "Cambridge / Pakistan National Curriculum")
     units = curr.get("units", [])
 
     if not units:
-        st.info(f"📋 No pre-loaded syllabus for **{sel_sub} — {sel_grade}**.")
+        st.info(f"📋 Syllabus coming soon for **{curriculum} · {sel_sub} — {sel_grade}**.")
         if st.button(f"💬 Ask Ustad about {sel_sub} {sel_grade}",
                      use_container_width=True, type="primary"):
             st.session_state.subject = subj_key
@@ -4066,7 +4523,7 @@ def page_syllabus():
             })
 
     # ── Coverage stats ────────────────────────────────────────────
-    syl_key     = f"{subj_key}_{sel_grade}"
+    syl_key     = f"{curriculum}_{subj_key}_{sel_grade}"
     done_set    = set(u.get("studied_topics", {}).get(syl_key, []))
     total       = len(all_topics)
     done_count  = sum(1 for t in all_topics if t["topic_key"] in done_set)

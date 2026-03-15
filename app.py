@@ -1741,6 +1741,43 @@ def _back_btn(label="🏠  Home", dest="home", key_suffix=""):
         st.rerun()
     st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
 
+
+def _page_nav(back_label, back_dest, go_label, go_dest, key_suffix):
+    """
+    Render a full-width bottom navigation bar with Back and Go buttons.
+    back_dest / go_dest: page keys used in st.session_state.page.
+    Pass go_dest=None to hide the Go button (end of flow pages).
+    Pass back_dest=None to hide the Back button.
+    """
+    st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
+    st.markdown(
+        "<div style='border-top:1px solid #E4E8EE;padding-top:14px;margin-top:4px'></div>",
+        unsafe_allow_html=True
+    )
+    _cols = st.columns([1, 1]) if (back_dest and go_dest) else [None, None]
+
+    if back_dest and go_dest:
+        with _cols[0]:
+            if st.button(f"◀  {back_label}", key=f"nav_back_{key_suffix}",
+                         use_container_width=True):
+                st.session_state.page = back_dest
+                st.rerun()
+        with _cols[1]:
+            if st.button(f"{go_label}  ▶", key=f"nav_go_{key_suffix}",
+                         use_container_width=True, type="primary"):
+                st.session_state.page = go_dest
+                st.rerun()
+    elif back_dest:
+        if st.button(f"◀  {back_label}", key=f"nav_back_{key_suffix}",
+                     use_container_width=True):
+            st.session_state.page = back_dest
+            st.rerun()
+    elif go_dest:
+        if st.button(f"{go_label}  ▶", key=f"nav_go_{key_suffix}",
+                     use_container_width=True, type="primary"):
+            st.session_state.page = go_dest
+            st.rerun()
+
 def render_sidebar():
     u    = st.session_state.user
     role = u.get("role", "student")
@@ -3317,6 +3354,7 @@ def page_chat():
         "</div></div></div>",
         unsafe_allow_html=True
     )
+    _page_nav("Home", "home", "Practice Quiz", "quiz", "chat")
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -3683,6 +3721,9 @@ def _gen_room_id():
     import string
     chars = string.ascii_uppercase + string.digits
     return "".join(random.choices(chars, k=6))
+
+    _page_nav("Home", "home", "Friends Quiz", "friends", "quiz")
+
 
 def _cleanup_old_rooms():
     """Delete rooms older than 2 hours to keep groups.json lean."""
@@ -4051,6 +4092,7 @@ def page_friends():
                     st.session_state.fq_room_id = join_code
                     st.session_state.fq_role    = "guest"
                     st.rerun()
+    _page_nav("Practice Quiz", "quiz", "Image Generator", "image", "friends")
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -4362,6 +4404,7 @@ def page_image():
                                     ]
                                     save_json(IMAGES_FILE, imgs_f)
                                     st.rerun()
+    _page_nav("Friends Quiz", "friends", "Syllabus", "syllabus", "image")
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -4785,6 +4828,7 @@ def page_syllabus():
                         u = _toggle_done(u, syl_key, topic_key)
                         done_set = set(u.get("studied_topics", {}).get(syl_key, []))
                         st.rerun()
+    _page_nav("Image Generator", "image", "My Progress", "progress", "syllabus")
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -4821,6 +4865,7 @@ def page_progress():
     with c1: st.metric("🎨 Images Generated", stats.get("images",0))
     with c2: st.metric("📅 Member Since",      u.get("joined",""))
     with c3: st.metric("📖 Subjects Studied",  sum(1 for s in SUBJECTS if stats.get(s,0)>0))
+    _page_nav("Syllabus", "syllabus", "Chat History", "history", "progress")
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -4887,6 +4932,7 @@ def page_history():
                 st.session_state.session_id    = sess["id"]
                 st.session_state.subject       = sess.get("subject","Maths")
                 st.session_state.page          = "chat"; st.rerun()
+    _page_nav("My Progress", "progress", "Badges", "badges", "history")
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -4914,6 +4960,7 @@ def page_badges():
                 <div class="badge-desc">{b['desc']}</div>
                 <div style="font-size:11px;margin-top:5px;color:{status_color};font-weight:700">{status_text}</div>
             </div>""", unsafe_allow_html=True)
+    _page_nav("Chat History", "history", "Profile", "profile", "badges")
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -4974,6 +5021,7 @@ def page_profile():
                 save_json(USERS_FILE, users)
                 st.session_state.user = eu
                 st.success("✅ Profile updated!"); time.sleep(0.5); st.rerun()
+    _page_nav("Badges", "badges", "Home", "home", "profile")
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -6099,6 +6147,8 @@ if not st.session_state.logged_in:
         "is_new":  False,
     }
     st.rerun()
+
+_page_nav("Home", "home", None, None, "myhw")
 
 render_sidebar()
 p = st.session_state.page

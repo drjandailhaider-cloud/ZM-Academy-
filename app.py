@@ -3542,7 +3542,7 @@ def page_chat():
         "</div></div></div>",
         unsafe_allow_html=True
     )
-    _page_nav("Home", "home", "Practice Quiz", "quiz", "chat")
+    _page_nav("Home", "home", None, None, "chat")
 
 
 # ─────────────────────────────────────────────────────────────────

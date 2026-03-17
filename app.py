@@ -3628,22 +3628,40 @@ def page_quiz():
             correct = ans["chosen"] == ques["answer"]
             bg     = "#F0FDF4" if correct else "#FFF1EE"
             border = "#059669" if correct else "#E8472A"
-            wrong_line = "" if correct else f"<div style=\"font-size:13px;color:#059669;margin-top:2px\">✅ Correct: <b>{ques['answer']}</b></div>"
-            # _clean_expl defined at top of page_quiz — handles all HTML variants
-            import html as _html
-            clean_expl = _html.escape(_clean_expl(ques.get("explanation", "")))
-            st.markdown(f"""
-            <div style="background:{bg};border:1.5px solid {border};border-radius:12px;
-                padding:14px 16px;margin-bottom:10px;color:#1A1A2E">
-                <div style="font-weight:700;font-size:14px">Q{i+1}. {ques["q"]}</div>
-                <div style="font-size:13px;margin-top:5px">
-                    Your answer: <b>{ans["chosen"]}</b> {"✅" if correct else "❌"}
-                </div>
-                {wrong_line}
-                <div style="font-size:12px;color:#555;margin-top:5px;padding:6px 10px;background:rgba(0,0,0,.04);border-radius:8px">
-                    💡 {clean_expl}
-                </div>
-            </div>""", unsafe_allow_html=True)
+            wrong_ans = "" if correct else ques['answer']
+
+            # Card header (safe HTML — no user/AI content inside)
+            st.markdown(
+                f'<div style="background:{bg};border:1.5px solid {border};'
+                f'border-radius:12px;padding:14px 16px;margin-bottom:10px;color:#1A1A2E">',
+                unsafe_allow_html=True
+            )
+            # Question text — rendered via st.markdown (auto-escapes HTML)
+            st.markdown(f"**Q{i+1}.** {ques['q']}")
+            # Answer line
+            mark = "✅" if correct else "❌"
+            st.markdown(f"Your answer: **{ans['chosen']}** {mark}")
+            # Wrong answer hint
+            if not correct:
+                st.markdown(
+                    f'<div style="font-size:13px;color:#059669;margin-top:2px">'
+                    f'✅ Correct: <b>{wrong_ans}</b></div>',
+                    unsafe_allow_html=True
+                )
+            # Explanation — plain st.markdown, NO unsafe_allow_html
+            # This means ANY HTML the AI puts in explanation is shown as text or ignored
+            expl_raw = ques.get("explanation", "")
+            # Strip HTML tags completely before rendering
+            import html as _html, re as _re
+            expl_clean = _re.sub(r'<[^>]+>', ' ', _html.unescape(expl_raw), flags=_re.DOTALL)
+            expl_clean = ' '.join(expl_clean.split()).lstrip('💡').strip()
+            if expl_clean:
+                st.markdown(
+                    f'<div style="font-size:12px;color:#555;margin-top:5px;padding:6px 10px;'
+                    f'background:rgba(0,0,0,.04);border-radius:8px">💡 {expl_clean}</div>',
+                    unsafe_allow_html=True
+                )
+            st.markdown('</div>', unsafe_allow_html=True)
 
         col1, col2 = st.columns(2)
         with col1:
@@ -4178,18 +4196,36 @@ def page_friends():
                 correct = chosen == ques["answer"]
                 bg      = "#F0FDF4" if correct else "#FFF1EE"
                 border  = "#059669" if correct else "#E8472A"
-                wrong   = "" if correct else f"<div style=\"font-size:12px;color:#059669;margin-top:3px\">✅ {ques['answer']}</div>"
-                fq_expl = _html_fq.escape(_fq_clean(ques.get("explanation", "")))
-                st.markdown(f"""
-                <div style="background:{bg};border:1.5px solid {border};border-radius:12px;
-                    padding:12px 14px;margin-bottom:8px">
-                    <div style="font-weight:700;font-size:13px">Q{i+1}. {ques["q"]}</div>
-                    <div style="font-size:12px;margin-top:4px">
-                        Your answer: <b>{chosen}</b> {"✅" if correct else "❌"}</div>
-                    {wrong}
-                    <div style="font-size:11px;color:#666;margin-top:4px;padding:5px 8px;
-                        background:rgba(0,0,0,.04);border-radius:6px">💡 {fq_expl}</div>
-                </div>""", unsafe_allow_html=True)
+                # Card wrapper
+                st.markdown(
+                    f'<div style="background:{bg};border:1.5px solid {border};'
+                    f'border-radius:12px;padding:12px 14px;margin-bottom:8px">',
+                    unsafe_allow_html=True
+                )
+                st.markdown(f"**Q{i+1}.** {ques['q']}")
+                st.markdown(
+                    f'<div style="font-size:12px;margin-top:4px">'
+                    f'Your answer: <b>{chosen}</b> {"✅" if correct else "❌"}</div>',
+                    unsafe_allow_html=True
+                )
+                if not correct:
+                    st.markdown(
+                        f'<div style="font-size:12px;color:#059669;margin-top:3px">'
+                        f'✅ {ques["answer"]}</div>',
+                        unsafe_allow_html=True
+                    )
+                # Explanation — always strip HTML before rendering
+                _fq_raw = ques.get("explanation", "")
+                import html as _hfq, re as _rfq
+                _fq_txt = _rfq.sub(r'<[^>]+>', ' ', _hfq.unescape(_fq_raw), flags=_rfq.DOTALL)
+                _fq_txt = ' '.join(_fq_txt.split()).lstrip('💡').strip()
+                if _fq_txt:
+                    st.markdown(
+                        f'<div style="font-size:11px;color:#666;margin-top:4px;padding:5px 8px;'
+                        f'background:rgba(0,0,0,.04);border-radius:6px">💡 {_fq_txt}</div>',
+                        unsafe_allow_html=True
+                    )
+                st.markdown('</div>', unsafe_allow_html=True)
 
             if st.button("🔄 Play Again", use_container_width=True, type="primary", key="play_again"):
                 leave_room()

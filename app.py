@@ -3412,12 +3412,19 @@ def page_quiz():
             bg     = "#F0FDF4" if correct else "#FFF1EE"
             border = "#059669" if correct else "#E8472A"
             wrong_line = "" if correct else f"<div style=\"font-size:13px;color:#059669;margin-top:2px\">✅ Correct: <b>{ques['answer']}</b></div>"
-            # Strip any HTML tags from explanation before rendering
-            import html as _html
+            # Deep-clean explanation: strip ALL HTML (including multi-line tags),
+            # then HTML-escape the plain text before injecting into our own HTML.
+            import html as _html, re as _re
             raw_expl = ques.get("explanation", "")
-            # Remove HTML tags if AI returned them, then escape special chars
-            import re as _re
-            clean_expl = _re.sub(r'<[^>]+>', '', raw_expl).strip()
+            # 1. Remove HTML tags (including multi-line) with DOTALL
+            clean_expl = _re.sub(r'<[^>]+>', ' ', raw_expl, flags=_re.DOTALL)
+            # 2. Collapse whitespace / newlines left behind
+            clean_expl = ' '.join(clean_expl.split())
+            # 3. Unescape any &amp; &lt; &gt; the AI may have double-encoded
+            clean_expl = _html.unescape(clean_expl)
+            # 4. Strip leading 💡 if AI already included it
+            clean_expl = clean_expl.lstrip('💡').strip()
+            # 5. Re-escape for safe HTML injection
             clean_expl = _html.escape(clean_expl)
             st.markdown(f"""
             <div style="background:{bg};border:1.5px solid {border};border-radius:12px;
@@ -3659,10 +3666,10 @@ def page_quiz():
                   f"Create exactly {num_qs} {difficulty}-level multiple choice questions "
                   f"about '{topic_str}' for {quiz_lvl} {quiz_sub} students in Pakistan. "
                   f"Easy=basic recall, Medium=understanding+application, Hard=analysis+evaluation. "
-                  f"Return ONLY raw JSON: "
+                  f"Return ONLY raw JSON. The explanation field must be plain text only - NO HTML tags: "
                   f"{{\"questions\":[{{\"q\":\"question text\","
                   f"\"options\":[\"A. option\",\"B. option\",\"C. option\",\"D. option\"],"
-                  f"\"answer\":\"A. option\",\"explanation\":\"why\"}}]}}"}],
+                  f"\"answer\":\"A. option\",\"explanation\":\"plain text explanation here\"}}]}}"}],
                 "Quiz generator. Return ONLY valid raw JSON. No backticks. No markdown.",
                 quiz_tokens,
             )
@@ -3960,7 +3967,10 @@ def page_friends():
                 border  = "#059669" if correct else "#E8472A"
                 wrong   = "" if correct else f"<div style=\"font-size:12px;color:#059669;margin-top:3px\">✅ {ques['answer']}</div>"
                 import html as _html2, re as _re2
-                fq_expl = _re2.sub(r'<[^>]+>', '', ques.get("explanation", "")).strip()
+                _fq_raw = ques.get("explanation", "")
+                fq_expl = _re2.sub(r'<[^>]+>', ' ', _fq_raw, flags=_re2.DOTALL)
+                fq_expl = ' '.join(fq_expl.split())
+                fq_expl = _html2.unescape(fq_expl).lstrip('\U0001f4a1').strip()
                 fq_expl = _html2.escape(fq_expl)
                 st.markdown(f"""
                 <div style="background:{bg};border:1.5px solid {border};border-radius:12px;
@@ -4016,10 +4026,10 @@ def page_friends():
                     [{"role":"user","content":
                       f"Create exactly {grp_num} {grp_diff}-level MCQ questions about '{topic_str}' "
                       f"for {grp_lvl} {grp_sub} students. "
-                      f"Return ONLY raw JSON: {{\"questions\":[{{\"q\":\"...\","
+                      f"Return ONLY raw JSON, explanation must be plain text NO HTML: {{\"questions\":[{{\"q\":\"...\","
                       f"\"options\":[\"A. ...\",\"B. ...\",\"C. ...\",\"D. ...\"],"
-                      f"\"answer\":\"A. ...\",\"explanation\":\"...\"}}]}}"}],
-                    "Quiz generator. Return ONLY valid raw JSON.", grp_tokens
+                      f"\"answer\":\"A. ...\",\"explanation\":\"plain text explanation here\"}}]}}"}],
+                    "Quiz generator. Return ONLY valid raw JSON. No HTML in explanation field.", grp_tokens
                 )
             if raw.startswith(("__API_KEY_MISSING__","__EMPTY_RESPONSE__","__API_ERROR__:")):
                 st.error(f"⚠️ AI error: {raw}")

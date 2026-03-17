@@ -3593,15 +3593,12 @@ def page_quiz():
             # then HTML-escape the plain text before injecting into our own HTML.
             import html as _html, re as _re
             raw_expl = ques.get("explanation", "")
-            # 1. Remove HTML tags (including multi-line) with DOTALL
-            clean_expl = _re.sub(r'<[^>]+>', ' ', raw_expl, flags=_re.DOTALL)
-            # 2. Collapse whitespace / newlines left behind
+            # Correct order: unescape entities FIRST, then strip tags
+            # (handles both raw <div> AND entity-encoded &lt;div&gt; from AI)
+            clean_expl = _html.unescape(raw_expl)
+            clean_expl = _re.sub(r'<[^>]+>', ' ', clean_expl, flags=_re.DOTALL)
             clean_expl = ' '.join(clean_expl.split())
-            # 3. Unescape any &amp; &lt; &gt; the AI may have double-encoded
-            clean_expl = _html.unescape(clean_expl)
-            # 4. Strip leading 💡 if AI already included it
             clean_expl = clean_expl.lstrip('💡').strip()
-            # 5. Re-escape for safe HTML injection
             clean_expl = _html.escape(clean_expl)
             st.markdown(f"""
             <div style="background:{bg};border:1.5px solid {border};border-radius:12px;
@@ -4145,9 +4142,10 @@ def page_friends():
                 wrong   = "" if correct else f"<div style=\"font-size:12px;color:#059669;margin-top:3px\">✅ {ques['answer']}</div>"
                 import html as _html2, re as _re2
                 _fq_raw = ques.get("explanation", "")
-                fq_expl = _re2.sub(r'<[^>]+>', ' ', _fq_raw, flags=_re2.DOTALL)
+                fq_expl = _html2.unescape(_fq_raw)
+                fq_expl = _re2.sub(r'<[^>]+>', ' ', fq_expl, flags=_re2.DOTALL)
                 fq_expl = ' '.join(fq_expl.split())
-                fq_expl = _html2.unescape(fq_expl).lstrip('\U0001f4a1').strip()
+                fq_expl = fq_expl.lstrip('💡').strip()
                 fq_expl = _html2.escape(fq_expl)
                 st.markdown(f"""
                 <div style="background:{bg};border:1.5px solid {border};border-radius:12px;
@@ -5711,7 +5709,9 @@ def _render_hw_card(hw_prev, show_answers=True, creator_view=False):
                         </div>""", unsafe_allow_html=True)
                 if q.get("explanation"):
                     import html as _html3, re as _re3
-                    _expl3 = _re3.sub(r'<[^>]+>', '', q.get('explanation','')).strip()
+                    _expl3 = _html3.unescape(q.get('explanation',''))
+                    _expl3 = _re3.sub(r'<[^>]+>', ' ', _expl3, flags=_re3.DOTALL)
+                    _expl3 = ' '.join(_expl3.split()).lstrip('💡').strip()
                     _expl3 = _html3.escape(_expl3)
                     st.markdown(f"""
                     <div style="background:#F3F4FF;border-radius:8px;padding:8px 12px;
@@ -6294,7 +6294,9 @@ def page_student_homework():
                                   if is_mcq and not is_correct else "")
                         expl   = question.get("explanation","")
                         import html as _html4, re as _re4
-                        expl   = _re4.sub(r'<[^>]+>', '', expl).strip()
+                        expl   = _html4.unescape(expl)
+                        expl   = _re4.sub(r'<[^>]+>', ' ', expl, flags=_re4.DOTALL)
+                        expl   = ' '.join(expl.split()).lstrip('💡').strip()
                         expl   = _html4.escape(expl)
                         expl_html = (f"<div style='font-size:11px;color:#3730A3;margin-top:4px;"
                                      f"padding:5px 8px;background:rgba(99,102,241,0.08);"

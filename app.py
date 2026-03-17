@@ -1253,8 +1253,14 @@ def call_ai_svg(messages, system):
 # ─────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=DM+Serif+Display:ital@0;1&display=swap');
+/* ── FONT IMPORTS ────────────────────────────────────────────────
+   1. Noto Nastaliq Urdu  — authentic Nastaliq calligraphic script
+   2. Noto Naskh Arabic   — clean Naskh fallback
+   3. DM Sans / DM Serif  — existing Latin UI fonts
+──────────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=DM+Serif+Display:ital@0;1&display=swap');
 
+/* ── CSS VARIABLES ──────────────────────────────────────────── */
 :root{
   --bg:        #F5F7FA;
   --surface:   #FFFFFF;
@@ -1278,48 +1284,110 @@ st.markdown("""
   --radius:    14px;
   --radius-sm: 10px;
   --radius-lg: 20px;
+
+  /* ── Responsive base font size using clamp()
+       clamp(min, preferred, max)
+       min  = 16px  — laptop / small desktop floor
+       pref = 1.1vw — scales with viewport width
+       max  = 19px  — large screen ceiling
+       Result: ~16px on 1024px screen, ~17px on 1280px, ~19px on 1600px+ ── */
+  --fs-base:   clamp(16px, 1.1vw, 19px);
+
+  /* Typography scale derived from base */
+  --fs-sm:     calc(var(--fs-base) * 0.8125);   /* ~13-15px */
+  --fs-md:     var(--fs-base);                  /* 16-19px  */
+  --fs-lg:     calc(var(--fs-base) * 1.1875);   /* ~19-23px */
+  --fs-xl:     calc(var(--fs-base) * 1.5);      /* ~24-29px */
+  --fs-2xl:    calc(var(--fs-base) * 2);        /* ~32-38px */
+
+  /* Line height tokens */
+  --lh-tight:  1.35;
+  --lh-body:   1.75;
+  --lh-urdu:   2.4;   /* Nastaliq needs more vertical room */
+
+  /* Urdu font stack — Nastaliq → Naskh → Unicode fallback */
+  --font-urdu: 'Noto Nastaliq Urdu','Noto Naskh Arabic','Arial Unicode MS',
+               'Segoe UI','Tahoma',serif;
 }
 
-html,body,[class*="css"]{
+/* ── GLOBAL BASE TYPOGRAPHY ─────────────────────────────────── */
+html{
+  font-size: var(--fs-base) !important;
+}
+html, body, [class*="css"]{
   font-family:'DM Sans',system-ui,sans-serif !important;
   background:var(--bg) !important;
   color:var(--text) !important;
+  font-size: var(--fs-base) !important;
+  line-height: var(--lh-body) !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
 }
+
+/* ── MAIN CONTAINER ─────────────────────────────────────────── */
 .main .block-container{
   padding-top:1.4rem !important; padding-bottom:4rem !important;
   max-width:980px !important;
   padding-left:1.8rem !important; padding-right:1.8rem !important;
   background:var(--bg) !important;
+  font-size: var(--fs-base) !important;
 }
+
+/* Streamlit paragraph / generic text elements */
+.main p, .main li, .main span, .main div{
+  font-size: inherit !important;
+  line-height: var(--lh-body) !important;
+}
+
+/* ── HEADER / TOGGLE VISIBILITY ─────────────────────────────── */
 #MainMenu, footer { visibility:hidden; }
-/* Keep header visible so the sidebar toggle (☰) works */
 header { visibility:visible !important; background:transparent !important; }
-/* Ensure sidebar collapse/expand button is always clickable */
 [data-testid="collapsedControl"],
 button[kind="header"],
 .css-1rs6os,
 .css-1544g2n { display:block !important; visibility:visible !important; opacity:1 !important; }
 
+/* ── RESPONSIVE BREAKPOINTS ─────────────────────────────────── */
+/* Tablet: 769–1024px */
+@media(min-width:769px) and (max-width:1024px){
+  :root{ --fs-base: clamp(15px, 1.5vw, 17px); }
+  .main .block-container{ padding-left:1.2rem !important; padding-right:1.2rem !important; }
+}
+
+/* Desktop / Laptop: 1025–1440px — the key fix for the reported issue */
+@media(min-width:1025px) and (max-width:1440px){
+  :root{ --fs-base: clamp(16px, 1.2vw, 18px); }
+}
+
+/* Large desktop: 1441px+ */
+@media(min-width:1441px){
+  :root{ --fs-base: clamp(17px, 1.1vw, 20px); }
+}
+
+/* Mobile: ≤768px */
 @media(max-width:768px){
+  :root{ --fs-base: 15px; }
   .main .block-container{ padding-left:.7rem !important; padding-right:.7rem !important; }
-  .stButton>button{ min-height:46px !important; font-size:13.5px !important; }
+  .stButton>button{ min-height:46px !important; }
   .msg-user{ margin-left:4px !important; }
   .msg-bot{  margin-right:4px !important; }
   div[data-testid="column"]{ padding:2px !important; }
   .stTextInput>div>div>input{ font-size:16px !important; }
 }
 
-/* ── BUTTONS ────────────────────────────────────────── */
+/* ── BUTTONS ────────────────────────────────────────────────── */
 .stButton>button{
   background:var(--surface) !important;
   border:1.5px solid var(--border) !important;
   color:var(--text) !important;
   font-family:'DM Sans',sans-serif !important;
-  font-weight:600 !important; font-size:13.5px !important;
+  font-weight:600 !important;
+  font-size: var(--fs-sm) !important;
   border-radius:var(--radius-sm) !important;
   padding:10px 18px !important;
   transition:all .18s ease !important;
   box-shadow:var(--shadow-sm) !important;
+  line-height: var(--lh-tight) !important;
 }
 .stButton>button:hover{
   border-color:var(--green) !important;
@@ -1341,8 +1409,7 @@ button[kind="header"],
   color:#fff !important;
 }
 
-/* ── SIDEBAR ────────────────────────────────────────── */
-/* Force sidebar always visible — Student-only mode */
+/* ── SIDEBAR ────────────────────────────────────────────────── */
 [data-testid="stSidebar"]{
   display:block !important;
   visibility:visible !important;
@@ -1352,7 +1419,6 @@ button[kind="header"],
   min-width:240px !important;
   max-width:320px !important;
 }
-/* Sidebar toggle arrow always clickable */
 [data-testid="collapsedControl"]{
   display:flex !important;
   visibility:visible !important;
@@ -1362,13 +1428,16 @@ button[kind="header"],
 [data-testid="stSidebar"] p,
 [data-testid="stSidebar"] span,
 [data-testid="stSidebar"] div,
-[data-testid="stSidebar"] label{ color:var(--text2) !important; }
-
+[data-testid="stSidebar"] label{
+  color:var(--text2) !important;
+  font-size: var(--fs-sm) !important;
+}
 [data-testid="stSidebar"] .stButton>button{
   background:transparent !important;
   border:none !important;
   color:var(--text2) !important;
-  font-weight:600 !important; font-size:13px !important;
+  font-weight:600 !important;
+  font-size: var(--fs-sm) !important;
   text-align:left !important;
   padding:9px 12px !important; border-radius:10px !important;
   margin-bottom:1px !important; width:100% !important;
@@ -1389,7 +1458,58 @@ button[kind="header"],
   transform:none !important;
 }
 
-/* ── STAT CARDS ─────────────────────────────────────── */
+/* ── URDU / ARABIC SCRIPT — GLOBAL DETECTION ────────────────────
+   Any element that carries Urdu/Arabic Unicode characters will
+   automatically inherit these rules via the :lang() pseudo-class
+   and the .urdu-text utility class we apply in Python.
+   The \0600-\06FF range covers all Arabic-script characters
+   including Urdu-specific ones (پ، ٹ، چ، ڈ، ڑ، ژ، ک، گ، ں، ہ، ی).
+──────────────────────────────────────────────────────────────── */
+:lang(ur),
+:lang(ar),
+.urdu-text,
+[lang="ur"],
+[lang="ar"]{
+  font-family: var(--font-urdu) !important;
+  direction: rtl !important;
+  text-align: right !important;
+  line-height: var(--lh-urdu) !important;
+  letter-spacing: 0 !important;         /* Nastaliq uses zero tracking */
+  word-spacing: 2px !important;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1 !important;
+  -webkit-font-smoothing: antialiased !important;
+}
+
+/* Headings in Urdu — prevent bold distortion with Nastaliq */
+:lang(ur) h1, :lang(ur) h2, :lang(ur) h3,
+:lang(ur) h4, :lang(ur) h5, :lang(ur) h6,
+.urdu-text h1, .urdu-text h2, .urdu-text h3{
+  font-family: var(--font-urdu) !important;
+  font-weight: 600 !important;          /* Nastaliq 700 can distort glyphs */
+  line-height: var(--lh-urdu) !important;
+}
+
+/* Urdu inside chat bubbles */
+.msg-bot .urdu-text,
+.msg-user .urdu-text{
+  font-family: var(--font-urdu) !important;
+  direction: rtl !important;
+  text-align: right !important;
+  line-height: var(--lh-urdu) !important;
+  font-size: calc(var(--fs-base) * 1.1) !important;  /* Nastaliq reads better slightly larger */
+}
+
+/* Urdu inside quiz/explanation divs */
+.urdu-text p,
+.urdu-text span,
+.urdu-text div{
+  font-family: var(--font-urdu) !important;
+  direction: rtl !important;
+  text-align: right !important;
+  line-height: var(--lh-urdu) !important;
+}
+
+/* ── STAT CARDS ─────────────────────────────────────────────── */
 .stat-card{
   background:var(--surface); border-radius:var(--radius);
   padding:18px 14px; text-align:center;
@@ -1405,7 +1525,7 @@ button[kind="header"],
 .stat-num{ font-family:'DM Serif Display',serif; font-size:30px; font-weight:400; color:var(--green); }
 .stat-lbl{ font-size:11px; color:var(--text3); margin-top:4px; font-weight:600; text-transform:uppercase; letter-spacing:.7px; }
 
-/* ── HERO BANNER ────────────────────────────────────── */
+/* ── HERO BANNER ────────────────────────────────────────────── */
 .hero-banner{
   background:linear-gradient(130deg,#1C7C54 0%,#25A870 55%,#1B7A50 100%);
   border-radius:var(--radius-lg); padding:26px 28px; margin-bottom:22px;
@@ -1423,7 +1543,7 @@ button[kind="header"],
   background:rgba(201,168,76,0.10);
 }
 
-/* ── SECTION HEADER ─────────────────────────────────── */
+/* ── SECTION HEADER ─────────────────────────────────────────── */
 .section-header{
   background:var(--surface); color:var(--text);
   border-radius:var(--radius); padding:14px 20px; margin-bottom:18px;
@@ -1439,7 +1559,7 @@ button[kind="header"],
 .section-header.blue{   border-left-color:var(--blue); }
 .section-header.purple{ border-left-color:#6D28D9; }
 
-/* ── SUBJECT CARDS ─────────────────────────────────── */
+/* ── SUBJECT CARDS ──────────────────────────────────────────── */
 .subj-card{
   background:var(--surface); border-radius:var(--radius);
   padding:16px 12px; text-align:center;
@@ -1453,7 +1573,7 @@ button[kind="header"],
 .subj-prog{ margin-top:8px; background:#EDF0F5; border-radius:99px; height:4px; overflow:hidden; }
 .subj-prog-fill{ height:4px; border-radius:99px; }
 
-/* ── DAILY CHALLENGE ────────────────────────────────── */
+/* ── DAILY CHALLENGE ────────────────────────────────────────── */
 .daily-challenge{
   background:linear-gradient(135deg,#1A1D23,#2D3748);
   border-radius:var(--radius-lg); padding:18px 22px; margin-bottom:20px;
@@ -1461,7 +1581,7 @@ button[kind="header"],
   box-shadow:var(--shadow-md);
 }
 
-/* ── FEATURE / QUICK-START CARD ─────────────────────── */
+/* ── FEATURE CARD ───────────────────────────────────────────── */
 .feature-card{
   background:var(--surface); border-radius:var(--radius);
   padding:14px 16px; border:1.5px solid var(--border);
@@ -1470,34 +1590,38 @@ button[kind="header"],
 }
 .feature-card:hover{ border-color:var(--green); box-shadow:var(--shadow-md); transform:translateX(2px); }
 
-/* ── HIST CARD ──────────────────────────────────────── */
+/* ── HIST CARD ──────────────────────────────────────────────── */
 .hist-card{
   background:var(--surface); border-radius:var(--radius);
   padding:14px 16px; box-shadow:var(--shadow-sm);
   border:1.5px solid var(--border); margin-bottom:8px;
 }
 
-/* ── CHAT MESSAGES ──────────────────────────────────── */
+/* ── CHAT MESSAGES ──────────────────────────────────────────── */
 .msg-user{
   background:var(--green); color:#fff;
   border-radius:18px 18px 4px 18px; padding:12px 16px;
-  margin:5px 0 5px 48px; font-size:14px; line-height:1.7;
+  margin:5px 0 5px 48px;
+  font-size: var(--fs-sm) !important;
+  line-height: var(--lh-body);
   box-shadow:0 3px 12px rgba(28,124,84,0.2);
 }
 .msg-bot{
   background:var(--surface); color:var(--text);
   border-radius:18px 18px 18px 4px; padding:12px 16px;
-  margin:5px 48px 5px 0; font-size:14px; line-height:1.75;
+  margin:5px 48px 5px 0;
+  font-size: var(--fs-sm) !important;
+  line-height: var(--lh-body);
   box-shadow:var(--shadow-sm); border:1.5px solid var(--border);
 }
 .msg-lbl{ font-size:11px; color:var(--text3); margin-bottom:3px; font-weight:600; }
 .msg-lbl-r{ text-align:right; }
 
-/* ── PROGRESS BAR ───────────────────────────────────── */
+/* ── PROGRESS BAR ───────────────────────────────────────────── */
 .prog-bar{ background:var(--surface2); border-radius:99px; height:9px; overflow:hidden; margin-bottom:4px; }
 .prog-fill{ height:100%; border-radius:99px; transition:width .5s ease; }
 
-/* ── BADGE CARD ─────────────────────────────────────── */
+/* ── BADGE CARD ─────────────────────────────────────────────── */
 .badge-card{
   background:var(--surface); border:1.5px solid var(--border);
   border-radius:var(--radius); padding:14px 10px; text-align:center;
@@ -1509,7 +1633,7 @@ button[kind="header"],
 .badge-name{ font-size:12px; font-weight:700; color:var(--text); margin-top:6px; }
 .badge-desc{ font-size:10px; color:var(--text3); margin-top:2px; }
 
-/* ── WORD CARD ──────────────────────────────────────── */
+/* ── WORD CARD ──────────────────────────────────────────────── */
 .word-card{
   background:linear-gradient(135deg,#1A1D23 0%,#2D3748 100%);
   border-radius:var(--radius); padding:20px 22px; margin-bottom:16px;
@@ -1517,14 +1641,14 @@ button[kind="header"],
   position:relative; overflow:hidden;
 }
 
-/* ── REMINDER ───────────────────────────────────────── */
+/* ── REMINDER ───────────────────────────────────────────────── */
 .reminder{
   background:linear-gradient(135deg,#FFFDF0,#FFF8DC);
   border:1.5px solid rgba(201,168,76,0.35); border-radius:var(--radius);
   padding:12px 16px; margin-bottom:14px; font-size:13px; color:var(--text);
 }
 
-/* ── LEADERBOARD ────────────────────────────────────── */
+/* ── LEADERBOARD ────────────────────────────────────────────── */
 .lb-row{
   display:flex; align-items:center; gap:12px; padding:12px 16px;
   background:var(--surface); border-radius:var(--radius); margin-bottom:6px;
@@ -1536,7 +1660,7 @@ button[kind="header"],
 .lb-name{ flex:1; font-weight:700; font-size:14px; }
 .lb-score{ font-weight:800; font-size:16px; color:var(--green); font-family:'DM Serif Display',serif; }
 
-/* ── SYLLABUS ───────────────────────────────────────── */
+/* ── SYLLABUS ───────────────────────────────────────────────── */
 .syl-step{
   background:var(--surface); border-radius:var(--radius); padding:14px 18px;
   margin-bottom:10px; border:1.5px solid var(--border); box-shadow:var(--shadow-sm); color:var(--text);
@@ -1544,17 +1668,19 @@ button[kind="header"],
 .syl-step-title{ font-size:11px; font-weight:700; color:var(--green); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
 .topic-chip{ display:inline-block; border-radius:20px; padding:4px 11px; font-size:11px; font-weight:600; margin:3px 3px 3px 0; }
 
-/* ── FORM INPUTS ────────────────────────────────────── */
+/* ── FORM INPUTS ────────────────────────────────────────────── */
 [data-testid="stSelectbox"]>div>div{
   background:var(--surface) !important; border:1.5px solid var(--border) !important;
   border-radius:var(--radius-sm) !important; color:var(--text) !important;
+  font-size: var(--fs-sm) !important;
 }
 [data-testid="stSelectbox"]>div>div>div{ color:var(--text) !important; font-weight:600 !important; }
 [data-baseweb="popover"],[data-baseweb="menu"],[role="listbox"]{
   background:var(--surface) !important; border:1.5px solid var(--border) !important;
   border-radius:var(--radius) !important; box-shadow:var(--shadow-lg) !important;
 }
-[role="option"]{ color:var(--text) !important; background:var(--surface) !important; font-size:13.5px !important; padding:9px 14px !important; }
+[role="option"]{ color:var(--text) !important; background:var(--surface) !important;
+  font-size: var(--fs-sm) !important; padding:9px 14px !important; }
 [role="option"]:hover,[role="option"][aria-selected="true"]{
   background:var(--green-bg) !important; color:var(--green) !important; font-weight:700 !important;
 }
@@ -1563,22 +1689,26 @@ button[kind="header"],
   border-radius:var(--radius-sm) !important; border:1.5px solid var(--border) !important;
   color:var(--text) !important; background:var(--surface) !important;
   font-family:'DM Sans',sans-serif !important;
+  font-size: var(--fs-sm) !important;
 }
 .stTextInput>div>div>input:focus,
 .stTextArea>div>div>textarea:focus{
   border-color:var(--green) !important;
   box-shadow:0 0 0 3px rgba(28,124,84,0.10) !important;
 }
-label,[data-testid="stLabel"]>label{ color:var(--text) !important; font-weight:600 !important; font-size:13px !important; }
+label,[data-testid="stLabel"]>label{
+  color:var(--text) !important; font-weight:600 !important;
+  font-size: var(--fs-sm) !important;
+}
 
-/* ── TABS ───────────────────────────────────────────── */
+/* ── TABS ───────────────────────────────────────────────────── */
 .stTabs [data-baseweb="tab-list"]{
   background:var(--surface2) !important; border-radius:var(--radius-sm) !important;
   padding:4px !important; border:1.5px solid var(--border) !important; gap:3px !important;
 }
 .stTabs [data-baseweb="tab"]{
   background:transparent !important; color:var(--text2) !important;
-  font-weight:600 !important; font-size:13px !important;
+  font-weight:600 !important; font-size: var(--fs-sm) !important;
   border-radius:8px !important; padding:7px 14px !important; border:none !important;
 }
 .stTabs [aria-selected="true"]{
@@ -1586,25 +1716,25 @@ label,[data-testid="stLabel"]>label{ color:var(--text) !important; font-weight:6
   box-shadow:var(--shadow-sm) !important; font-weight:700 !important;
 }
 
-/* ── EXPANDER ───────────────────────────────────────── */
+/* ── EXPANDER ───────────────────────────────────────────────── */
 [data-testid="stExpander"]{
   background:var(--surface) !important; border:1.5px solid var(--border) !important;
   border-radius:var(--radius-sm) !important; margin-bottom:5px !important;
 }
 [data-testid="stExpander"] summary{ font-weight:600 !important; color:var(--text) !important; }
 
-/* ── METRICS ────────────────────────────────────────── */
+/* ── METRICS ────────────────────────────────────────────────── */
 [data-testid="stMetricValue"]{ color:var(--green) !important; font-family:'DM Serif Display',serif !important; }
 [data-testid="stMetricLabel"]{ color:var(--text2) !important; font-weight:600 !important; }
 
-/* ── ALERTS ─────────────────────────────────────────── */
+/* ── ALERTS ─────────────────────────────────────────────────── */
 [data-testid="stAlert"]{ border-radius:var(--radius-sm) !important; border-left-width:4px !important; }
 
-/* ── RADIO / CHECKBOX ───────────────────────────────── */
+/* ── RADIO / CHECKBOX ───────────────────────────────────────── */
 .stRadio label,[data-testid="stRadio"] label{ color:var(--text) !important; font-weight:600 !important; }
 .stCheckbox label{ color:var(--text) !important; font-weight:600 !important; }
 
-/* ── SCROLLBAR ──────────────────────────────────────── */
+/* ── SCROLLBAR ──────────────────────────────────────────────── */
 ::-webkit-scrollbar{ width:5px; height:5px; }
 ::-webkit-scrollbar-track{ background:var(--bg); }
 ::-webkit-scrollbar-thumb{ background:rgba(28,124,84,0.2); border-radius:99px; }
@@ -1731,6 +1861,51 @@ def page_auth():
 # ─────────────────────────────────────────────────────────────────
 # SIDEBAR
 # ─────────────────────────────────────────────────────────────────
+
+
+import re as _urdu_re
+# ── Urdu / Arabic Unicode block: U+0600–U+06FF ──────────────────
+_URDU_RE = _urdu_re.compile(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]')
+
+def is_urdu(text: str) -> bool:
+    """Return True if text contains Urdu/Arabic script characters."""
+    return bool(_URDU_RE.search(text))
+
+def urdu_wrap(text: str, tag: str = "div", extra_style: str = "") -> str:
+    """
+    Wrap text in a div/span with Urdu CSS class + RTL attributes.
+    Automatically detects Urdu; returns plain text unchanged if not Urdu.
+    Usage:  st.markdown(urdu_wrap(some_text), unsafe_allow_html=True)
+    """
+    if not is_urdu(text):
+        return text
+    style = (
+        "font-family:'Noto Nastaliq Urdu','Noto Naskh Arabic',"
+        "'Arial Unicode MS',serif;"
+        "direction:rtl;text-align:right;"
+        "line-height:2.4;letter-spacing:0;word-spacing:2px;"
+        "-webkit-font-smoothing:antialiased;"
+    )
+    if extra_style:
+        style += extra_style
+    return (
+        f'<{tag} class="urdu-text" lang="ur" '
+        f'style="{style}">{text}</{tag}>'
+    )
+
+def render_urdu(text: str, font_size: str = "15px") -> None:
+    """
+    Convenience: call st.markdown with Urdu-wrapped text.
+    Falls back to plain st.markdown if no Urdu characters found.
+    """
+    import streamlit as _st
+    if is_urdu(text):
+        _st.markdown(
+            urdu_wrap(text, "div", f"font-size:{font_size};"),
+            unsafe_allow_html=True
+        )
+    else:
+        _st.markdown(text)
 
 
 def _back_btn(label="🏠  Home", dest="home", key_suffix=""):
@@ -3179,17 +3354,19 @@ def page_chat():
                     .replace(">","&gt;").replace("\n","<br>")
                     .replace("**",""))          # strip markdown bold for HTML
             tag = m.get("tag","")
+            # Auto-detect Urdu/Arabic script and add RTL class if needed
+            _uc = ' urdu-text" lang="ur' if is_urdu(m["content"]) else ''
             if m["role"] == "user":
                 win += (f"<div class=\"user-row\">"
-                        f"<div class=\"user-bubble\">{safe}</div></div>")
+                        f"<div class=\"user-bubble{_uc}\">{safe}</div></div>")
             elif tag == "image":
                 win += (f"<div class=\"img-row\">"
                         f"<div class=\"ai-ava\">{USTAD_SVG_SMALL}</div>"
-                        f"<div class=\"img-bubble\">📸 <b>Homework Solution</b><br><br>{safe}</div></div>")
+                        f"<div class=\"img-bubble{_uc}\">📸 <b>Homework Solution</b><br><br>{safe}</div></div>")
             else:
                 win += (f"<div class=\"ai-row\">"
                         f"<div class=\"ai-ava\">{USTAD_SVG_SMALL}</div>"
-                        f"<div class=\"ai-bubble\">{safe}</div></div>")
+                        f"<div class=\"ai-bubble{_uc}\">{safe}</div></div>")
         win += "</div>"
         st.markdown(win, unsafe_allow_html=True)
 
@@ -4920,20 +5097,20 @@ def page_history():
         with st.expander(label):
             for m in msgs:
                 if m["role"] == "user":
-                    # FIX #4: Use st.text-like approach for user messages to avoid
-                    # HTML injection while preserving styling
+                    _esc = m['content'].replace('&','&amp;').replace('<','&lt;').replace('>','&gt;')
+                    _urdu_cls = ' urdu-text" lang="ur' if is_urdu(m['content']) else ''
                     st.markdown(
-                        f"<div class=\"msg-user\" style=\"margin-left:40px\">"
-                        f"{m['content'].replace('&','&amp;').replace('<','&lt;').replace('>','&gt;')}"
+                        f"<div class=\"msg-user{_urdu_cls}\" style=\"margin-left:40px\">"
+                        f"{_esc}"
                         f"</div>",
                         unsafe_allow_html=True
                     )
                 else:
-                    # Bot messages can contain markdown formatting — render as plain text
-                    # to avoid XSS while preserving readability
+                    _esc = m['content'].replace('&','&amp;').replace('<','&lt;').replace('>','&gt;')
+                    _urdu_cls = ' urdu-text" lang="ur' if is_urdu(m['content']) else ''
                     st.markdown(
-                        f"<div class=\"msg-bot\" style=\"margin-right:40px\">"
-                        f"{m['content'].replace('&','&amp;').replace('<','&lt;').replace('>','&gt;')}"
+                        f"<div class=\"msg-bot{_urdu_cls}\" style=\"margin-right:40px\">"
+                        f"{_esc}"
                         f"</div>",
                         unsafe_allow_html=True
                     )

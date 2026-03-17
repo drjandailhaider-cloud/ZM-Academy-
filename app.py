@@ -771,6 +771,27 @@ SINDH_CURRICULUM["Chemistry"] = {
 
 SINDH_CURRICULUM["Biology"] = {
 
+
+  "Grade 1": {"board":"Sindh Textbook Board – Grade 1 General Science","units":[
+    _u("Living Things",["Plants and animals","Parts of a plant","Animals and their homes","Caring for living things"]),
+    _u("My Body",["Body parts","Five senses","Healthy habits","Food we eat"]),
+  ]},
+  "Grade 2": {"board":"Sindh Textbook Board – Grade 2 General Science","units":[
+    _u("Plants",["Parts of a plant and functions","Seed germination","Plants need water and sunlight","Plants as food source"]),
+    _u("Animals",["Animal groups","Animal habitats","Food chains basics","Life cycles"]),
+  ]},
+  "Grade 3": {"board":"Sindh Textbook Board – Grade 3 General Science","units":[
+    _u("Life Processes",["Characteristics of living things","MRS GREN","Microorganisms basics","Fungi and bacteria"]),
+    _u("Ecosystems",["Food chains: producers and consumers","Habitats","Adaptation","Protecting the environment"]),
+  ]},
+  "Grade 4": {"board":"Sindh Textbook Board – Grade 4 General Science","units":[
+    _u("Cells",["Plant and animal cell structure","Cell organelles","Unicellular organisms","Differences: plant vs animal cell"]),
+    _u("Reproduction",["Asexual reproduction","Pollination and seed dispersal","Human reproduction basics","Life cycles"]),
+  ]},
+  "Grade 5": {"board":"Sindh Textbook Board – Grade 5 General Science","units":[
+    _u("Human Body",["Circulatory system","Respiratory system","Digestive system","Nervous system"]),
+    _u("Health",["Communicable diseases","Immunity and vaccination","Balanced diet","Effects of drugs"]),
+  ]},
   "Grade 6": {"board":"Sindh Textbook Board – Grade 6 Science","units":[
     _u("Cells & Life",["Cell structure: plant and animal","Cell functions","Unicellular organisms","Levels of organisation"]),
     _u("Ecosystems",["Food chains and food webs","Producers, consumers, decomposers","Habitats","Adaptation"]),
@@ -1087,6 +1108,41 @@ PUNJAB_CURRICULUM["Chemistry"] = {
 }
 
 PUNJAB_CURRICULUM["Biology"] = {
+  "Grade 1": {"board":"PCTB – Grade 1 Science","units":[
+    _u("Living Things",["Animals and plants around us","Characteristics of living things","Plants: roots, stem, leaves, flower","Animals: pets and wild animals"]),
+    _u("My Body",["Body parts","Five senses: sight, hearing, smell, taste, touch","Staying healthy","Food and nutrition basics"]),
+  ]},
+  "Grade 2": {"board":"PCTB – Grade 2 Science","units":[
+    _u("Plants",["Parts of a plant and their functions","What plants need to grow","Germination of seeds","Plants as food"]),
+    _u("Animals",["Animal groups: mammals, birds, reptiles, fish, insects","Animal homes and habitats","What animals eat: herbivore, carnivore, omnivore","Life cycles: butterfly, frog"]),
+  ]},
+  "Grade 3": {"board":"PCTB – Grade 3 Science","units":[
+    _u("Life Processes",["MRS GREN: movement, respiration, sensitivity, growth, reproduction, excretion, nutrition","Differences between living and non-living","Microorganisms: bacteria, fungi, viruses"]),
+    _u("Ecosystems",["Food chains: producer, consumer, decomposer","Habitats: forest, desert, ocean, grassland","Adaptation of animals","Human impact on environment"]),
+  ]},
+  "Grade 4": {"board":"PCTB – Grade 4 Science","units":[
+    _u("Cells",["Plant and animal cell structure","Cell membrane, cytoplasm, nucleus","Unicellular organisms: amoeba, paramecium","Differences between plant and animal cells"]),
+    _u("Reproduction",["Asexual reproduction: binary fission, budding","Sexual reproduction in plants: pollination, fertilisation, seed dispersal","Human reproduction basics","Life cycles"]),
+  ]},
+  "Grade 5": {"board":"PCTB – Grade 5 Science","units":[
+    _u("Human Body Systems",["Circulatory system: heart, blood, blood vessels","Respiratory system: lungs, breathing mechanism","Digestive system: organs and functions","Nervous system: brain, spinal cord, nerves"]),
+    _u("Health & Disease",["Communicable diseases: causes and prevention","Vaccination and immunity","Balanced diet and nutrition","Effects of drugs and smoking"]),
+  ]},
+  "Grade 6": {"board":"PCTB – Grade 6 Science (Biology)","units":[
+    _u("Cell Biology",["Cell structure: plant and animal","Cell organelles and functions","Diffusion and osmosis","Cell division: mitosis overview"]),
+    _u("Nutrition",["Photosynthesis: equation and conditions","Mineral nutrition in plants","Human digestive system in detail","Enzymes in digestion"]),
+    _u("Ecosystems",["Biotic and abiotic factors","Food webs and energy flow","Carbon and nitrogen cycles","Conservation and biodiversity"]),
+  ]},
+  "Grade 7": {"board":"PCTB – Grade 7 Science (Biology)","units":[
+    _u("Transport",["Transport in plants: xylem, phloem, transpiration","Human circulatory system: heart structure","Blood: components and functions","Lymphatic system"]),
+    _u("Respiration",["Aerobic respiration: equation and stages","Anaerobic respiration","Gas exchange in lungs","Breathing mechanism"]),
+    _u("Reproduction",["Sexual and asexual reproduction","Human reproductive system","Fertilisation and development","Contraception and family planning"]),
+  ]},
+  "Grade 8": {"board":"PCTB – Grade 8 Science (Biology)","units":[
+    _u("Genetics",["DNA structure and function","Chromosomes and genes","Mitosis and meiosis","Mendelian genetics: dominant and recessive"]),
+    _u("Evolution",["Natural selection","Evidence for evolution","Adaptation","Variation and mutation"]),
+    _u("Microorganisms & Disease",["Bacteria: structure and types","Viruses","Immune system: antibodies and phagocytes","Biotechnology basics"]),
+  ]},
   "Grade 9": {"board":"Punjab Board Matric Part-I Biology","units":[
     _u("Introduction to Biology",["Branches of biology","Characteristics of life","Biological method","Tools: microscopy and staining"]),
     _u("Solving a Biological Problem",["Hypothesis","Experiment design","Data collection and analysis","Conclusion"]),

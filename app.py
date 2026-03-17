@@ -3584,6 +3584,43 @@ def page_quiz():
                 st.session_state.quiz = None
                 st.rerun()
 
+    # ── SELECTORS — only render when no active quiz ─────────────
+    if q is None:
+        st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+        _sc1, _sc2, _sc3, _sc4 = st.columns(4)
+        with _sc1:
+            quiz_sub = st.selectbox(
+                "Subject", list(SUBJECTS.keys()), key="quiz_sub",
+                label_visibility="visible"
+            )
+        with _sc2:
+            _lvl_idx = get_level_index(u.get("grade", "Grade 6"))
+            quiz_lvl = st.selectbox(
+                "Grade", LEVELS, index=_lvl_idx, key="quiz_lvl",
+                label_visibility="visible"
+            )
+        with _sc3:
+            difficulty = st.selectbox(
+                "Difficulty", ["Easy", "Medium", "Hard"], index=1, key="quiz_diff",
+                label_visibility="visible"
+            )
+        with _sc4:
+            num_qs = st.selectbox(
+                "Questions", [5, 10, 15, 20], index=0, key="quiz_num",
+                label_visibility="visible"
+            )
+        # Persist selections to session state so they survive reruns
+        st.session_state["_quiz_sub"]  = quiz_sub
+        st.session_state["_quiz_lvl"]  = quiz_lvl
+        st.session_state["_quiz_diff"] = difficulty
+        st.session_state["_quiz_num"]  = num_qs
+    else:
+        # Read from persisted session state — never reset to defaults
+        quiz_sub   = st.session_state.get("_quiz_sub",  "Maths")
+        quiz_lvl   = st.session_state.get("_quiz_lvl",  u.get("grade", "Grade 6"))
+        difficulty = st.session_state.get("_quiz_diff", "Medium")
+        num_qs     = st.session_state.get("_quiz_num",  5)
+
     if q is not None and q["done"]:
         # FIX #5: Save quiz stat once, guarded by _stat_saved flag
         if not q.get("_stat_saved"):
@@ -3820,114 +3857,95 @@ def page_quiz():
         },
     }
 
-    # ─────────────────────────────────────────────────────────────
-    # QUIZ SETUP — compact single-row controls
-    # ─────────────────────────────────────────────────────────────
-    # Row 1: four selectors side by side
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        quiz_sub = st.selectbox("Subject", list(SUBJECTS.keys()), key="quiz_sub",
-                                label_visibility="visible")
-    with c2:
-        lvl_idx  = get_level_index(u.get("grade", "Grade 6"))
-        quiz_lvl = st.selectbox("Grade", LEVELS, index=lvl_idx, key="quiz_lvl",
-                                label_visibility="visible")
-    with c3:
-        difficulty = st.selectbox("Difficulty", ["Easy", "Medium", "Hard"],
-                                  index=1, key="quiz_diff",
-                                  label_visibility="visible")
-    with c4:
-        num_qs = st.selectbox("Questions", [5, 10, 15, 20],
-                              index=0, key="quiz_num",
-                              label_visibility="visible")
+    # ── TOPIC SELECTOR + GENERATE — only shown during setup ─────
+    if q is None:
+        # Row 2: topic selector built from internal syllabus map
+        syllabus_topics = QUIZ_SYLLABUS.get(quiz_sub, {}).get(quiz_lvl, [])
+        topic_options   = ["— General (all topics) —"] + syllabus_topics + ["✏️ Custom topic…"]
 
-    # Row 2: topic selector built from internal syllabus map
-    syllabus_topics = QUIZ_SYLLABUS.get(quiz_sub, {}).get(quiz_lvl, [])
-    topic_options   = ["— General (all topics) —"] + syllabus_topics + ["✏️ Custom topic…"]
-
-    st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
-    selected_option = st.selectbox(
-        "Topic",
-        topic_options,
-        key="quiz_topic_select",
-        label_visibility="visible",
-    )
-
-    # Custom entry box appears only when user picks the last option
-    quiz_topic = ""
-    if selected_option == "✏️ Custom topic…":
-        quiz_topic = st.text_input(
-            "Enter your topic",
-            placeholder="e.g. Projectile motion, Shakespearean sonnet, Binary trees…",
-            key="quiz_custom_topic",
-            label_visibility="collapsed",
+        st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+        selected_option = st.selectbox(
+            "Topic",
+            topic_options,
+            key="quiz_topic_select",
+            label_visibility="visible",
         )
-    elif selected_option == "— General (all topics) —":
+
+        # Custom entry box appears only when user picks the last option
         quiz_topic = ""
-    else:
-        quiz_topic = selected_option
-
-    # Difficulty hint strip (compact, no large header)
-    diff_info = {
-        "Easy":   ("🟢", "Recall & recognition — perfect for quick revision."),
-        "Medium": ("🟡", "Conceptual understanding & application questions."),
-        "Hard":   ("🔴", "Analysis, evaluation & higher-order thinking."),
-    }
-    d_icon, d_text = diff_info[difficulty]
-    st.markdown(
-        f"<div style='background:#F8F9FA;border-radius:8px;padding:7px 12px;"
-        f"font-size:12px;color:#555;margin:6px 0 10px'>"
-        f"{d_icon} <b>{difficulty}:</b> {d_text}</div>",
-        unsafe_allow_html=True,
-    )
-
-    if st.button("🚀 Generate Quiz", use_container_width=True, type="primary", key="gen_quiz_btn"):
-        topic_str   = quiz_topic.strip() if quiz_topic.strip() else f"{quiz_sub} general topics"
-        quiz_tokens = max(1200, num_qs * 220 + 300)
-        with st.spinner(f"✨ Generating {num_qs} {difficulty} questions on '{topic_str}'..."):
-            raw = call_ai(
-                [{"role": "user", "content":
-                  f"Create exactly {num_qs} {difficulty}-level multiple choice questions "
-                  f"about '{topic_str}' for {quiz_lvl} {quiz_sub} students in Pakistan. "
-                  f"Easy=basic recall, Medium=understanding+application, Hard=analysis+evaluation. "
-                  f"Return ONLY raw JSON. The explanation field must be plain text only - NO HTML tags: "
-                  f"{{\"questions\":[{{\"q\":\"question text\","
-                  f"\"options\":[\"A. option\",\"B. option\",\"C. option\",\"D. option\"],"
-                  f"\"answer\":\"A. option\",\"explanation\":\"plain text explanation here\"}}]}}"}],
-                "Quiz generator. Return ONLY valid raw JSON. No backticks. No markdown.",
-                quiz_tokens,
+        if selected_option == "✏️ Custom topic…":
+            quiz_topic = st.text_input(
+                "Enter your topic",
+                placeholder="e.g. Projectile motion, Shakespearean sonnet, Binary trees…",
+                key="quiz_custom_topic",
+                label_visibility="collapsed",
             )
-        if raw.startswith("__API_KEY_MISSING__"):
-            st.error("⚠️ API key not configured. Add ANTHROPIC_API_KEY or CLAUDE_API_KEY in Streamlit Secrets.")
-        elif raw.startswith("__EMPTY_RESPONSE__"):
-            st.error("⚠️ AI returned an empty response. Please try again.")
-        elif raw.startswith("__API_ERROR__:"):
-            st.error(f"⚠️ API error: {raw[14:]}")
+        elif selected_option == "— General (all topics) —":
+            quiz_topic = ""
         else:
-            try:
-                clean = raw.strip()
-                for fence in ["```json", "```"]:
-                    clean = clean.replace(fence, "")
-                clean = clean.strip()
-                j0 = clean.find("{"); j1 = clean.rfind("}") + 1
-                if j0 >= 0 and j1 > j0:
-                    clean = clean[j0:j1]
-                data = json.loads(clean)
-                qs   = data.get("questions", [])
-                if not qs:
-                    st.error("⚠️ AI returned no questions. Try a different topic.")
-                else:
-                    st.session_state.quiz = {
-                        "questions": qs[:num_qs],
-                        "current": 0, "score": 0, "answers": [], "done": False,
-                        "sub": quiz_sub, "lvl": quiz_lvl,
-                        "topic": topic_str, "difficulty": difficulty,
-                    }
-                    st.rerun()
-            except Exception as _qe:
-                st.error(f"⚠️ Could not parse AI response: {_qe}")
-                with st.expander("Debug — AI raw output"):
-                    st.code(raw[:1000])
+            quiz_topic = selected_option
+
+        # Difficulty hint strip
+        diff_info = {
+            "Easy":   ("🟢", "Recall & recognition — perfect for quick revision."),
+            "Medium": ("🟡", "Conceptual understanding & application questions."),
+            "Hard":   ("🔴", "Analysis, evaluation & higher-order thinking."),
+        }
+        d_icon, d_text = diff_info[difficulty]
+        st.markdown(
+            f"<div style='background:#F8F9FA;border-radius:8px;padding:7px 12px;"
+            f"font-size:12px;color:#555;margin:6px 0 10px'>"
+            f"{d_icon} <b>{difficulty}:</b> {d_text}</div>",
+            unsafe_allow_html=True,
+        )
+
+        if st.button("🚀 Generate Quiz", use_container_width=True, type="primary", key="gen_quiz_btn"):
+            topic_str   = quiz_topic.strip() if quiz_topic.strip() else f"{quiz_sub} general topics"
+            quiz_tokens = max(1200, num_qs * 220 + 300)
+            with st.spinner(f"✨ Generating {num_qs} {difficulty} questions on '{topic_str}'..."):
+                raw = call_ai(
+                    [{"role": "user", "content":
+                      f"Create exactly {num_qs} {difficulty}-level multiple choice questions "
+                      f"about '{topic_str}' for {quiz_lvl} {quiz_sub} students in Pakistan. "
+                      f"Easy=basic recall, Medium=understanding+application, Hard=analysis+evaluation. "
+                      f"Return ONLY raw JSON. The explanation field must be plain text only - NO HTML tags: "
+                      f"{{\"questions\":[{{\"q\":\"question text\","
+                      f"\"options\":[\"A. option\",\"B. option\",\"C. option\",\"D. option\"],"
+                      f"\"answer\":\"A. option\",\"explanation\":\"plain text explanation here\"}}]}}"}],
+                    "Quiz generator. Return ONLY valid raw JSON. No backticks. No markdown.",
+                    quiz_tokens,
+                )
+            if raw.startswith("__API_KEY_MISSING__"):
+                st.error("⚠️ API key not configured. Add ANTHROPIC_API_KEY in Streamlit Secrets.")
+            elif raw.startswith("__EMPTY_RESPONSE__"):
+                st.error("⚠️ AI returned an empty response. Please try again.")
+            elif raw.startswith("__API_ERROR__:"):
+                st.error(f"⚠️ API error: {raw[14:]}")
+            else:
+                try:
+                    clean = raw.strip()
+                    for fence in ["```json", "```"]:
+                        clean = clean.replace(fence, "")
+                    clean = clean.strip()
+                    j0 = clean.find("{"); j1 = clean.rfind("}") + 1
+                    if j0 >= 0 and j1 > j0:
+                        clean = clean[j0:j1]
+                    data = json.loads(clean)
+                    qs   = data.get("questions", [])
+                    if not qs:
+                        st.error("⚠️ AI returned no questions. Try a different topic.")
+                    else:
+                        st.session_state.quiz = {
+                            "questions": qs[:num_qs],
+                            "current": 0, "score": 0, "answers": [], "done": False,
+                            "sub": quiz_sub, "lvl": quiz_lvl,
+                            "topic": topic_str, "difficulty": difficulty,
+                        }
+                        st.rerun()
+                except Exception as _qe:
+                    st.error(f"⚠️ Could not parse AI response: {_qe}")
+                    with st.expander("Debug — AI raw output"):
+                        st.code(raw[:1000])
 
     _page_nav("Home", "home", "Friends Quiz", "friends", "quiz")
 

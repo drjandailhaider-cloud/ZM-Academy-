@@ -2933,8 +2933,12 @@ def page_chat():
     # "active"   = what the chat is actually using (only changes on Start)
     # Topic cards use ACTIVE state so they never fire on dropdown change
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # Use navigated-from subject if set (e.g. from subject card on home page)
+    _nav_sub = st.session_state.get("subject", "Maths")
+    if _nav_sub not in list(SUBJECTS.keys()):
+        _nav_sub = "Maths"
     if "pending_sub" not in st.session_state:
-        st.session_state.pending_sub = st.session_state.get("subject", "Maths")
+        st.session_state.pending_sub = _nav_sub
     if "pending_lvl" not in st.session_state:
         lvl_raw = u.get("grade", "Grade 6")
         st.session_state.pending_lvl = lvl_raw if lvl_raw in LEVELS else "Grade 6"
@@ -3278,6 +3282,13 @@ def page_chat():
     subj_list  = list(SUBJECTS.keys())
     cur_p_sub  = st.session_state.pending_sub
     cur_p_lvl  = st.session_state.pending_lvl
+
+    # If user navigated here from a subject card, pre-select that subject
+    _nav_sub_now = st.session_state.get("subject", "")
+    if _nav_sub_now and _nav_sub_now in subj_list and _nav_sub_now != cur_p_sub:
+        st.session_state.pending_sub = _nav_sub_now
+        cur_p_sub = _nav_sub_now
+
     sub_idx    = subj_list.index(cur_p_sub) if cur_p_sub in subj_list else 0
     lvl_idx    = LEVELS.index(cur_p_lvl)    if cur_p_lvl  in LEVELS    else 5
 
@@ -3543,6 +3554,14 @@ def page_quiz():
     st.markdown("<div class=\"section-header orange\">📝 Practice Quiz</div>", unsafe_allow_html=True)
 
     q = st.session_state.quiz
+
+    # ── Top-bar reset: always let user get back to the selector ──
+    if q is not None:
+        _rb1, _rb2, _rb3 = st.columns([3, 1, 3])
+        with _rb2:
+            if st.button("🔄 New Quiz", key="quiz_reset_top", use_container_width=True):
+                st.session_state.quiz = None
+                st.rerun()
 
     if q is not None and q["done"]:
         # FIX #5: Save quiz stat once, guarded by _stat_saved flag
@@ -3879,6 +3898,8 @@ def page_quiz():
                 with st.expander("Debug — AI raw output"):
                     st.code(raw[:1000])
 
+    _page_nav("Home", "home", "Friends Quiz", "friends", "quiz")
+
 
 # ─────────────────────────────────────────────────────────────────
 # ONLINE FRIENDS QUIZ — Room-based multiplayer via groups.json
@@ -3902,8 +3923,6 @@ def _gen_room_id():
     import string
     chars = string.ascii_uppercase + string.digits
     return "".join(random.choices(chars, k=6))
-
-    _page_nav("Home", "home", "Friends Quiz", "friends", "quiz")
 
 
 def _cleanup_old_rooms():

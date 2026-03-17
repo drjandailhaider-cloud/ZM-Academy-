@@ -741,6 +741,19 @@ SINDH_CURRICULUM["Physics"] = {
 }
 
 SINDH_CURRICULUM["Chemistry"] = {
+
+  "Grade 6": {"board":"Sindh Textbook Board – Grade 6 Science","units":[
+    _u("Matter",["States of matter: solid, liquid, gas","Physical and chemical changes","Pure substances and mixtures","Separation techniques"]),
+    _u("Elements & Compounds",["Atoms and molecules","Elements and compounds","Symbols and formulae","The periodic table introduction"]),
+  ]},
+  "Grade 7": {"board":"Sindh Textbook Board – Grade 7 Science","units":[
+    _u("Atomic Structure",["Sub-atomic particles","Atomic number and mass number","Electronic configuration","Isotopes"]),
+    _u("Chemical Reactions",["Types of reactions: combination, decomposition","Balancing equations","Acids, bases and pH","Reactivity series"]),
+  ]},
+  "Grade 8": {"board":"Sindh Textbook Board – Grade 8 Science","units":[
+    _u("Bonding",["Ionic bonding: formation and properties","Covalent bonding","Metallic bonding","Properties comparison"]),
+    _u("Rates & Energy",["Factors affecting rate of reaction","Exothermic and endothermic reactions","Activation energy","Catalysts"]),
+  ]},
   "Grade 9": {"board":"Sindh Board HSSC Part-I Chemistry","units":[
     _u("Introduction to Chemistry",["Branches of chemistry","Laboratory safety","Physical and chemical changes","Mixtures and pure substances","Separation techniques"]),
     _u("Atomic Structure",["Atoms, molecules, ions","Atomic number and mass number","Isotopes","Electronic configuration","Periodic table introduction"]),
@@ -757,6 +770,19 @@ SINDH_CURRICULUM["Chemistry"] = {
 }
 
 SINDH_CURRICULUM["Biology"] = {
+
+  "Grade 6": {"board":"Sindh Textbook Board – Grade 6 Science","units":[
+    _u("Cells & Life",["Cell structure: plant and animal","Cell functions","Unicellular organisms","Levels of organisation"]),
+    _u("Ecosystems",["Food chains and food webs","Producers, consumers, decomposers","Habitats","Adaptation"]),
+  ]},
+  "Grade 7": {"board":"Sindh Textbook Board – Grade 7 Science","units":[
+    _u("Human Body Systems",["Digestive system","Circulatory system","Respiratory system","Skeletal and muscular system"]),
+    _u("Plants",["Photosynthesis","Respiration in plants","Transport: xylem and phloem","Plant reproduction"]),
+  ]},
+  "Grade 8": {"board":"Sindh Textbook Board – Grade 8 Science","units":[
+    _u("Genetics Basics",["DNA and chromosomes","Cell division: mitosis","Heredity and variation","Simple genetics"]),
+    _u("Health & Disease",["Pathogens: bacteria, viruses","Immune system","Communicable diseases","Healthy lifestyle"]),
+  ]},
   "Grade 9": {"board":"Sindh Board HSSC Part-I Biology","units":[
     _u("Introduction to Biology",["Characteristics of living things","Levels of organisation","Cell structure: plant and animal","Microscopy","Scientific method"]),
     _u("Biochemistry",["Carbohydrates","Proteins and enzymes","Lipids","Nucleic acids","Water and its roles"]),
@@ -785,6 +811,38 @@ SINDH_CURRICULUM["English"] = {
     _u("Writing",["Paragraph writing","Descriptive essays","Informal letters","Story writing","Narrative composition"]),
     _u("Literature",["Poetry: appreciation and analysis","Short stories","Figures of speech: simile, metaphor, personification"]),
   ]},
+
+  "Grade 2": {"board":"Sindh Textbook Board – Grade 2 English","units":[
+    _u("Phonics & Reading",["Letter sounds and blends","CVC and CVCC words","Sight words","Reading simple sentences","Story comprehension"]),
+    _u("Grammar",["Nouns: common and proper","Verbs: action words","Adjectives","Singular and plural","Capital letters and full stops"]),
+    _u("Writing",["Copying sentences","Writing own sentences","Days and months","Simple descriptions"]),
+  ]},
+  "Grade 3": {"board":"Sindh Textbook Board – Grade 3 English","units":[
+    _u("Reading",["Reading passages with comprehension","Identifying main idea","True/false questions","Vocabulary building"]),
+    _u("Grammar",["Parts of speech: noun, verb, adjective, adverb","Simple, compound sentences","Conjunctions","Punctuation: comma, apostrophe"]),
+    _u("Writing",["Paragraph writing","Informal letters","Describing people and places","Story completion"]),
+  ]},
+  "Grade 4": {"board":"Sindh Textbook Board – Grade 4 English","units":[
+    _u("Reading Comprehension",["Reading prose passages","Inference and deduction","Vocabulary in context","Comprehension questions"]),
+    _u("Grammar",["Tenses: present, past, future","Active and passive voice","Direct and indirect speech","Articles and prepositions"]),
+    _u("Writing",["Essay writing: descriptive","Formal and informal letters","Dialogue writing","Summary writing"]),
+  ]},
+  "Grade 5": {"board":"Sindh Textbook Board – Grade 5 English","units":[
+    _u("Reading & Literature",["Prose comprehension","Poetry appreciation","Skimming and scanning","Critical reading"]),
+    _u("Grammar",["Complex sentences","Relative clauses","Modal verbs","Conditionals: type 1 and 2"]),
+    _u("Writing",["Argumentative essays","Report writing","Creative writing","Précis writing"]),
+  ]},
+  "Grade 7": {"board":"Sindh Textbook Board – Grade 7 English","units":[
+    _u("Reading",["Unseen passages","Comprehension strategies","Inferential questions","Vocabulary enrichment"]),
+    _u("Grammar",["Advanced tenses","Reported speech","Passive constructions","Phrasal verbs"]),
+    _u("Writing",["Persuasive essays","Formal letters and emails","Narrative writing","Language analysis"]),
+    _u("Literature",["Short stories: themes and characters","Poems: imagery and tone","Drama extracts"]),
+  ]},
+  "Grade 8": {"board":"Sindh Textbook Board – Grade 8 English","units":[
+    _u("Advanced Reading",["Complex comprehension passages","Evaluating arguments","Comparing texts","Author's purpose"]),
+    _u("Advanced Grammar",["Transformation of sentences","Error correction","Clause types","Stylistic choices"]),
+    _u("Advanced Writing",["Discursive essays","Research-based writing","Analytical paragraphs","Translation: Urdu to English"]),
+  ]},
   "Grade 9": {"board":"Sindh Board HSSC Part-I English","units":[
     _u("Reading & Comprehension",["Unseen passages","Literary analysis","Skimming and scanning","Critical reading","Vocabulary enrichment"]),
     _u("Grammar & Usage",["Advanced tenses","Modal verbs","Conditional sentences","Passive voice","Reported speech","Articles and prepositions"]),
@@ -811,6 +869,38 @@ SINDH_CURRICULUM["Urdu"] = {
     _u("قواعد",["اسم، ضمیر، فعل، صفت","جملے کی اقسام","واحد جمع","مذکر مؤنث"]),
     _u("تحریر",["مضمون نویسی","خط نویسی","کہانی"]),
   ]},
+
+  "Grade 2": {"board":"Sindh Textbook Board – Grade 2 Urdu","units":[
+    _u("حروف و الفاظ",["حروف تہجی کی مشق","دو حرفی الفاظ","تین حرفی الفاظ","الفاظ کے معنی"]),
+    _u("پڑھنا و لکھنا",["سادہ جملے پڑھنا","نقل نویسی","سوال جواب"]),
+  ]},
+  "Grade 3": {"board":"Sindh Textbook Board – Grade 3 Urdu","units":[
+    _u("قواعد کی بنیاد",["اسم کی اقسام","واحد جمع","مذکر مؤنث","فعل کی پہچان"]),
+    _u("نظم و نثر",["نظم کا خلاصہ","سبق کے سوال جواب","مرکزی خیال"]),
+  ]},
+  "Grade 4": {"board":"Sindh Textbook Board – Grade 4 Urdu","units":[
+    _u("قواعد",["ضمیر کی اقسام","صفت و موصوف","زمانے کی اقسام","محاورے"]),
+    _u("تحریر",["مضمون نویسی","خط نویسی","کہانی"]),
+  ]},
+  "Grade 5": {"board":"Sindh Textbook Board – Grade 5 Urdu","units":[
+    _u("اعلیٰ قواعد",["مرکب الفاظ","ضرب الامثال","اسلوب بیان","جملے کی اقسام"]),
+    _u("ادب",["نظم کا تجزیہ","افسانہ","سفرنامہ"]),
+  ]},
+  "Grade 7": {"board":"Sindh Textbook Board – Grade 7 Urdu","units":[
+    _u("قواعد جدید",["فعل لازم و متعدی","مفعول","حال و ماضی","مترادف و متضاد"]),
+    _u("ادبی اصناف",["غزل","نظم","مضمون","خط"]),
+    _u("تحریر",["درخواست","خلاصہ نویسی","تقریر"]),
+  ]},
+  "Grade 8": {"board":"Sindh Textbook Board – Grade 8 Urdu","units":[
+    _u("جدید قواعد",["صنائع بدائع","علامہ اقبالؒ کا کلام","محاورے و ضرب الامثال","ادبی تنقید کی بنیادیں"]),
+    _u("نثری اصناف",["افسانہ","انشائیہ","سوانح عمری"]),
+    _u("اعلیٰ تحریر",["تنقیدی مضمون","تجزیہ","خبر نویسی"]),
+  ]},
+  "Grade 10": {"board":"Sindh Board HSSC Part-II Urdu","units":[
+    _u("جدید اردو ادب",["افسانوی ادب","جدید نظم","نثری اصناف کا ارتقاء"]),
+    _u("اعلیٰ قواعد",["تصریف الافعال","جملے کی ساخت","اعراب و تلفظ"]),
+    _u("تحریر",["تحقیقی مضمون","تنقیدی جائزہ","تخلیقی تحریر"]),
+  ]},
   "Grade 9": {"board":"Sindh Board HSSC Part-I Urdu","units":[
     _u("نظم (شاعری)",["غزل","نظم","حمد و نعت","شاعری کی تکنیک"]),
     _u("نثر",["افسانہ","مضمون","سوانح عمری","طنز و مزاح"]),
@@ -824,6 +914,17 @@ SINDH_CURRICULUM["Computer Science"] = {
     _u("Introduction to Computers",["Types of computers","Input and output devices","Storage devices","Parts of a computer system","Uses of computers in daily life"]),
     _u("Operating Systems",["Purpose of an operating system","Windows basics","File management","Desktop and taskbar"]),
     _u("MS Word",["Creating and saving documents","Formatting text","Tables","Inserting images","Printing"]),
+  ]},
+
+  "Grade 7": {"board":"Sindh Textbook Board – Grade 7 Computer Studies","units":[
+    _u("Number Systems",["Binary: decimal to binary and back","Octal and hexadecimal","BCD and ASCII","Logic gates: AND OR NOT NAND NOR"]),
+    _u("MS Excel",["Spreadsheet basics","Formulas: SUM AVERAGE MAX MIN","Charts: bar, pie, line","Conditional formatting"]),
+    _u("Internet & Email",["Web browsers","Search engines","Email: compose, reply, forward","Online safety and netiquette"]),
+  ]},
+  "Grade 8": {"board":"Sindh Textbook Board – Grade 8 Computer Studies","units":[
+    _u("Advanced Programming",["Python: lists and tuples","Functions and modules","File handling: read and write","Error handling: try-except"]),
+    _u("Database Basics",["What is a database?","Tables, rows and columns","Simple SQL: SELECT, INSERT","Forms and reports in Access"]),
+    _u("Multimedia",["Types of multimedia","Image formats: JPEG PNG GIF","Audio and video editing basics","Presentation design"]),
   ]},
   "Grade 9": {"board":"Sindh Board HSSC Part-I Computer Science","units":[
     _u("Computer Fundamentals",["Number systems: binary, octal, hexadecimal","Boolean algebra and logic gates","Computer architecture","Memory hierarchy","Input/output devices"]),
@@ -935,6 +1036,18 @@ PUNJAB_CURRICULUM["Physics"] = {
     _u("Kinematics",["Distance and displacement","Speed and velocity","Acceleration","Equations of motion"]),
     _u("Forces",["Newton's Laws","Weight and mass","Friction","Simple machines"]),
   ]},
+
+  "Grade 7": {"board":"PCTB – Grade 7 Science (Physics)","units":[
+    _u("Mechanics",["Velocity and acceleration","Newton's Laws of Motion","Momentum","Work, energy and power"]),
+    _u("Waves & Sound",["Properties of waves: amplitude, frequency, wavelength","Speed of sound","Reflection of sound","Ultrasound uses"]),
+    _u("Light",["Reflection at plane and curved mirrors","Refraction","Lenses: convex and concave","Human eye"]),
+  ]},
+  "Grade 8": {"board":"PCTB – Grade 8 Science (Physics)","units":[
+    _u("Kinematics",["Distance-time graphs","Velocity-time graphs","Equations of motion","Free fall"]),
+    _u("Forces & Pressure",["Resultant forces","Pressure in solids and liquids","Archimedes principle","Atmospheric pressure"]),
+    _u("Electricity",["Static electricity","Electric current, voltage, resistance","Ohm's Law","Series and parallel circuits"]),
+    _u("Thermal Physics",["Heat transfer: conduction, convection, radiation","Specific heat capacity","Expansion of materials"]),
+  ]},
   "Grade 9": {"board":"Punjab Board Matric Part-I Physics","units":[
     _u("Physical Quantities & Measurement",["Base and derived quantities","SI units","Scientific notation","Significant figures","Measuring instruments"]),
     _u("Kinematics",["Rest and motion","Scalars and vectors","Equations of motion","Free fall","Graphs of motion"]),
@@ -1008,6 +1121,37 @@ PUNJAB_CURRICULUM["English"] = {
     _u("Writing",["Paragraph writing","Descriptive writing","Informal letters","Story writing"]),
     _u("Literature",["Poetry","Short stories","Drama extracts"]),
   ]},
+
+  "Grade 2": {"board":"PCTB – Grade 2 English","units":[
+    _u("Phonics",["Consonant blends","Long vowel sounds","Common sight words","Reading simple texts"]),
+    _u("Grammar",["Nouns and verbs","Adjectives","Simple sentences","Punctuation basics"]),
+    _u("Writing",["Copying sentences","Sentence construction","Days and months"]),
+  ]},
+  "Grade 3": {"board":"PCTB – Grade 3 English","units":[
+    _u("Reading",["Short paragraphs","Comprehension questions","Vocabulary from context","Sequencing events"]),
+    _u("Grammar",["Tenses: present and past","Plurals and possessives","Prepositions","Conjunctions"]),
+    _u("Writing",["Paragraph writing","Informal letters","Descriptions"]),
+  ]},
+  "Grade 4": {"board":"PCTB – Grade 4 English","units":[
+    _u("Comprehension",["Passage reading","Inference","Main idea and details","True/false and MCQs"]),
+    _u("Grammar",["Active and passive voice","Direct and indirect speech","Articles","Phrasal verbs"]),
+    _u("Writing",["Essay: descriptive","Letter writing","Story writing"]),
+  ]},
+  "Grade 5": {"board":"PCTB – Grade 5 English","units":[
+    _u("Advanced Reading",["Prose and poetry comprehension","Critical reading","Skimming and scanning","Summary skills"]),
+    _u("Grammar",["Complex sentences","Modal verbs","Conditionals","Reported speech"]),
+    _u("Writing",["Argumentative essays","Formal letters","Creative writing","Précis"]),
+  ]},
+  "Grade 7": {"board":"PCTB – Grade 7 English","units":[
+    _u("Reading",["Unseen passages","Inferential comprehension","Vocabulary in context","Text types"]),
+    _u("Grammar",["Advanced tenses","Passive voice","Transformation of sentences","Clause types"]),
+    _u("Writing",["Persuasive writing","Report writing","Descriptive compositions","Language analysis"]),
+  ]},
+  "Grade 8": {"board":"PCTB – Grade 8 English","units":[
+    _u("Literature",["Prose analysis: themes and style","Poetry: form and devices","Drama extracts","Comparing texts"]),
+    _u("Advanced Grammar",["Error correction","Sentence transformation","Complex structures","Register and tone"]),
+    _u("Advanced Writing",["Analytical essays","Discursive writing","Formal communication","Translation"]),
+  ]},
   "Grade 9": {"board":"Punjab Board Matric Part-I English","units":[
     _u("Reading Comprehension",["Prose passages","Comprehension questions","Summary writing","Vocabulary"]),
     _u("Grammar",["Tenses (all)","Modals","Conditional sentences","Passive voice","Reported speech"]),
@@ -1027,6 +1171,39 @@ PUNJAB_CURRICULUM["Urdu"] = {
     _u("حروف تہجی",["حروف کی پہچان","آوازیں","آسان الفاظ"]),
     _u("پڑھنا و لکھنا",["سادہ جملے","نقل نویسی"]),
   ]},
+
+  "Grade 2": {"board":"PCTB – Grade 2 Urdu","units":[
+    _u("حروف و الفاظ",["حروف تہجی","آسان الفاظ","تصویروں کے نام","گنتی"]),
+    _u("سادہ جملے",["جملے پڑھنا","نقل لکھنا","سوال جواب"]),
+  ]},
+  "Grade 3": {"board":"PCTB – Grade 3 Urdu","units":[
+    _u("قواعد",["اسم کی اقسام","واحد جمع","مذکر مؤنث","فعل"]),
+    _u("نظم و نثر",["نظم کا خلاصہ","سبق کے سوال"]),
+  ]},
+  "Grade 4": {"board":"PCTB – Grade 4 Urdu","units":[
+    _u("قواعد",["ضمیر","صفت","محاورے","زمانہ"]),
+    _u("تحریر",["خط","مضمون","کہانی"]),
+  ]},
+  "Grade 5": {"board":"PCTB – Grade 5 Urdu","units":[
+    _u("ادب",["نظمیں","افسانہ","سفرنامہ"]),
+    _u("قواعد",["مرکب الفاظ","ضرب الامثال","جملے کی اقسام"]),
+  ]},
+  "Grade 6": {"board":"PCTB – Grade 6 Urdu","units":[
+    _u("نثر",["اسباق کا خلاصہ","سوال و جواب","مرکزی خیال"]),
+    _u("نظم",["نظم کی تشریح","صنائع بدائع تعارف"]),
+    _u("قواعد",["فعل لازم متعدی","مترادف متضاد","محاورے"]),
+    _u("تحریر",["درخواست","خلاصہ","تقریر"]),
+  ]},
+  "Grade 7": {"board":"PCTB – Grade 7 Urdu","units":[
+    _u("نثری اصناف",["افسانہ","انشائیہ","مضمون"]),
+    _u("شاعری",["غزل","نظم","حمد و نعت"]),
+    _u("قواعد",["جملے کی ساخت","فاعل مفعول","اسلوب بیان"]),
+  ]},
+  "Grade 8": {"board":"PCTB – Grade 8 Urdu","units":[
+    _u("کلاسیکی ادب",["میرؔ و غالبؔ کی غزلیں","اقبالؒ کی نظمیں","قصیدہ"]),
+    _u("جدید قواعد",["صنائع بدائع","علم عروض تعارف","مرکب الفاظ"]),
+    _u("اعلیٰ تحریر",["تنقیدی مضمون","خبر نویسی","ترجمہ"]),
+  ]},
   "Grade 9": {"board":"Punjab Board Matric Part-I Urdu","units":[
     _u("نثر",["اسباق کا خلاصہ","سوال و جواب","مرکزی خیال"]),
     _u("نظم",["نظموں کا تجزیہ","مرکزی خیال","صنائع بدائع"]),
@@ -1042,6 +1219,22 @@ PUNJAB_CURRICULUM["Urdu"] = {
 }
 
 PUNJAB_CURRICULUM["Computer Science"] = {
+
+  "Grade 6": {"board":"PCTB – Grade 6 Computer Studies","units":[
+    _u("Computer Basics",["Types of computers","Input and output devices","Storage devices","Uses of computers in daily life"]),
+    _u("Windows OS",["Desktop and taskbar","File management: create, copy, move, delete","Control panel basics","Keyboard shortcuts"]),
+    _u("MS Word",["Creating and formatting documents","Tables and images","Headers and footers","Saving and printing"]),
+  ]},
+  "Grade 7": {"board":"PCTB – Grade 7 Computer Studies","units":[
+    _u("Number Systems",["Binary: decimal to binary","Hexadecimal basics","BCD","Logic gates introduction"]),
+    _u("MS Excel",["Spreadsheet basics","Formulas: SUM AVERAGE COUNT","Charts and graphs","Cell referencing"]),
+    _u("Internet",["Web browsers and search engines","Email usage","Safe internet practices","Cloud storage basics"]),
+  ]},
+  "Grade 8": {"board":"PCTB – Grade 8 Computer Studies","units":[
+    _u("Programming Basics",["Python: print, input, variables","Data types","if-else statements","Loops: for and while"]),
+    _u("MS PowerPoint",["Creating slides","Transitions and animations","Design themes","Presenting effectively"]),
+    _u("Networks",["Types of networks: LAN WAN","Network devices: router, switch, hub","Internet protocol basics","Cybersecurity awareness"]),
+  ]},
   "Grade 9": {"board":"Punjab Board Matric Part-I Computer Science","units":[
     _u("Computer Basics",["History of computers","Types and generations","Hardware: input, output, storage, processing","Software: system and application","Number systems: binary, octal, hexadecimal"]),
     _u("Programming with Python",["Python environment setup","Variables and data types","Input/output","Arithmetic and logical operators","Conditional statements"]),

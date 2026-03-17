@@ -3553,6 +3553,27 @@ def page_quiz():
     _back_btn("🏠  Home", "home", "_quiz")
     st.markdown("<div class=\"section-header orange\">📝 Practice Quiz</div>", unsafe_allow_html=True)
 
+    # ── Sanitise any cached quiz that was generated before the HTML-fix ──
+    # If a stored quiz has div-wrapped explanations, clean them now so they
+    # never render as raw code regardless of when the quiz was generated.
+    import html as _html_s, re as _re_s
+    def _clean_expl(raw):
+        c = _html_s.unescape(raw)
+        c = _re_s.sub(r'<[^>]+>', ' ', c, flags=_re_s.DOTALL)
+        c = ' '.join(c.split())
+        return c.lstrip('💡').strip()
+
+    if st.session_state.quiz is not None:
+        _qdata = st.session_state.quiz
+        _changed = False
+        for _qq in _qdata.get("questions", []):
+            _raw = _qq.get("explanation", "")
+            if _raw and ('<' in _raw or '&lt;' in _raw):
+                _qq["explanation"] = _clean_expl(_raw)
+                _changed = True
+        if _changed:
+            st.session_state.quiz = _qdata
+
     q = st.session_state.quiz
 
     # ── Top-bar reset: always let user get back to the selector ──
@@ -3608,17 +3629,9 @@ def page_quiz():
             bg     = "#F0FDF4" if correct else "#FFF1EE"
             border = "#059669" if correct else "#E8472A"
             wrong_line = "" if correct else f"<div style=\"font-size:13px;color:#059669;margin-top:2px\">✅ Correct: <b>{ques['answer']}</b></div>"
-            # Deep-clean explanation: strip ALL HTML (including multi-line tags),
-            # then HTML-escape the plain text before injecting into our own HTML.
-            import html as _html, re as _re
-            raw_expl = ques.get("explanation", "")
-            # Correct order: unescape entities FIRST, then strip tags
-            # (handles both raw <div> AND entity-encoded &lt;div&gt; from AI)
-            clean_expl = _html.unescape(raw_expl)
-            clean_expl = _re.sub(r'<[^>]+>', ' ', clean_expl, flags=_re.DOTALL)
-            clean_expl = ' '.join(clean_expl.split())
-            clean_expl = clean_expl.lstrip('💡').strip()
-            clean_expl = _html.escape(clean_expl)
+            # _clean_expl defined at top of page_quiz — handles all HTML variants
+            import html as _html
+            clean_expl = _html.escape(_clean_expl(ques.get("explanation", "")))
             st.markdown(f"""
             <div style="background:{bg};border:1.5px solid {border};border-radius:12px;
                 padding:14px 16px;margin-bottom:10px;color:#1A1A2E">
@@ -3945,6 +3958,13 @@ def page_friends():
     _back_btn("🏠  Home", "home", "_friends")
     st.markdown("<div class=\"section-header purple\">👥 Online Friends Quiz</div>", unsafe_allow_html=True)
 
+    # ── Sanitise any HTML in cached room question explanations ───
+    import html as _html_fq, re as _re_fq
+    def _fq_clean(raw):
+        c = _html_fq.unescape(raw)
+        c = _re_fq.sub(r'<[^>]+>', ' ', c, flags=_re_fq.DOTALL)
+        return ' '.join(c.split()).lstrip('💡').strip()
+
     # ── Session state shortcuts ───────────────────────────────
     my_room  = st.session_state.get("fq_room_id")       # room code I'm in
     my_role  = st.session_state.get("fq_role")          # "host" or "guest"
@@ -4159,13 +4179,7 @@ def page_friends():
                 bg      = "#F0FDF4" if correct else "#FFF1EE"
                 border  = "#059669" if correct else "#E8472A"
                 wrong   = "" if correct else f"<div style=\"font-size:12px;color:#059669;margin-top:3px\">✅ {ques['answer']}</div>"
-                import html as _html2, re as _re2
-                _fq_raw = ques.get("explanation", "")
-                fq_expl = _html2.unescape(_fq_raw)
-                fq_expl = _re2.sub(r'<[^>]+>', ' ', fq_expl, flags=_re2.DOTALL)
-                fq_expl = ' '.join(fq_expl.split())
-                fq_expl = fq_expl.lstrip('💡').strip()
-                fq_expl = _html2.escape(fq_expl)
+                fq_expl = _html_fq.escape(_fq_clean(ques.get("explanation", "")))
                 st.markdown(f"""
                 <div style="background:{bg};border:1.5px solid {border};border-radius:12px;
                     padding:12px 14px;margin-bottom:8px">
